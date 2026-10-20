@@ -20,8 +20,8 @@ Pour l'installer comme une appli :
 ## Classement en ligne et comptes (Firebase)
 
 - Firestore stocke les scores du jour, les fantômes, les réactions, les records et la progression de chacun.
-- Chaque appareil a un compte anonyme ; un joueur peut le protéger par un mot de passe (pseudo + mot de passe,
-  sans e-mail) pour retrouver sa progression ailleurs. Les pseudos sont uniques (collection `names`).
+- Chaque joueur entre un pseudo et un mot de passe dès l'accueil (pas d'e-mail : le jeu fabrique une adresse
+  technique `u…@bousier.game`). Les pseudos sont uniques (collection `names`) ; pour libérer un pseudo, supprimer `names/{pseudo}`.
 - La config du projet est dans `index.html` (`FIREBASE_CONFIG`). Sans réseau, le jeu utilise le classement local.
 - `main` et `dev` ont des classements séparés (`envs/prod` et `envs/dev`).
 - Les règles de sécurité sont dans `firestore.rules` : à recopier dans la console Firebase après chaque modification.

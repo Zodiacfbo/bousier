@@ -59,6 +59,7 @@ img.pix { image-rendering: pixelated; image-rendering: crisp-edges; display: inl
 .gold { color: var(--gold); }
 .good { color: var(--good); }
 .bad { color: var(--bad); }
+button.banner { font: inherit; width: 100%; cursor: pointer; }
 .banner { background: #1a1020; border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) var(--gold); color: var(--gold); padding: calc(var(--u) * 3); text-align: center; }
 .lb tr.pick td { cursor: pointer; }
 .lb .rx { font-size: .75em; color: var(--muted); margin-left: var(--u); }
@@ -1129,17 +1130,6 @@ const Online = {
     return true;
   },
 
-  // Réserve un pseudo : uid si c'est fait (ou déjà à moi), false s'il est pris,
-  // null si on ne peut pas vérifier (hors ligne)
-  claim(name) {
-    return this.run(async c => {
-      const uid = this.uid(c), snap = await c.fb.getDoc(this.nameRef(c, name));
-      if (snap.exists()) return snap.data().uid === uid ? uid : false;
-      await c.fb.setDoc(this.nameRef(c, name), { uid, name: name.trim(), at: Date.now() });
-      return uid;
-    }, 8000);
-  },
-
   // --- Lectures ---
   day(day) {
     return this.run(async c => sortBoard((await this.list(c, ['days', day, 'scores'], 'score', 200))
@@ -1248,6 +1238,50 @@ const Online = {
   },
 
   // --- Comptes ---
+  async currentUid() {
+    try { const c = await withTimeout(this.connect(), 5000); return c ? this.uid(c) : null; } catch (e) { return null; }
+  },
+
+  // Écran d'accueil « pseudo + mot de passe » : crée le compte si le pseudo est
+  // libre, protège un ancien profil sans mot de passe de cet appareil, sinon
+  // se connecte au compte existant.
+  async enter(name, password) {
+    name = name.trim();
+    try {
+      const c = await withTimeout(this.connect(), 8000);
+      if (!c) return { error: 'Pas de connexion internet : il en faut une pour créer ou retrouver ton profil.' };
+      const { fb, auth } = c, user = auth.currentUser;
+      const owner = await withTimeout(fb.getDoc(this.nameRef(c, name)), 8000);
+      const cred = () => fb.EmailAuthProvider.credential(accountEmail(name), password);
+      // ancien profil sans mot de passe, sur cet appareil : on le protège
+      if (owner.exists() && user.isAnonymous && owner.data().uid === user.uid) {
+        await withTimeout(fb.linkWithCredential(user, cred()), 10000);
+        const p = Store.data.profiles[owner.data().name] || Store.newProfile(owner.data().name);
+        Object.assign(p, { uid: user.uid, account: true, nameOk: user.uid });
+        Store.data.profiles[p.name] = p; Store.data.current = p.name; Store.save();
+        this.live = true;
+        return { name: p.name, isNew: false };
+      }
+      if (!owner.exists()) {
+        try {
+          if (user.isAnonymous) await withTimeout(fb.linkWithCredential(user, cred()), 10000);
+          else await withTimeout(fb.createUserWithEmailAndPassword(auth, accountEmail(name), password), 10000);
+        } catch (e) {
+          // un compte existe déjà avec ce pseudo (pseudo libéré à la main) : on s'y connecte
+          if (!String(e.code).includes('already-in-use')) throw e;
+          return this.login(name, password);
+        }
+        const uid = this.uid(c);
+        await withTimeout(fb.setDoc(this.nameRef(c, name), { uid, name, at: Date.now() }), 8000);
+        const p = Object.assign(Store.newProfile(name), { uid, account: true, nameOk: uid });
+        Store.data.profiles[name] = p; Store.data.current = name; Store.save();
+        this.live = true;
+        return { name, isNew: true };
+      }
+      return this.login(name, password);
+    } catch (e) { return { error: this.authError(e) }; }
+  },
+
   // Protège le profil actuel par un mot de passe (le compte anonyme devient un vrai compte)
   async secure(p, password) {
     try {
@@ -1271,6 +1305,7 @@ const Online = {
       const uid = cred.user.uid;
       const owner = await c.fb.getDoc(this.nameRef(c, name));
       const realName = owner.exists() ? owner.data().name : name.trim();
+      if (!owner.exists()) await c.fb.setDoc(this.nameRef(c, name), { uid, name: realName, at: Date.now() });
       const snap = await c.fb.getDoc(this.ref(c, 'profiles', uid + '_' + encodeURIComponent(nameKey(realName))));
       const p = snap.exists() ? Object.assign(Store.newProfile(realName), JSON.parse(snap.data().data)) : Store.newProfile(realName);
       Object.assign(p, { name: realName, uid, account: true, nameOk: uid, nameTaken: false });
@@ -1284,7 +1319,7 @@ const Online = {
   authError(e) {
     const code = e && e.code || '';
     console.warn('Compte', e);
-    if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found') || code.includes('invalid-email')) return 'Pseudo ou mot de passe incorrect.';
+    if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found') || code.includes('invalid-email')) return 'Mauvais mot de passe… ou ce pseudo est déjà pris par quelqu\'un d\'autre.';
     if (code.includes('weak-password')) return 'Mot de passe trop court (6 caractères minimum).';
     if (code.includes('email-already-in-use') || code.includes('credential-already-in-use')) return 'Ce pseudo a déjà un compte : connecte-toi.';
     if (code.includes('too-many-requests')) return 'Trop d\'essais, réessaie dans quelques minutes.';
@@ -2455,9 +2490,8 @@ const App = {
       resume: () => this.resume(),
       abandon: () => this.abandon(),
       sound: () => { Sound.on = !Sound.on; Store.data.settings.sound = Sound.on; Store.save(); this.show('profile'); },
-      switchp: () => { Store.switchProfile(v); this.loadDay(); this.show('home'); },
-      newp: () => this.createProfileFromInput(),
-      login: () => this.doLogin(),
+      switchp: () => this.switchTo(v),
+      enter: () => this.doEnter(),
       secure: () => this.doSecure(),
       saveteam: () => this.saveTeam(),
       tuto: () => {
@@ -2477,33 +2511,30 @@ const App = {
     if (el) el.textContent = msg || '';
   },
 
-  async createProfileFromInput() {
-    const i = this.ui.querySelector('#pname');
-    const name = i ? i.value.trim() : '';
-    if (!name) { if (i) i.focus(); return; }
-    const pb = nameProblem(name);
-    if (pb) return this.formError(pb, '#pname');
-    if (Store.data.profiles[name]) return this.formError('Ce joueur existe déjà sur cet appareil.', '#pname');
-    this.formError('Vérification…', '#pname');
-    // null = pas de réseau : on crée quand même, le pseudo sera réservé plus tard
-    const uid = await Online.claim(name);
-    if (uid === false) return this.formError('Pseudo déjà pris ! Si c\'est toi, connecte-toi.', '#pname');
-    const p = Store.createProfile(name);
-    if (uid) { p.uid = uid; p.nameOk = uid; Store.save(); }
-    Online.submitPlayer(p);
-    this.loadDay();
-    this.show(Store.data.settings.tutoDone ? 'home' : 'tuto', 0);
-  },
-
-  async doLogin() {
-    const name = (this.ui.querySelector('#lname') || {}).value || '', pw = (this.ui.querySelector('#lpass') || {}).value || '';
-    if (!name.trim() || !pw) return this.formError('Pseudo et mot de passe, s\'il te plaît.');
-    this.formError('Connexion…');
-    const r = await Online.login(name, pw);
+  // Écran d'accueil : pseudo + mot de passe (création ou connexion)
+  async doEnter() {
+    const name = ((this.ui.querySelector('#pname') || {}).value || '').trim(), pw = (this.ui.querySelector('#ppass') || {}).value || '';
+    if (!name) return this.formError('Choisis un pseudo.');
+    const pb = Store.data.profiles[name] ? null : nameProblem(name);
+    if (pb) return this.formError(pb);
+    if (pw.length < 6) return this.formError('Mot de passe : 6 caractères minimum.');
+    this.formError('Un instant…');
+    const r = await Online.enter(name, pw);
     if (r.error) return this.formError(r.error);
     this.loadDay();
-    this.toast(`Content de te revoir, ${r.name} !`);
+    Online.submitPlayer(this.p);
+    if (r.isNew && !Store.data.settings.tutoDone) return this.show('tuto', 0);
+    this.toast(r.isNew ? `Bienvenue, ${r.name} !` : `Content de te revoir, ${r.name} !`);
     this.show('home');
+  },
+
+  // Changer de joueur : un compte protégé qui n'est pas celui connecté demande son mot de passe
+  async switchTo(name) {
+    const t = Store.data.profiles[name];
+    if (!t) return;
+    const uid = await Online.currentUid();
+    if (t.account && uid && t.uid && t.uid !== uid) return this.show('name', name);
+    Store.switchProfile(name); this.loadDay(); this.show('home');
   },
 
   async doSecure() {
@@ -2724,17 +2755,19 @@ const App = {
 
   scr_none() { return ''; },
 
-  scr_name() {
+  scr_name(prefill = '') {
+    const back = this.p ? `<div class="head"><button class="btn ghost small" data-a="go" data-v="profile">◀</button><h2>Joueur</h2></div>` : '';
     return `<div class="screen center">
+      ${back}
       <div class="title">BOUSIER</div>
       <div class="mascot">${pix(mascotUrl(SKINS[0], HATS[0], 12), 80, 84)}</div>
       <div class="panel">
-        <p>Bienvenue, petit bousier ! Comment tu t'appelles ?</p>
-        <input id="pname" maxlength="14" placeholder="Ton pseudo" onkeydown="if(event.key==='Enter')App.createProfileFromInput()">
+        <input id="pname" maxlength="14" placeholder="Pseudo" autocomplete="username" value="${esc(prefill)}">
+        <input id="ppass" type="password" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password" onkeydown="if(event.key==='Enter')App.doEnter()">
         <div class="tiny bad form-err"></div>
-        <button class="btn big" data-a="newp">C'est parti !</button>
+        <button class="btn big" data-a="enter">JOUER !</button>
+        <div class="tiny">${prefill ? `Entre le mot de passe de ${esc(prefill)}.` : 'Nouveau ? Choisis un pseudo et un mot de passe.<br>Déjà joué ? Mets les mêmes pour retrouver ta progression.'}</div>
       </div>
-      <button class="btn ghost" data-a="go" data-v="login">🔑 J'ai déjà un compte</button>
     </div>`;
   },
 
@@ -2771,20 +2804,6 @@ const App = {
     </div>`;
   },
 
-  scr_login() {
-    return `<div class="screen center">
-      <div class="head"><button class="btn ghost small" data-a="go" data-v="${this.p ? 'profile' : 'name'}">◀</button><h2>Connexion</h2></div>
-      <div class="panel">
-        <p>Retrouve ta progression (pièces, badges, style, série) sur cet appareil.</p>
-        <input id="lname" maxlength="14" placeholder="Pseudo" autocomplete="username">
-        <input id="lpass" type="password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter')App.doLogin()">
-        <div class="tiny bad form-err"></div>
-        <button class="btn big" data-a="login">Se connecter</button>
-      </div>
-      <div class="tiny">Mot de passe oublié ? Demande à l'organisateur du jeu de le réinitialiser.</div>
-    </div>`;
-  },
-
   async scr_home() {
     const p = this.p, cfg = this.cfg, d = Store.dayPeek(p, this.today);
     const left = 3 - d.attempts;
@@ -2807,6 +2826,7 @@ const App = {
         <div class="mascot bob">${pix(mascotUrl(skin, hat, 10), 72, 76)}</div>
       </div>
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
+      ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
       ${p.nameTaken ? '<div class="banner bad">Ce pseudo est déjà pris en ligne : tes scores ne sont pas envoyés. Crée un autre joueur.</div>' : ''}
       <div class="row2">
         <div class="panel card">
@@ -3023,11 +3043,11 @@ const App = {
     const recs = await Leaderboard.records();
     this.knownTeams = [...new Map(recs.filter(e => e.team).map(e => [nameKey(e.team), e.team])).values()];
     const account = p.account
-      ? '<div class="good">🔒 Profil protégé par mot de passe. Tu peux le retrouver sur n\'importe quel appareil.</div>'
-      : `<p>Protège ton profil avec un mot de passe pour le retrouver sur un autre téléphone.</p>
+      ? '<div class="good">🔒 Connecté. Pour jouer sur un autre téléphone, mets ton pseudo et ton mot de passe.</div>'
+      : `<p>Choisis un mot de passe : sans lui, tu perds ton pseudo si tu changes de téléphone ou réinstalles le jeu.</p>
         <input id="spass" type="password" minlength="6" placeholder="Mot de passe (6 caractères min.)" autocomplete="new-password" onkeydown="if(event.key==='Enter')App.doSecure()">
         <div class="tiny bad form-err"></div>
-        <button class="btn" data-a="secure">🔒 Protéger mon profil</button>`;
+        <button class="btn" data-a="secure">🔒 Choisir mon mot de passe</button>`;
     return `<div class="screen">
       ${this.back('Profil')}
       <div class="panel">
@@ -3041,15 +3061,9 @@ const App = {
         <button class="btn" data-a="saveteam">Enregistrer</button>
       </div>
       <div class="panel">
-        <div class="label">Changer de joueur</div>
+        <div class="label">Joueurs de cet appareil</div>
         <div class="col">${list}</div>
-        <button class="btn ghost" data-a="go" data-v="login">🔑 Se connecter à un compte</button>
-      </div>
-      <div class="panel">
-        <div class="label">Ajouter un joueur sur cet appareil</div>
-        <input id="pname" maxlength="14" placeholder="Pseudo" onkeydown="if(event.key==='Enter')App.createProfileFromInput()">
-        <div class="tiny bad form-err"></div>
-        <button class="btn" data-a="newp">Créer</button>
+        <button class="btn ghost" data-a="go" data-v="name">➕ Autre joueur ou autre compte</button>
       </div>
       <div class="panel">
         <button class="btn ghost" data-a="sound">${Sound.on ? '🔊 Son activé' : '🔇 Son coupé'}</button>
