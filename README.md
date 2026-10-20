@@ -17,12 +17,16 @@ Pour l'installer comme une appli :
 - Chaque push sur `main` ou `dev` republie le site automatiquement (`.github/workflows/deploy.yml`), via la branche `gh-pages` qu'il ne faut pas modifier à la main.
 - La version de test a sa propre sauvegarde, séparée de la version officielle.
 
-## Classement en ligne (Firebase)
+## Classement en ligne et comptes (Firebase)
 
-- Firestore stocke les scores du jour, les fantômes et les records ; chaque appareil a un compte anonyme.
-- La config du projet est dans `index.html` (`FIREBASE_CONFIG`). Sans config ou sans réseau, le jeu utilise le classement local.
+- Firestore stocke les scores du jour, les fantômes, les réactions, les records et la progression de chacun.
+- Chaque appareil a un compte anonyme ; un joueur peut le protéger par un mot de passe (pseudo + mot de passe,
+  sans e-mail) pour retrouver sa progression ailleurs. Les pseudos sont uniques (collection `names`).
+- La config du projet est dans `index.html` (`FIREBASE_CONFIG`). Sans réseau, le jeu utilise le classement local.
 - `main` et `dev` ont des classements séparés (`envs/prod` et `envs/dev`).
 - Les règles de sécurité sont dans `firestore.rules` : à recopier dans la console Firebase après chaque modification.
+- Dans la console : Authentication > Sign-in method > activer **Anonyme** et **Adresse e-mail/Mot de passe**.
+- Mot de passe oublié : Authentication > Users, chercher l'utilisateur (`u…@bousier.game`) et changer son mot de passe.
 - Tester en local avec l'émulateur : `npx firebase emulators:start --only auth,firestore --project demo-bousier`.
 
 ## Fichiers

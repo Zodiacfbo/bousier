@@ -58,6 +58,14 @@ img.pix { image-rendering: pixelated; image-rendering: crisp-edges; display: inl
 .center { text-align: center; }
 .gold { color: var(--gold); }
 .good { color: var(--good); }
+.bad { color: var(--bad); }
+.banner { background: #1a1020; border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) var(--gold); color: var(--gold); padding: calc(var(--u) * 3); text-align: center; }
+.lb tr.pick td { cursor: pointer; }
+.lb .rx { font-size: .75em; color: var(--muted); margin-left: var(--u); }
+.reacts { display: flex; gap: calc(var(--u) * 2); justify-content: center; }
+.reacts button { font: inherit; font-size: 1.3em; background: #1a1020; border: var(--u) solid var(--line); padding: var(--u) calc(var(--u) * 3); cursor: pointer; }
+.reacts button.on { box-shadow: inset 0 0 0 var(--u) var(--gold); }
+.titles td { padding: var(--u); }
 b { color: #fff; }
 
 .btn {
@@ -192,7 +200,7 @@ table { width: 100%; border-collapse: collapse; }
   <div id="hud" class="hidden">
     <div class="hud-top">
       <div id="hud-size">6,4 cm</div>
-      <div class="hud-right"><span id="hud-wx"></span><span id="hud-try"></span><button id="hud-pause" aria-label="Pause">II</button></div>
+      <div class="hud-right"><span id="hud-time">0:00</span><span id="hud-wx"></span><span id="hud-try"></span><button id="hud-pause" aria-label="Pause">II</button></div>
     </div>
     <div class="hud-prog"><div id="hud-bar"></div><div id="hud-beetle">🪲</div><div class="hud-hole">🕳️</div></div>
   </div>
@@ -260,6 +268,7 @@ function fmtCountdown(ms) {
 
 // Taille de la boule (rayon en pixels) -> centimètres affichés
 function radiusToCm(r) { return r * r * 0.4; }
+function fmtTime(t) { const s = Math.floor(t); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 function fmtSize(cm) {
   if (cm >= 100) return (cm / 100).toFixed(2).replace('.', ',') + ' m';
   return cm.toFixed(1).replace('.', ',') + ' cm';
@@ -378,6 +387,23 @@ function silhouette(src, color = '#2a1d24') {
 
 // --- Sprites dessinés -------------------------------------------------------
 const ROWS = {
+  // Kevin, sur sa trottinette, cherche toujours son téléphone
+  kevin: [
+    '....kkkk....',
+    '...knnnnk...',
+    '...knsssk...',
+    '....ksskk...',
+    '...kCCCCk...',
+    '..kCCCCCCkk.',
+    '..kCCCCk.kk.',
+    '...kCCk...k.',
+    '...kQQk...k.',
+    '...kQkQk..k.',
+    '..kQk.kQk.k.',
+    '.kkkkkkkkkkk',
+    '.kgk....kgk.',
+    '..k......k..',
+  ],
   beetleA: [
     '...kkkkk...',
     '..kqQqQqk..',
@@ -652,6 +678,7 @@ function lightMask(LR) {
 function buildSprites() {
   for (const k in ROWS) SPR[k] = spriteFromRows(ROWS[k]);
   SPR.lezardF = flipCanvas(SPR.lezard);
+  SPR.kevinF = flipCanvas(SPR.kevin);
   SPR.scorpionF = flipCanvas(SPR.scorpion);
   SPR.tortueF = flipCanvas(SPR.tortue);
   SPR.grenouilleF = SPR.grenouille;
@@ -813,6 +840,7 @@ const BADGES = [
 // --- Quêtes du jour --------------------------------------------------------
 // Chaque générateur reçoit (rng, course) et renvoie { id, text, check(run) }
 const QUEST_GEN = [
+  (rng) => { const s = rng.pick([80, 90, 100]); return { id: 'fast' + s, text: `Finis en moins de ${s} s`, check: r => r.finished && r.time < s }; },
   (rng) => { const n = rng.pick([50, 70, 90]); return { id: 'eat' + n, text: `Avale ${n} objets`, check: r => r.absorbed >= n }; },
   (rng, course) => {
     const big = ['cactus', 'tente', 'chameau', 'palmier', 'amphore', 'valise', 'crane'].filter(id => (course.counts[id] || 0) >= 2);
@@ -836,7 +864,7 @@ const QUEST_REWARD = 25, QUEST_ALL_BONUS = 25;
 <script>
 'use strict';
 // ---------------------------------------------------------------------------
-// Sauvegarde locale + classement (en ligne via Firebase, local en secours).
+// Sauvegarde locale, comptes et classement (en ligne via Firebase, local en secours).
 // ---------------------------------------------------------------------------
 
 // Config du projet Firebase. Ces clés sont publiques par nature (comme pour
@@ -858,6 +886,32 @@ const GAME_URL = 'https://zodiacfbo.github.io/bousier/';
 // La version de test (/dev/) a sa propre sauvegarde pour ne pas toucher à la vraie
 const SAVE_KEY = location.pathname.includes('/dev/') ? 'bousier_dev_v1' : 'bousier_v1';
 
+// --- Pseudos ----------------------------------------------------------------
+const NAME_RE = /^[\p{L}\p{N} _'-]{2,14}$/u;
+// Filtre volontairement simple. Les mots courts ne sont refusés qu'en mot entier.
+const BAD_WORDS = ['merde', 'putain', 'pute', 'salope', 'connard', 'connasse', 'encule', 'batard', 'bite', 'couille',
+  'chatte', 'nique', 'fdp', 'ntm', 'pd', 'tg', 'negre', 'nazi', 'hitler', 'fuck', 'shit', 'bitch', 'cunt', 'dick',
+  'nigger', 'nigga', 'whore', 'slut', 'porn', 'sexe'];
+
+function normName(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's');
+}
+function nameProblem(name) {
+  if (!NAME_RE.test(name)) return 'De 2 à 14 caractères : lettres, chiffres, espaces, - _ \'';
+  const n = normName(name), words = n.split(/[^a-z]+/), flat = n.replace(/[^a-z]/g, '');
+  for (const w of BAD_WORDS) if (w.length <= 3 ? words.includes(w) : flat.includes(w)) return 'Ce pseudo n\'est pas autorisé.';
+  return null;
+}
+// Un pseudo est réservé sans tenir compte des majuscules
+const nameKey = name => name.trim().toLowerCase();
+// Les comptes Firebase demandent un e-mail : on en fabrique un à partir du pseudo
+function accountEmail(name) {
+  const hex = [...new TextEncoder().encode(nameKey(name))].map(b => b.toString(16).padStart(2, '0')).join('');
+  return `u${hex}@bousier.game`;
+}
+
+// --- Sauvegarde locale -------------------------------------------------------
 const Store = {
   data: null,
 
@@ -868,23 +922,30 @@ const Store = {
     this.data = d;
     return d;
   },
-  save() { safeStorageSet(SAVE_KEY, JSON.stringify(this.data)); },
+  save() {
+    const p = this.profile();
+    if (p) p.savedAt = Date.now();
+    safeStorageSet(SAVE_KEY, JSON.stringify(this.data));
+    if (p) Online.queueSync(p);
+  },
 
   profile() { return this.data.profiles[this.data.current] || null; },
+
+  newProfile(name) {
+    return {
+      name, created: dayKey(), coins: 0, streak: 0, bestStreak: 0, lastDay: null,
+      badges: {}, owned: { ball: [], hat: [], theme: [] },
+      equip: { ball: 'classique', hat: 'aucun', theme: 'doree' },
+      collection: {}, legends: {}, weathers: {},
+      stats: { runs: 0, absorbed: 0, best: 0, terriers: 0, camels: 0 },
+      days: {}, team: '', uid: null, account: false,
+    };
+  },
 
   createProfile(name) {
     name = name.trim().slice(0, 14);
     if (!name) return null;
-    if (!this.data.profiles[name]) {
-      this.data.profiles[name] = {
-        name, created: dayKey(), coins: 0, streak: 0, bestStreak: 0, lastDay: null,
-        badges: {}, owned: { ball: [], hat: [], theme: [] },
-        equip: { ball: 'classique', hat: 'aucun', theme: 'doree' },
-        collection: {}, legends: {}, weathers: {},
-        stats: { runs: 0, absorbed: 0, best: 0, terriers: 0, camels: 0 },
-        days: {},
-      };
-    }
+    if (!this.data.profiles[name]) this.data.profiles[name] = this.newProfile(name);
     this.data.current = name;
     this.save();
     return this.data.profiles[name];
@@ -915,19 +976,55 @@ const Store = {
   },
 };
 
-// Classement local : tous les profils créés sur cet appareil
+// À score égal, le plus rapide passe devant
+function sortBoard(list) {
+  return list.sort((a, b) => b.score - a.score || (a.time ?? Infinity) - (b.time ?? Infinity));
+}
+
+// Résumé d'une partie tel qu'il est stocké (sert aussi aux titres du jour)
+function runSummary(run) {
+  return {
+    score: run.score, sizeCm: Math.round(run.sizeCm * 10) / 10, terrier: run.terrier, legend: run.legend,
+    time: Math.round(run.time * 10) / 10, absorbed: run.absorbed, bumps: run.bumps, wallHits: run.wallHits,
+    pricks: run.pricks, weather: run.weather,
+  };
+}
+
+// Fantômes à affronter : le premier du jour et le rival (juste au-dessus de moi,
+// ou le dernier du classement si je n'ai pas encore de score)
+function pickGhostTargets(lb, me) {
+  const i = lb.findIndex(e => e.name === me), out = [];
+  if (lb.length && i !== 0) out.push({ ...lb[0], role: 'leader' });
+  const rival = i > 1 ? lb[i - 1] : i < 0 && lb.length > 1 ? lb[lb.length - 1] : null;
+  if (rival) out.push({ ...rival, role: 'rival' });
+  return out;
+}
+
+// Regroupe le total de la semaine par équipe (moyenne des joueurs qui ont joué)
+function teamBoard(week) {
+  const by = {};
+  for (const e of week) {
+    if (!e.team) continue;
+    const t = by[nameKey(e.team)] || (by[nameKey(e.team)] = { team: e.team, players: 0, total: 0 });
+    t.players++; t.total += e.total;
+    if (t.team === t.team.toLowerCase() && e.team !== e.team.toLowerCase()) t.team = e.team;  // garde l'orthographe avec majuscules
+  }
+  return Object.values(by).map(t => ({ ...t, avg: Math.round(t.total / t.players * 10) / 10 })).sort((a, b) => b.avg - a.avg);
+}
+
+// --- Classement local : tous les profils créés sur cet appareil ---------------
 const LocalBoard = {
   async day(day) {
-    return Object.values(Store.data.profiles)
-      .map(p => { const d = p.days[day]; return d && d.best > 0 ? { name: p.name, score: d.best, run: d.bestRun } : null; })
-      .filter(Boolean).sort((a, b) => b.score - a.score);
+    return sortBoard(Object.values(Store.data.profiles)
+      .map(p => { const d = p.days[day]; return d && d.best > 0 ? { id: p.name, name: p.name, score: d.best, time: d.bestRun && d.bestRun.time, run: d.bestRun, team: p.team || '' } : null; })
+      .filter(Boolean));
   },
   async week(wk) {
     const days = weekDays(wk);
     return Object.values(Store.data.profiles).map(p => {
       let total = 0, played = 0;
       for (const k of days) { const d = p.days[k]; if (d && d.best > 0) { total += d.best; played++; } }
-      return { name: p.name, total: Math.round(total * 10) / 10, played };
+      return { name: p.name, team: p.team || '', total: Math.round(total * 10) / 10, played };
     }).filter(e => e.played > 0).sort((a, b) => b.total - a.total);
   },
   async records() {
@@ -935,10 +1032,11 @@ const LocalBoard = {
       name: p.name, best: p.stats.best, bestStreak: p.bestStreak, legends: Object.keys(p.legends).length, badges: Object.keys(p.badges).length,
     })).sort((a, b) => b.best - a.best);
   },
-  async ghosts(day) {
-    return Object.values(Store.data.profiles)
-      .map(p => ({ name: p.name, ghost: p.days[day] && p.days[day].ghost, score: p.days[day] ? p.days[day].best : 0 }))
-      .filter(g => g.ghost).sort((a, b) => b.score - a.score).slice(0, 4);
+  async ghosts(day, targets) {
+    return targets.map(t => {
+      const p = Store.data.profiles[t.name], d = p && p.days[day];
+      return d && d.ghost ? { ...t, ghost: d.ghost } : null;
+    }).filter(Boolean);
   },
 };
 
@@ -946,13 +1044,20 @@ function withTimeout(promise, ms) {
   return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
 }
 
-// Classement en ligne (Firestore). Chaque appareil a un compte anonyme ;
-// un joueur = un profil sur un appareil (id « uid_pseudo »).
+// --- En ligne (Firestore) ----------------------------------------------------
+// Chaque appareil a un compte anonyme, qu'on peut protéger par un mot de passe.
+// Un joueur = un pseudo réservé (names/{pseudo en minuscules} -> uid).
+//   names/{pseudo}                      propriétaire de chaque pseudo
 //   envs/{env}/days/{jour}/scores/{id}  meilleur score du jour
 //   envs/{env}/days/{jour}/ghosts/{id}  fantôme de ce meilleur score
+//   envs/{env}/days/{jour}/reacts/{id}  réactions (👏 😂 💩 🔥) sur les scores
 //   envs/{env}/players/{id}             records de tous les temps
+//   envs/{env}/profiles/{id}            progression complète (pièces, badges…)
+// avec id = « uid_pseudo ».
+const REACTIONS = ['👏', '😂', '💩', '🔥'];
+
 const Online = {
-  conn: null,   // promesse -> { fb, db, uid } ou null
+  conn: null,   // promesse -> { fb, auth, db } ou null
   live: false,  // vrai quand le dernier échange avec le serveur a réussi
 
   connect() {
@@ -967,8 +1072,11 @@ const Online = {
           const [host, port] = BOUSIER_EMULATOR.firestore.split(':');
           fb.connectFirestoreEmulator(db, host, +port);
         }
-        const cred = auth.currentUser ? { user: auth.currentUser } : await fb.signInAnonymously(auth);
-        return { fb, db, uid: cred.user.uid };
+        // On attend la session enregistrée sur l'appareil : sans ça, chaque
+        // ouverture créerait un nouveau compte (et un doublon au classement)
+        await auth.authStateReady();
+        if (!auth.currentUser) await fb.signInAnonymously(auth);
+        return { fb, auth, db };
       })().catch(e => { console.warn('Classement en ligne indisponible', e); this.conn = null; return null; });
     }
     return this.conn;
@@ -989,64 +1097,225 @@ const Online = {
     }
   },
 
-  id(c, name) { return c.uid + '_' + encodeURIComponent(name); },
+  uid(c) { return c.auth.currentUser ? c.auth.currentUser.uid : null; },
+  id(c, name) { return this.uid(c) + '_' + encodeURIComponent(nameKey(name)); },
   ref(c, ...path) { return c.fb.doc(c.db, 'envs', ONLINE_ENV, ...path); },
+  nameRef(c, name) { return c.fb.doc(c.db, 'names', nameKey(name)); },
   async list(c, path, field, n) {
     const { fb } = c;
     const snap = await fb.getDocs(fb.query(fb.collection(c.db, 'envs', ONLINE_ENV, ...path), fb.orderBy(field, 'desc'), fb.limit(n)));
-    return snap.docs.map(d => d.data());
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   },
 
+  // Le profil peut-il écrire en ligne ? Il doit appartenir au compte connecté
+  // et son pseudo doit être réservé à son nom.
+  async ready(c, p) {
+    const uid = this.uid(c);
+    if (!uid) return false;
+    if (!p.uid) { p.uid = uid; Store.save(); }
+    if (p.uid !== uid) return false;
+    if (p.nameOk === uid) return true;
+    const snap = await c.fb.getDoc(this.nameRef(c, p.name));
+    if (snap.exists() && snap.data().uid !== uid) { p.nameTaken = true; return false; }
+    if (!snap.exists()) await c.fb.setDoc(this.nameRef(c, p.name), { uid, name: p.name, at: Date.now() });
+    p.nameOk = uid; p.nameTaken = false;
+    return true;
+  },
+
+  // Réserve un pseudo : uid si c'est fait (ou déjà à moi), false s'il est pris,
+  // null si on ne peut pas vérifier (hors ligne)
+  claim(name) {
+    return this.run(async c => {
+      const uid = this.uid(c), snap = await c.fb.getDoc(this.nameRef(c, name));
+      if (snap.exists()) return snap.data().uid === uid ? uid : false;
+      await c.fb.setDoc(this.nameRef(c, name), { uid, name: name.trim(), at: Date.now() });
+      return uid;
+    }, 8000);
+  },
+
+  // --- Lectures ---
   day(day) {
-    return this.run(async c => (await this.list(c, ['days', day, 'scores'], 'score', 100))
-      .map(e => ({ name: e.name, score: e.score, run: e.run || null })));
+    return this.run(async c => sortBoard((await this.list(c, ['days', day, 'scores'], 'score', 200))
+      .map(e => ({ id: e.id, name: e.name, score: e.score, time: e.time, run: e.run || null, team: e.team || '' }))));
   },
   week(wk) {
     return this.run(async c => {
-      const days = await Promise.all(weekDays(wk).map(k => this.list(c, ['days', k, 'scores'], 'score', 100)));
+      const days = await Promise.all(weekDays(wk).map(k => this.list(c, ['days', k, 'scores'], 'score', 200)));
       const by = {};
       for (const list of days) for (const e of list) {
-        const t = by[e.name] || (by[e.name] = { name: e.name, total: 0, played: 0 });
-        t.total += e.score; t.played++;
+        const t = by[e.name] || (by[e.name] = { name: e.name, team: '', total: 0, played: 0 });
+        t.total += e.score; t.played++; if (e.team) t.team = e.team;
       }
       return Object.values(by).map(e => ({ ...e, total: Math.round(e.total * 10) / 10 })).sort((a, b) => b.total - a.total);
-    });
+    }, 8000);
   },
   records() {
     return this.run(async c => (await this.list(c, ['players'], 'best', 100))
-      .map(e => ({ name: e.name, best: e.best, bestStreak: e.bestStreak, legends: e.legends, badges: e.badges })));
+      .map(e => ({ name: e.name, best: e.best, bestStreak: e.bestStreak, legends: e.legends, badges: e.badges, team: e.team || '' })));
   },
-  ghosts(day) {
-    return this.run(async c => (await this.list(c, ['days', day, 'ghosts'], 'score', 4))
-      .map(e => ({ name: e.name, score: e.score, ghost: { x: e.x, y: e.y, r: e.r } })));
+  ghosts(day, targets) {
+    return this.run(async c => (await Promise.all(targets.map(async t => {
+      const snap = await c.fb.getDoc(this.ref(c, 'days', day, 'ghosts', t.id));
+      if (!snap.exists()) return null;
+      const g = snap.data();
+      return { ...t, ghost: { x: g.x, y: g.y, r: g.r } };
+    }))).filter(Boolean), 8000);
+  },
+  // { [id du score]: { '👏': 2, … } } + mes réactions { [id du score]: '👏' }
+  reactions(day) {
+    return this.run(async c => {
+      const list = await this.list(c, ['days', day, 'reacts'], 'at', 500), uid = this.uid(c);
+      const counts = {}, mine = {};
+      for (const r of list) {
+        const t = counts[r.target] || (counts[r.target] = {});
+        t[r.e] = (t[r.e] || 0) + 1;
+        if (r.id.startsWith(uid + '_')) mine[r.target] = r.e;
+      }
+      return { counts, mine };
+    });
   },
 
-  // Envoie le meilleur score du jour (et son fantôme) du profil
+  // --- Écritures ---
   submitScore(p, day) {
     const d = p.days[day];
     if (!d || !(d.best > 0)) return Promise.resolve(null);
     return this.run(async c => {
-      const id = this.id(c, p.name), at = Date.now();
-      const writes = [c.fb.setDoc(this.ref(c, 'days', day, 'scores', id), { name: p.name, score: d.best, run: d.bestRun, at })];
+      if (!await this.ready(c, p)) return false;
+      const id = this.id(c, p.name), at = Date.now(), team = p.team || '';
+      const time = d.bestRun && d.bestRun.time != null ? d.bestRun.time : null;
+      const writes = [c.fb.setDoc(this.ref(c, 'days', day, 'scores', id), { name: p.name, score: d.best, time, run: d.bestRun, team, at })];
       if (d.ghost) writes.push(c.fb.setDoc(this.ref(c, 'days', day, 'ghosts', id), { name: p.name, score: d.best, x: d.ghost.x, y: d.ghost.y, r: d.ghost.r, at }));
       await Promise.all(writes);
       return true;
     }, 8000);
   },
   submitPlayer(p) {
-    return this.run(c => c.fb.setDoc(this.ref(c, 'players', this.id(c, p.name)), {
-      name: p.name, best: p.stats.best, bestStreak: p.bestStreak,
-      legends: Object.keys(p.legends).length, badges: Object.keys(p.badges).length, at: Date.now(),
-    }), 8000);
+    return this.run(async c => {
+      if (!await this.ready(c, p)) return false;
+      await c.fb.setDoc(this.ref(c, 'players', this.id(c, p.name)), {
+        name: p.name, best: p.stats.best, bestStreak: p.bestStreak, team: p.team || '',
+        legends: Object.keys(p.legends).length, badges: Object.keys(p.badges).length, at: Date.now(),
+      });
+      return true;
+    }, 8000);
+  },
+  react(day, p, target, e) {
+    return this.run(async c => {
+      if (!await this.ready(c, p)) return false;
+      await c.fb.setDoc(this.ref(c, 'days', day, 'reacts', this.uid(c) + '_' + target), { target, e, by: p.name, at: Date.now() });
+      return true;
+    });
+  },
+
+  // --- Progression en ligne ---
+  // Copie du profil sans les fantômes (lourds) ni les jours anciens
+  packProfile(p) {
+    const limit = addDays(dayKey(), -30), days = {};
+    for (const k in p.days) if (k >= limit) days[k] = { ...p.days[k], ghost: null };
+    return JSON.stringify({ ...p, days, nameOk: undefined, nameTaken: undefined });
+  },
+  queueSync(p) {
+    if (!FIREBASE_CONFIG) return;
+    clearTimeout(this._sync);
+    this._sync = setTimeout(() => this.syncProfile(p), 3000);
+  },
+  syncProfile(p) {
+    return this.run(async c => {
+      if (!await this.ready(c, p)) return false;
+      await c.fb.setDoc(this.ref(c, 'profiles', this.id(c, p.name)), { name: p.name, at: p.savedAt || Date.now(), data: this.packProfile(p) });
+      return true;
+    }, 8000);
+  },
+  // Récupère la progression en ligne si elle est plus récente (joué sur un autre appareil)
+  pullProfile(p) {
+    return this.run(async c => {
+      if (!await this.ready(c, p)) return false;
+      const snap = await c.fb.getDoc(this.ref(c, 'profiles', this.id(c, p.name)));
+      if (!snap.exists() || !(snap.data().at > (p.savedAt || 0))) return false;
+      const cloud = JSON.parse(snap.data().data);
+      for (const k in cloud.days) if (p.days[k] && p.days[k].ghost) cloud.days[k].ghost = p.days[k].ghost;
+      Object.assign(p, cloud, { savedAt: snap.data().at });
+      safeStorageSet(SAVE_KEY, JSON.stringify(Store.data));
+      return true;
+    }, 8000);
+  },
+
+  // --- Comptes ---
+  // Protège le profil actuel par un mot de passe (le compte anonyme devient un vrai compte)
+  async secure(p, password) {
+    try {
+      const c = await withTimeout(this.connect(), 8000);
+      if (!c) return 'Pas de connexion.';
+      const user = c.auth.currentUser;
+      if (!user.isAnonymous) return 'Cet appareil est déjà connecté à un autre compte.';
+      if (!await withTimeout(this.ready(c, p), 8000)) return p.nameTaken ? 'Ce pseudo appartient à un autre joueur.' : 'Ce profil appartient à une autre session.';
+      await withTimeout(c.fb.linkWithCredential(user, c.fb.EmailAuthProvider.credential(accountEmail(p.name), password)), 10000);
+      p.account = true; Store.save();
+      await this.syncProfile(p);
+      return null;
+    } catch (e) { return this.authError(e); }
+  },
+  // Se connecte à un compte et récupère sa progression sur cet appareil
+  async login(name, password) {
+    try {
+      const c = await withTimeout(this.connect(), 8000);
+      if (!c) return { error: 'Pas de connexion.' };
+      const cred = await withTimeout(c.fb.signInWithEmailAndPassword(c.auth, accountEmail(name), password), 10000);
+      const uid = cred.user.uid;
+      const owner = await c.fb.getDoc(this.nameRef(c, name));
+      const realName = owner.exists() ? owner.data().name : name.trim();
+      const snap = await c.fb.getDoc(this.ref(c, 'profiles', uid + '_' + encodeURIComponent(nameKey(realName))));
+      const p = snap.exists() ? Object.assign(Store.newProfile(realName), JSON.parse(snap.data().data)) : Store.newProfile(realName);
+      Object.assign(p, { name: realName, uid, account: true, nameOk: uid, nameTaken: false });
+      Store.data.profiles[realName] = p;
+      Store.data.current = realName;
+      Store.save();
+      this.live = true;
+      return { name: realName };
+    } catch (e) { return { error: this.authError(e) }; }
+  },
+  authError(e) {
+    const code = e && e.code || '';
+    console.warn('Compte', e);
+    if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found') || code.includes('invalid-email')) return 'Pseudo ou mot de passe incorrect.';
+    if (code.includes('weak-password')) return 'Mot de passe trop court (6 caractères minimum).';
+    if (code.includes('email-already-in-use') || code.includes('credential-already-in-use')) return 'Ce pseudo a déjà un compte : connecte-toi.';
+    if (code.includes('too-many-requests')) return 'Trop d\'essais, réessaie dans quelques minutes.';
+    if (code.includes('operation-not-allowed')) return 'Les comptes ne sont pas encore activés sur le serveur.';
+    return 'Impossible pour le moment (réseau ?).';
   },
 };
 
-// Classement utilisé par le jeu : en ligne si possible, sinon local
+// --- Classement utilisé par le jeu : en ligne si possible, sinon local ---------
 const Leaderboard = {
-  async day(day) { return (await Online.day(day)) || LocalBoard.day(day); },
+  async day(day) {
+    const online = await Online.day(day);
+    const lb = online || await LocalBoard.day(day);
+    lb.online = !!online;
+    return lb;
+  },
   async week(wk) { return (await Online.week(wk)) || LocalBoard.week(wk); },
+  async teams(wk) { return teamBoard(await this.week(wk)); },
   async records() { return (await Online.records()) || LocalBoard.records(); },
-  async ghosts(day) { return (await Online.ghosts(day)) || LocalBoard.ghosts(day); },
+  // Le premier, le rival et mon propre record du jour
+  async ghosts(day, p) {
+    const lb = await this.day(day), targets = pickGhostTargets(lb, p.name);
+    const list = targets.length ? (lb.online ? await Online.ghosts(day, targets) : await LocalBoard.ghosts(day, targets)) || [] : [];
+    const mine = Store.dayPeek(p, day).ghost;
+    if (mine) list.push({ name: p.name, role: 'self', ghost: mine });
+    return list;
+  },
+  // Champion de la semaine précédente (couronne 👑), mis en cache
+  champs: {},
+  async champion(today) {
+    const wk = weekKey(addDays(weekKey(today), -7));
+    if (!(wk in this.champs)) {
+      const lb = await Online.week(wk);
+      if (!lb) return null;
+      this.champs[wk] = lb.length >= 2 ? lb[0].name : null;
+    }
+    return this.champs[wk];
+  },
 };
 
 </script>
@@ -1100,10 +1369,29 @@ const Sound = {
 // --- Défi du jour ----------------------------------------------------------
 function baseWeatherIdx(day) { return Math.floor(makeRng(hashStr(day + '|meteo')).next() * WEATHERS.length); }
 
+// Météo du jour : jamais la même que la veille. On la calcule de proche en
+// proche depuis le lancement pour comparer avec la météo réellement tirée.
+const WX_CACHE = {};
+function rerollWeather(day, prev) {
+  const wi = baseWeatherIdx(day);
+  return wi !== prev ? wi : (wi + 1 + Math.floor(makeRng(hashStr(day + '|m2')).next() * (WEATHERS.length - 1))) % WEATHERS.length;
+}
+function weatherIdx(day) {
+  // jusqu'au lancement : l'ancienne règle, pour ne pas changer une dune déjà jouée
+  if (day <= LAUNCH_DAY) return rerollWeather(day, baseWeatherIdx(addDays(day, -1)));
+  if (WX_CACHE[day] == null) {
+    let d = LAUNCH_DAY, prev = weatherIdx(d);
+    while (d < day) {
+      d = addDays(d, 1);
+      if (WX_CACHE[d] == null) WX_CACHE[d] = rerollWeather(d, prev);
+      prev = WX_CACHE[d];
+    }
+  }
+  return WX_CACHE[day];
+}
+
 function dailyConfig(day) {
-  let wi = baseWeatherIdx(day);
-  if (wi === baseWeatherIdx(addDays(day, -1)))
-    wi = (wi + 1 + Math.floor(makeRng(hashStr(day + '|m2')).next() * (WEATHERS.length - 1))) % WEATHERS.length;
+  const wi = weatherIdx(day);
   const legend = LEGENDS[Math.floor(makeRng(hashStr(day + '|legend')).next() * LEGENDS.length)];
   const seed = hashStr('bousier|' + day);
   const weather = WEATHERS[wi];
@@ -1209,8 +1497,46 @@ function generateCourse(seed, weather, legend) {
   return {
     seed, weather, legend, len, holeY, holeX, Lx, Rx, objects: final, counts,
     windPh: [rng.range(0, 6.28), rng.range(0, 6.28)],
+    events: generateEvents(seed, holeY),
   };
 }
+
+// --- Événements surprise -----------------------------------------------------
+// Tirés au sort avec la dune (graine à part pour ne pas changer les objets) :
+// mêmes événements, au même endroit, pour tout le monde. Annoncés juste avant.
+const EVENTS = {
+  flip: { name: 'ECRAN RETOURNE !', dur: 4 },
+  mirror: { name: 'COMMANDES INVERSEES !', dur: 5 },
+  camels: { name: 'EMBOUTEILLAGE DE CHAMEAUX !', dur: 0 },
+  tornado: { name: 'MINI TORNADE !', dur: 3.5 },
+  kevin: { name: 'KEVIN EN TROTTINETTE !', dur: 3 },
+  meeting: { name: 'NOUVEAU MESSAGE...', dur: 3.5 },
+  poop: { name: 'PLUIE DE CROTTES !', dur: 0 },
+  quake: { name: 'TREMBLEMENT DE TERRE !', dur: 3 },
+  mirage: { name: 'UN MIRAGE ?', dur: 0 },
+};
+function generateEvents(seed, holeY) {
+  const rng = makeRng((seed ^ 0x5eed1e) >>> 0);
+  const pool = Object.keys(EVENTS).filter(k => k !== 'mirage'), n = rng.int(2, 3), evs = [];
+  for (let i = 0; i < n; i++) {
+    const type = pool.splice(rng.int(0, pool.length - 1), 1)[0];
+    evs.push({ type, y: Math.round(holeY * (0.18 + (i + rng.range(0.15, 0.85)) * 0.6 / n)), seed: rng.int(1, 1e6) });
+  }
+  if (rng.chance(0.35)) evs.push({ type: 'mirage', y: holeY - 650, seed: rng.int(1, 1e6) });
+  return evs;
+}
+
+// --- Commentateur sportif ------------------------------------------------------
+const COMMENTS = {
+  start: ['ET C\'EST PARTI !', 'QUE LE MEILLEUR GAGNE !', 'BELLE ENTAME !'],
+  big: ['QUELLE BOULE !', 'ENORME !', 'IL A FAIM !', 'MAGNIFIQUE !', 'CA GROSSIT !'],
+  bump: ['OH LE CHOC...', 'AIE AIE AIE !', 'CA VA LAISSER DES TRACES', 'QUEL GACHIS !'],
+  wall: ['ATTENTION AU BORD !', 'IL FROLE LE MUR !'],
+  legend: ['INCROYABLE TRESOR !', 'LA CLASSE !'],
+  end: ['LA DERNIERE LIGNE DROITE !', 'LE TERRIER EST EN VUE !'],
+  pass: { leader: n => `IL DOUBLE ${n}, LE 1ER !`, rival: n => `${n} EST DERRIERE !`, self: () => 'DEVANT TON RECORD !' },
+  passed: { leader: n => `${n} REPREND LA TETE`, rival: n => `${n} REPASSE DEVANT !`, self: () => 'TON RECORD REPASSE DEVANT' },
+};
 
 function lowerBound(arr, y) {
   let lo = 0, hi = arr.length;
@@ -1262,13 +1588,16 @@ class Game {
     this.wx = config.weather; this.opts = opts;
     this.skin = opts.skin; this.hat = opts.hat; this.specks = genSpecks(opts.skin);
     this.setPalette(opts.theme, config.weather);
-    this.ghosts = (opts.ghosts || []).filter(g => g.ghost && g.ghost.x);
+    this.ghosts = (opts.ghosts || []).filter(g => g.ghost && g.ghost.x).slice(0, 3);
+    for (const g of this.ghosts) g.passed = false;
     const startX = (this.course.Lx[60] + this.course.Rx[60]) / 2;
     this.ball = { x: startX, y: 60, vx: 0, vy: 0, area: START_AREA, r: Math.sqrt(START_AREA), roll: 0, lastWall: -9, lastHurt: -9, stuck: [], scale: 1, anim: 0 };
     this.input.targetX = null;
     this.run = { absorbed: 0, byType: {}, bumps: 0, pricks: 0, wallHits: 0, terrier: false, legend: false, finished: false, time: 0, sizeCm: 0, score: 0 };
     this.rec = { x: [], y: [], r: [] };
     this.t = 0; this.playTicks = 0; this.phase = 'count'; this.countT = 3.2; this.lastCount = 4;
+    this.evs = (this.course.events || []).map(e => ({ ...e }));
+    this.resetEvents(); this.comment = null; this.lastSay = -9;
     this.shake = 0; this.particles = []; this.texts = []; this.notices = [];
     this.eatable = new Set(OBJECTS.filter(o => o.r <= this.ball.r * 0.8).map(o => o.id));
     this.state = 'run'; this.paused = false; this.phaseT = 0;
@@ -1314,7 +1643,7 @@ class Game {
       this.countT -= TICK;
       const c = Math.ceil(this.countT);
       if (c !== this.lastCount && c > 0) { this.lastCount = c; Sound.play('count'); }
-      if (this.countT <= 0) { this.phase = 'play'; Sound.play('go'); this.notice('ROULE !', '#fff4a8', 1); }
+      if (this.countT <= 0) { this.phase = 'play'; Sound.play('go'); this.notice('ROULE !', '#fff4a8', 1); this.say('start', 1); }
       this.updateParticles();
       return;
     }
@@ -1337,7 +1666,8 @@ class Game {
     const wx = this.wx, r = b.r;
     this.playTicks++; this.run.time += TICK;
     if (this.input.keys) this.input.targetX = clamp((this.input.targetX == null ? b.x : this.input.targetX) + this.input.keys * 150 * TICK, 0, W);
-    const target = this.input.targetX == null ? b.x : this.input.targetX;
+    let target = this.input.targetX == null ? b.x : this.input.targetX;
+    if (this.mirror) target = 2 * b.x - target;
     const maxLat = Math.max(42, 150 - r * 3.4);
     const desired = clamp((target - b.x) * 7, -maxLat, maxLat);
     const acc = 900 / (1 + r * 0.09) * (wx.grip || 1);
@@ -1349,6 +1679,8 @@ class Game {
     b.roll += b.vy * TICK / Math.max(2, r);
     b.anim += b.vy * TICK * 0.12;
     if (wx.shrink) b.area = Math.max(START_AREA, b.area - wx.shrink * TICK * (1 + r * 0.06));
+    this.updateEvents(b);
+    this.updateKevins(b);
 
     // bords de la dune
     const [L, R] = this.edge(b.y);
@@ -1381,6 +1713,9 @@ class Game {
     if (this.frame % 2 === 0) {
       this.particles.push({ x: b.x + (Math.random() - 0.5) * b.r * 1.6, y: b.y - b.r * 0.6, vx: (Math.random() - 0.5) * 20, vy: -10 - Math.random() * 10, g: 0, life: 0.5, col: Math.random() < 0.5 ? this.theme.sandLight : this.theme.sandDark, s: 1 });
     }
+
+    this.watchGhosts(b);
+    if (this.course.holeY - b.y < 700 && !this.saidEnd) { this.saidEnd = true; this.say('end', 1); }
 
     if (this.playTicks % GHOST_EVERY === 0) {
       this.rec.x.push(Math.round(b.x * 10)); this.rec.y.push(Math.round(b.y)); this.rec.r.push(Math.round(b.r * 10));
@@ -1415,6 +1750,7 @@ class Game {
     if (this.t - b.lastWall < 0.4) return;
     b.lastWall = this.t;
     this.run.wallHits++;
+    this.say('wall', 0.25);
     b.area = Math.max(START_AREA, b.area * 0.975);
     b.vy *= 0.85;
     this.shake = 1.5;
@@ -1435,6 +1771,7 @@ class Game {
     b.area = Math.max(START_AREA, b.area * (1 - loss));
     b.vy *= 0.35; b.vx += nx * 70;
     this.run.bumps++;
+    this.say('bump', 0.4);
     if (o.def.prickly) { this.run.pricks++; Sound.play('prick'); this.floatText('AIE !', b.x, b.y - b.r - 10, '#ff8a7a'); }
     else Sound.play('bump');
     this.shake = 3;
@@ -1461,18 +1798,21 @@ class Game {
     if (o.def.legendary) {
       run.legend = true;
       Sound.play('legend');
+      this.say('legend', 1);
       this.notice(`TRESOR : ${o.def.name} !`, '#ffe066', 2.2);
       this.burst(b.x + dx, b.y + dy, 24, ['#fff4a8', '#ffe066', '#ffffff'], 90);
     } else {
       Sound.play('pop', o.r);
       this.burst(b.x + dx, b.y + dy, Math.min(10, 2 + o.r), ['#ffffff', '#fff4a8'], 40);
       if (o.r >= 5) this.floatText(o.def.name, b.x + dx, b.y + dy - 6, '#ffffff');
+      if (o.r >= 6) this.say('big', 0.5);
     }
   }
 
   finish() {
     if (this.state !== 'run') return;
     this.state = 'done';
+    this.resetEvents();
     const run = this.run;
     run.finished = true;
     run.score = Math.round(run.sizeCm * (run.terrier ? 1 : 0.5) * (run.legend ? 1.1 : 1) * 10) / 10;
@@ -1481,7 +1821,135 @@ class Game {
     if (this.hooks.onFinish) this.hooks.onFinish(run);
   }
 
-  abort() { this.state = 'done'; }
+  abort() { this.state = 'done'; this.resetEvents(); }
+
+  // --- Événements surprise ---------------------------------------------------
+  resetEvents() {
+    this.flip = false; this.mirror = false; this.popup = null; this.mirage = null; this.kevins = []; this.saidEnd = false;
+    this.cv.style.transform = '';
+  }
+
+  updateEvents(b) {
+    for (const ev of this.evs) {
+      const def = EVENTS[ev.type];
+      if (!ev.state && b.y >= ev.y - 70) { ev.state = 'warn'; this.notice(def.name, '#ffb04a', 1.6); Sound.play('count'); }
+      if (ev.state === 'warn' && b.y >= ev.y) { ev.state = 'on'; ev.t = 0; this.startEvent(ev, b); }
+      if (ev.state === 'on') {
+        ev.t += TICK;
+        this.tickEvent(ev, b);
+        if (ev.t >= def.dur) { ev.state = 'done'; this.endEvent(ev); }
+      }
+    }
+    if (this.mirage && b.y > this.course.holeY - 120) {
+      this.mirage = null; this.notice('C\'ETAIT UN MIRAGE !', '#c8ff8a', 1.6);
+      this.burst(b.x, b.y + 60, 12, ['#ffffff', '#fff4a8'], 50);
+    }
+  }
+
+  // Ajoute un objet à la dune en gardant la liste triée
+  spawn(def, x, y, r, sprite, extra) {
+    const o = { def, x, x0: x, y, r, sprite: sprite || def.sprite, dead: false, hitT: -9, phase: 0, amp: 0, w: 0, ...extra };
+    this.objs.splice(lowerBound(this.objs, y), 0, o);
+    return o;
+  }
+
+  startEvent(ev, b) {
+    const rng = makeRng(ev.seed), H = this.H;
+    switch (ev.type) {
+      case 'flip': this.flip = true; this.cv.style.transform = 'rotate(180deg)'; break;
+      case 'mirror': this.mirror = true; break;
+      case 'camels': {
+        for (let i = 0; i < 5; i++) {
+          const y = ev.y + 100 + i * 26, [L, R] = this.edge(y), def = OBJ.chameau;
+          this.spawn(def, (L + R) / 2, y, def.r, null, { amp: Math.max(0, (R - L) / 2 - def.r - 4), w: rng.range(0.9, 1.5), phase: rng.range(0, 6.28) });
+        }
+        break;
+      }
+      case 'poop': {
+        for (let i = 0; i < 26; i++) {
+          const y = ev.y + 70 + rng.range(0, 220), [L, R] = this.edge(y);
+          this.spawn(OBJ.crottin, rng.range(L + 6, R - 6), y, OBJ.crottin.r);
+        }
+        for (let i = 0; i < 2; i++) {
+          const y = ev.y + 120 + i * 90, [L, R] = this.edge(y);
+          this.spawn(OBJ.cactus, rng.range(L + 12, R - 12), y, OBJ.cactus.r);
+        }
+        break;
+      }
+      case 'kevin': {
+        const dir = rng.chance(0.5) ? 1 : -1, y = ev.y + 85, [L, R] = this.edge(y);
+        this.kevins.push({ y, x0: dir > 0 ? L - 8 : R + 8, x1: dir > 0 ? R + 8 : L - 8, dir, t: 0, hit: false });
+        break;
+      }
+      case 'meeting': {
+        const w = 132, h = 46;
+        this.popup = { x: Math.round(rng.range(4, W - w - 4)), y: Math.round(rng.range(H * 0.2, H * 0.55)), w, h };
+        Sound.play('unlock');
+        break;
+      }
+      case 'mirage': {
+        const hy = this.course.holeY, side = rng.chance(0.5) ? 1 : -1;
+        const [L, R] = this.edge(hy);
+        let mx = this.course.holeX + side * rng.range(36, 48);
+        if (mx < L + 18 || mx > R - 18) mx = this.course.holeX - side * rng.range(36, 48);
+        this.mirage = { x: clamp(mx, L + 18, R - 18) };
+        break;
+      }
+    }
+  }
+
+  tickEvent(ev, b) {
+    if (ev.type === 'tornado') {
+      b.vx += Math.sin(ev.t * 7) * 520 * TICK;
+      b.roll += 0.25;
+      if (this.frame % 2 === 0) {
+        const a = ev.t * 9;
+        this.particles.push({ x: b.x + Math.cos(a) * (b.r + 8), y: b.y + Math.sin(a) * (b.r + 4), vx: -Math.sin(a) * 60, vy: Math.cos(a) * 30, g: 0, life: 0.5, col: this.theme.sandLight, s: 1 });
+      }
+    } else if (ev.type === 'quake') {
+      this.shake = Math.max(this.shake, 3);
+      b.vx += Math.sin(ev.t * 23) * 160 * TICK;
+    }
+  }
+
+  endEvent(ev) {
+    if (ev.type === 'flip') { this.flip = false; this.cv.style.transform = ''; }
+    if (ev.type === 'mirror') this.mirror = false;
+    if (ev.type === 'meeting') this.popup = null;
+  }
+
+  updateKevins(b) {
+    for (const k of this.kevins) {
+      k.t += TICK;
+      k.x = lerp(k.x0, k.x1, k.t / 3);
+      if (!k.hit && Math.hypot(k.x - b.x, k.y - b.y) < b.r + 5) {
+        k.hit = true;
+        this.bump({ def: {}, r: 4, hitT: -9 }, k.x - b.x, k.y - b.y, Math.hypot(k.x - b.x, k.y - b.y) || 1);
+        this.floatText('PARDON !', k.x, k.y - 14, '#ffffff');
+      }
+    }
+    this.kevins = this.kevins.filter(k => k.t < 3);
+  }
+
+  // Le commentateur parle (pas trop souvent)
+  say(kind, chance) {
+    if (Math.random() > chance || this.t - this.lastSay < 3) return;
+    const c = COMMENTS[kind];
+    this.sayText(c[Math.floor(Math.random() * c.length)]);
+  }
+  sayText(text) { this.lastSay = this.t; this.comment = { text, t: 2 }; }
+
+  // Dépassements de fantômes : de quoi faire parler le commentateur
+  watchGhosts(b) {
+    const idx = Math.floor(this.playTicks / GHOST_EVERY);
+    for (const g of this.ghosts) {
+      const gh = g.ghost;
+      if (idx >= gh.x.length || idx < 20) continue;
+      const gy = gh.y[idx], role = g.role || 'rival', n = g.name.slice(0, 8);
+      if (!g.passed && b.y > gy + 6) { g.passed = true; this.sayText((COMMENTS.pass[role] || COMMENTS.pass.rival)(n)); }
+      else if (g.passed && b.y < gy - 6) { g.passed = false; this.sayText((COMMENTS.passed[role] || COMMENTS.passed.rival)(n)); }
+    }
+  }
 
   notice(text, col, dur) { this.notices.push({ text, col, t: dur, dur }); if (this.notices.length > 2) this.notices.shift(); }
   floatText(text, x, y, col) { this.texts.push({ text, x, y, col, life: 0.9 }); }
@@ -1499,6 +1967,7 @@ class Game {
       p.x += p.vx * TICK; p.y += p.vy * TICK; p.vy += (p.g || 0) * TICK; p.vx *= 0.96; if (!p.g) p.vy *= 0.96;
     }
     for (let i = this.texts.length - 1; i >= 0; i--) { const t = this.texts[i]; t.life -= TICK; t.y -= 18 * TICK; if (t.life <= 0) this.texts.splice(i, 1); }
+    if (this.comment && (this.comment.t -= TICK) <= 0) this.comment = null;
     if (this.notices) for (let i = this.notices.length - 1; i >= 0; i--) { this.notices[i].t -= TICK; if (this.notices[i].t <= 0) this.notices.splice(i, 1); }
   }
 
@@ -1534,6 +2003,7 @@ class Game {
     ctx.save();
     ctx.translate(0, -Math.round(camY));
     this.drawHole();
+    if (this.mirage && this.frame % 12 < 10) this.drawHole(this.mirage.x + Math.round(Math.sin(this.t * 6)));
 
     const objs = this.objs, top = camY - 50, bot = camY + H + 50;
     const by = this.state === 'attract' ? Infinity : this.ball.y;
@@ -1543,6 +2013,10 @@ class Game {
     if (this.state !== 'attract') {
       this.drawGhosts();
       this.drawPlayer();
+      for (const k of this.kevins) {
+        const sp = SPR[k.dir > 0 ? 'kevin' : 'kevinF'];
+        ctx.drawImage(sp, Math.round(k.x - sp.width / 2), Math.round(k.y - sp.height / 2) - (Math.floor(k.t * 10) % 2));
+      }
     }
     for (; i < objs.length && objs[i].y < bot; i++) this.drawObj(objs[i]);
     this.drawParticles();
@@ -1586,8 +2060,8 @@ class Game {
     this.ctx.putImageData(this.img, 0, 0);
   }
 
-  drawHole() {
-    const ctx = this.ctx, hx = Math.round(this.course.holeX), hy = this.course.holeY;
+  drawHole(x = this.course.holeX) {
+    const ctx = this.ctx, hx = Math.round(x), hy = this.course.holeY;
     const ell = (rx, ry, col) => {
       ctx.fillStyle = col;
       for (let j = -ry; j <= ry; j++) { const hw = Math.round(rx * Math.sqrt(1 - (j / (ry + 0.5)) ** 2)); ctx.fillRect(hx - hw, hy + j, hw * 2 + 1, 1); }
@@ -1677,7 +2151,8 @@ class Game {
       const x = gh.x[idx] / 10, y = gh.y[idx], r = gh.r[idx] / 10;
       if (r < 1) return;
       this.drawBall(GHOST_SKIN, null, x, y, r, 0, 0.42);
-      drawText(this.ctx, g.name.slice(0, 10), x, y - r - 9, GHOST_COLORS[k % GHOST_COLORS.length], 1, '#1d1416', 'center');
+      const role = GHOST_ROLES[g.role] || GHOST_ROLES.other;
+      drawText(this.ctx, role.label(g.name), x, y - r - 9, role.col, 1, '#1d1416', 'center');
     });
   }
 
@@ -1744,12 +2219,26 @@ class Game {
     }
     // flèche vers le terrier
     const b = this.ball, dist = this.course.holeY - b.y;
-    if (this.state === 'run' && this.phase === 'play' && dist < 1100 && this.course.holeY - camY > H - 12) {
+    if (this.state === 'run' && this.phase === 'play' && !this.mirage && dist < 1100 && this.course.holeY - camY > H - 12) {
       const x = Math.round(clamp(this.course.holeX, 10, W - 10)), y = H - 16 + (Math.floor(this.t * 4) % 2);
       ctx.fillStyle = '#1d1416'; ctx.fillRect(x - 4, y - 1, 9, 3); ctx.fillRect(x - 3, y + 2, 7, 2); ctx.fillRect(x - 2, y + 4, 5, 2); ctx.fillRect(x - 1, y + 6, 3, 1);
       ctx.fillStyle = '#fff4a8'; ctx.fillRect(x - 3, y, 7, 1); ctx.fillRect(x - 2, y + 2, 5, 1); ctx.fillRect(x - 1, y + 4, 3, 1); ctx.fillRect(x, y + 5, 1, 1);
       drawText(ctx, 'TERRIER ' + Math.max(0, Math.round(dist / 10)) + 'M', x, y - 8, '#fff4a8', 1, '#1d1416', 'center');
     }
+    if (this.popup) {
+      const { x, y, w, h } = this.popup;
+      ctx.fillStyle = '#1d1416'; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+      ctx.fillStyle = '#f2f2f2'; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#2d6aa8'; ctx.fillRect(x, y, w, 9);
+      drawText(ctx, 'MESSAGERIE', x + 3, y + 2, '#ffffff', 1, null);
+      ctx.fillStyle = '#d8463a'; ctx.fillRect(x + w - 8, y + 2, 5, 5);
+      drawText(ctx, 'REUNION DANS 5 MIN', x + w / 2, y + 15, '#1d1416', 1, null, 'center');
+      drawText(ctx, 'SALLE 3 - VENEZ NOMBREUX', x + w / 2, y + 23, '#5a5560', 1, null, 'center');
+      ctx.fillStyle = '#5a5560'; ctx.fillRect(x + w / 2 - 9, y + 32, 19, 10);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(x + w / 2 - 8, y + 33, 17, 8);
+      drawText(ctx, 'OK', x + w / 2, y + 35, '#1d1416', 1, null, 'center');
+    }
+    if (this.comment) drawText(ctx, this.comment.text, W / 2, Math.round(H * 0.72), '#ffffff', 1, '#1d1416', 'center');
     if (this.notices) this.notices.forEach((n, k) => {
       const a = n.t / n.dur, yy = 34 + k * 10 - (1 - a) * 4;
       if (n.t > 0.15 || this.frame % 4 < 2) drawText(ctx, n.text, W / 2, yy, n.col, 1, '#1d1416', 'center');
@@ -1757,7 +2246,13 @@ class Game {
   }
 }
 
-const GHOST_COLORS = ['#c9b8ff', '#8ae0ff', '#ffb0d8', '#b8ff9a', '#ffd88a'];
+// Étiquette et couleur de chaque fantôme selon son rôle
+const GHOST_ROLES = {
+  leader: { col: '#ffd25a', label: n => '1ER ' + n.slice(0, 8) },
+  rival: { col: '#ffb0d8', label: n => 'RIVAL ' + n.slice(0, 8) },
+  self: { col: '#c9b8ff', label: () => 'TON RECORD' },
+  other: { col: '#8ae0ff', label: n => n.slice(0, 10) },
+};
 const RIP = new Int8Array(256).map((_, i) => Math.round(3 * Math.sin(i * 0.21) + 2 * Math.sin(i * 0.07)));
 
 </script>
@@ -1802,7 +2297,7 @@ const App = {
     this.hud = {
       root: document.getElementById('hud'), size: document.getElementById('hud-size'),
       bar: document.getElementById('hud-bar'), beetle: document.getElementById('hud-beetle'),
-      wx: document.getElementById('hud-wx'), tryEl: document.getElementById('hud-try'),
+      wx: document.getElementById('hud-wx'), tryEl: document.getElementById('hud-try'), time: document.getElementById('hud-time'),
     };
     this.game = new Game(document.getElementById('screen'), {
       hud: s => this.onHud(s),
@@ -1818,6 +2313,13 @@ const App = {
     this.ui.addEventListener('click', e => this.onClick(e));
     setInterval(() => this.tick(), 1000);
     if (!Store.profile()) this.show('name'); else this.show('home');
+    this.syncOnStart();
+  },
+
+  // Récupère la progression jouée sur un autre appareil
+  async syncOnStart() {
+    const p = this.p;
+    if (p && await Online.pullProfile(p)) { this.loadDay(); if (this.screen === 'home') this.show('home'); }
   },
 
   fit() {
@@ -1903,17 +2405,81 @@ const App = {
       sound: () => { Sound.on = !Sound.on; Store.data.settings.sound = Sound.on; Store.save(); this.show('profile'); },
       switchp: () => { Store.switchProfile(v); this.loadDay(); this.show('home'); },
       newp: () => this.createProfileFromInput(),
+      login: () => this.doLogin(),
+      secure: () => this.doSecure(),
+      saveteam: () => this.saveTeam(),
+      reactsel: () => { this.reactSel = this.reactSel === v ? null : v; this.show('leaderboard'); },
+      react: () => this.doReact(v),
     };
     if (acts[a]) acts[a]();
   },
 
-  createProfileFromInput() {
-    const i = this.ui.querySelector('input');
+  // Message sous le formulaire du champ indiqué
+  formError(msg, field) {
+    const box = field && this.ui.querySelector(field);
+    const el = (box && box.closest('.panel') || this.ui).querySelector('.form-err');
+    if (el) el.textContent = msg || '';
+  },
+
+  async createProfileFromInput() {
+    const i = this.ui.querySelector('#pname');
     const name = i ? i.value.trim() : '';
     if (!name) { if (i) i.focus(); return; }
-    Store.createProfile(name);
+    const pb = nameProblem(name);
+    if (pb) return this.formError(pb, '#pname');
+    if (Store.data.profiles[name]) return this.formError('Ce joueur existe déjà sur cet appareil.', '#pname');
+    this.formError('Vérification…', '#pname');
+    // null = pas de réseau : on crée quand même, le pseudo sera réservé plus tard
+    const uid = await Online.claim(name);
+    if (uid === false) return this.formError('Pseudo déjà pris ! Si c\'est toi, connecte-toi.', '#pname');
+    const p = Store.createProfile(name);
+    if (uid) { p.uid = uid; p.nameOk = uid; Store.save(); }
+    Online.submitPlayer(p);
     this.loadDay();
     this.show('home');
+  },
+
+  async doLogin() {
+    const name = (this.ui.querySelector('#lname') || {}).value || '', pw = (this.ui.querySelector('#lpass') || {}).value || '';
+    if (!name.trim() || !pw) return this.formError('Pseudo et mot de passe, s\'il te plaît.');
+    this.formError('Connexion…');
+    const r = await Online.login(name, pw);
+    if (r.error) return this.formError(r.error);
+    this.loadDay();
+    this.toast(`Content de te revoir, ${r.name} !`);
+    this.show('home');
+  },
+
+  async doSecure() {
+    const pw = (this.ui.querySelector('#spass') || {}).value || '';
+    if (pw.length < 6) return this.formError('6 caractères minimum.');
+    this.formError('Un instant…');
+    const err = await Online.secure(this.p, pw);
+    if (err) return this.formError(err);
+    this.toast('Profil protégé ! 🔒');
+    this.show('profile');
+  },
+
+  saveTeam() {
+    const v = ((this.ui.querySelector('#team') || {}).value || '').trim();
+    if (v) { const pb = nameProblem(v); if (pb) return this.toast(pb.replace('De 2 à 14', 'Équipe : 2 à 14')); }
+    const p = this.p;
+    // même orthographe que l'équipe existante si on la retrouve (majuscules)
+    const known = (this.knownTeams || []).find(t => nameKey(t) === nameKey(v));
+    p.team = known || v;
+    Store.save();
+    Online.submitPlayer(p);
+    this.toast(v ? `Équipe : ${p.team}` : 'Plus d\'équipe');
+    this.show('profile');
+  },
+
+  async doReact(e) {
+    const target = this.reactSel;
+    if (!target) return;
+    const ok = await Online.react(this.today, this.p, target, e);
+    if (!ok) this.toast('Réaction impossible hors ligne');
+    this.reactSel = null;
+    this.show('leaderboard');
   },
 
   toast(msg) {
@@ -1934,7 +2500,7 @@ const App = {
     }
     d.attempts++;  // l'essai est consommé dès le départ (pas de triche en rechargeant)
     Store.save();
-    const ghosts = await Leaderboard.ghosts(this.today);
+    const ghosts = await Leaderboard.ghosts(this.today, p);
     this.mode = 'daily';
     this.launch(this.cfg, ghosts, `ESSAI ${d.attempts}/3`);
   },
@@ -1960,6 +2526,7 @@ const App = {
 
   onHud(s) {
     this.hud.size.textContent = fmtSize(s.sizeCm);
+    this.hud.time.textContent = fmtTime(s.time || 0);
     this.hud.bar.style.width = (s.progress * 100).toFixed(1) + '%';
     this.hud.beetle.style.left = (s.progress * 100).toFixed(1) + '%';
   },
@@ -1983,9 +2550,10 @@ const App = {
     this.hud.root.classList.add('hidden');
     if (this.mode === 'daily') {
       const d = Store.dayData(p, this.today), cfg = this.cfg;
-      const summary = { score: run.score, sizeCm: Math.round(run.sizeCm * 10) / 10, terrier: run.terrier, legend: run.legend, time: Math.round(run.time), absorbed: run.absorbed, weather: run.weather };
+      const summary = runSummary(run);
       d.runs.push(summary);
-      if (run.score > d.best) { res.newBest = d.best > 0 || true; d.best = run.score; d.bestRun = summary; d.ghost = run.ghost; }
+      const faster = run.score === d.best && d.bestRun && run.time < d.bestRun.time;
+      if (run.score > d.best || faster) { res.newBest = d.best > 0 || true; d.best = run.score; d.bestRun = summary; d.ghost = run.ghost; }
       // collection
       for (const id in run.byType) {
         if (LEGEND[id]) continue;
@@ -2048,14 +2616,15 @@ const App = {
     return `🪲 BOUSIER #${cfg.num} ${cfg.weather.icon}\nMa meilleure boule : ${fmtSize(d.best)}\nEssais : ${squares}${d.legend ? ' ✨' : ''}\n${rankTxt}Série : 🔥${Store.streakOf(p, this.today)}\n${GAME_URL}`;
   },
   async share() {
-    const text = this.shareText();
+    const text = this.shareText(), copied = 'Résultat copié ! Colle-le à tes collègues 📋';
     try {
       if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) { await navigator.share({ text }); return; }
       await navigator.clipboard.writeText(text);
-      this.toast('Résultat copié ! Colle-le à tes collègues 📋');
+      this.toast(copied);
     } catch (e) {
+      if (e && e.name === 'AbortError') return;
       const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); this.toast('Résultat copié ! 📋'); } catch (e2) { this.toast('Copie impossible'); }
+      try { document.execCommand('copy'); this.toast(copied); } catch (e2) { this.toast('Copie impossible'); }
       ta.remove();
     }
   },
@@ -2087,7 +2656,7 @@ const App = {
   topbar() {
     const p = this.p;
     return `<div class="topbar">
-      <button class="chip" data-a="go" data-v="profile">👤 ${esc(p.name)}</button>
+      <button class="chip" data-a="go" data-v="profile">${p.account ? '🔒' : '👤'} ${esc(p.name)}${this.champ === p.name ? ' 👑' : ''}</button>
       <span class="chip">🔥 ${Store.streakOf(p, this.today)}</span>
       <span class="chip gold">🟡 ${p.coins}</span>
     </div>`;
@@ -2105,8 +2674,24 @@ const App = {
       <div class="panel">
         <p>Bienvenue, petit bousier ! Comment tu t'appelles ?</p>
         <input id="pname" maxlength="14" placeholder="Ton pseudo" onkeydown="if(event.key==='Enter')App.createProfileFromInput()">
+        <div class="tiny bad form-err"></div>
         <button class="btn big" data-a="newp">C'est parti !</button>
       </div>
+      <button class="btn ghost" data-a="go" data-v="login">🔑 J'ai déjà un compte</button>
+    </div>`;
+  },
+
+  scr_login() {
+    return `<div class="screen center">
+      <div class="head"><button class="btn ghost small" data-a="go" data-v="${this.p ? 'profile' : 'name'}">◀</button><h2>Connexion</h2></div>
+      <div class="panel">
+        <p>Retrouve ta progression (pièces, badges, style, série) sur cet appareil.</p>
+        <input id="lname" maxlength="14" placeholder="Pseudo" autocomplete="username">
+        <input id="lpass" type="password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter')App.doLogin()">
+        <div class="tiny bad form-err"></div>
+        <button class="btn big" data-a="login">Se connecter</button>
+      </div>
+      <div class="tiny">Mot de passe oublié ? Demande à l'organisateur du jeu de le réinitialiser.</div>
     </div>`;
   },
 
@@ -2114,8 +2699,10 @@ const App = {
     const p = this.p, cfg = this.cfg, d = Store.dayPeek(p, this.today);
     const left = 3 - d.attempts;
     const skin = findCos('ball', p.equip.ball), hat = findCos('hat', p.equip.hat);
-    const lb = await Leaderboard.day(this.today);
+    const [lb, champ] = await Promise.all([Leaderboard.day(this.today), Leaderboard.champion(this.today)]);
+    this.champ = champ;
     const rank = lb.findIndex(e => e.name === p.name) + 1;
+    const news = await this.news(lb);
     const leg = cfg.legend;
     const quests = cfg.quests.map(q => `<li class="${d.quests[q.id] ? 'done' : ''}">${d.quests[q.id] ? '✅' : '⬜'} ${esc(q.text)}</li>`).join('');
     const dots = [0, 1, 2].map(i => `<span class="dot ${i < d.attempts ? 'used' : ''}"></span>`).join('');
@@ -2129,6 +2716,8 @@ const App = {
         <div class="sub">Dune #${cfg.num} · ${esc(fmtDayLong(this.today))}</div>
         <div class="mascot bob">${pix(mascotUrl(skin, hat, 10), 72, 76)}</div>
       </div>
+      ${news ? `<div class="banner">${esc(news)}</div>` : ''}
+      ${p.nameTaken ? '<div class="banner bad">Ce pseudo est déjà pris en ligne : tes scores ne sont pas envoyés. Crée un autre joueur.</div>' : ''}
       <div class="row2">
         <div class="panel card">
           <div class="label">Météo du jour</div>
@@ -2176,7 +2765,7 @@ const App = {
     const r = this.lastRes, run = r.run, daily = r.mode === 'daily';
     const d = daily ? Store.dayPeek(this.p, this.today) : null;
     const lines = [
-      ['Objets avalés', run.absorbed], ['Chocs', run.bumps], ['Temps', Math.round(run.time) + ' s'],
+      ['Objets avalés', run.absorbed], ['Chocs', run.bumps], ['Temps', fmtTime(run.time)],
       ['Taille de la boule', fmtSize(run.sizeCm)],
       ['Terrier', run.terrier ? '✅ ×1' : '❌ ×0,5'],
     ];
@@ -2208,29 +2797,66 @@ const App = {
   },
 
   async scr_leaderboard() {
-    const tab = this.lbTab, me = this.p.name;
-    let body = '';
+    const tab = this.lbTab, me = this.p.name, champ = await Leaderboard.champion(this.today);
+    const who = name => `${esc(name)}${name === champ ? ' 👑' : ''}`;
+    let body = '', extra = '';
     if (tab === 'day') {
       const lb = await Leaderboard.day(this.today);
-      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.name)}</td><td>${e.run && e.run.terrier ? '🕳️' : ''}${e.run && e.run.legend ? '✨' : ''}</td><td class="r">${fmtSize(e.score)}</td></tr>`).join('')
-        : '<tr><td colspan="4" class="center tiny">Personne n\'a encore joué aujourd\'hui.</td></tr>';
+      const rx = lb.online ? await Online.reactions(this.today) : null;
+      const rxTxt = id => { const c = rx && rx.counts[id]; return c ? `<span class="rx">${REACTIONS.filter(e => c[e]).map(e => e + c[e]).join(' ')}</span>` : ''; };
+      body = lb.length ? lb.map((e, i) => {
+        const pick = rx && e.name !== me;
+        let row = `<tr class="${e.name === me ? 'me' : ''} ${pick ? 'pick' : ''}" ${pick ? `data-a="reactsel" data-v="${esc(e.id)}"` : ''}><td>${medal(i)}</td><td>${who(e.name)}${rxTxt(e.id)}</td><td>${e.run && e.run.terrier ? '🕳️' : ''}${e.run && e.run.legend ? '✨' : ''}</td><td class="r">${fmtSize(e.score)}</td></tr>`;
+        if (pick && this.reactSel === e.id) row += `<tr><td colspan="4"><div class="reacts">${REACTIONS.map(r => `<button class="${rx.mine[e.id] === r ? 'on' : ''}" data-a="react" data-v="${r}">${r}</button>`).join('')}</div></td></tr>`;
+        return row;
+      }).join('') : '<tr><td colspan="4" class="center tiny">Personne n\'a encore joué aujourd\'hui.</td></tr>';
+      const titles = dayTitles(lb);
+      if (titles.length) extra = `<div class="panel"><div class="label">Titres du jour</div><table class="lb titles">${titles.map(t => `<tr><td>${t.icon}</td><td>${esc(t.label)}</td><td>${who(t.name)}</td><td class="r tiny">${esc(t.value)}</td></tr>`).join('')}</table></div>`;
+      if (rx && lb.some(e => e.name !== me)) extra += '<div class="tiny center">Touche le score d\'un collègue pour réagir 👏 😂 💩 🔥</div>';
     } else if (tab === 'week') {
       const lb = await Leaderboard.week(weekKey(this.today));
-      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.name)}</td><td class="tiny">${e.played} j</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
+      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">${e.played} j</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Rien cette semaine.</td></tr>';
+      extra = '<div class="tiny center">Semaine = somme de tes meilleures boules de chaque jour. Joue tous les jours ! Le vainqueur porte la 👑 toute la semaine suivante.</div>';
+    } else if (tab === 'teams') {
+      const lb = await Leaderboard.teams(weekKey(this.today)), mine = nameKey(this.p.team || '');
+      body = lb.length ? lb.map((e, i) => `<tr class="${nameKey(e.team) === mine ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.team)}</td><td class="tiny">${e.players} j.</td><td class="r">${fmtSize(e.avg)}</td></tr>`).join('')
+        : '<tr><td colspan="4" class="center tiny">Aucune équipe cette semaine.</td></tr>';
+      extra = `<div class="tiny center">Moyenne par joueur sur la semaine. ${this.p.team ? '' : 'Rejoins une équipe depuis ton profil 👤.'}</div>`;
     } else {
       const lb = await Leaderboard.records();
-      body = lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.name)}</td><td class="tiny">🔥${e.bestStreak} ✨${e.legends}</td><td class="r">${fmtSize(e.best)}</td></tr>`).join('');
+      body = lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">🔥${e.bestStreak} ✨${e.legends}</td><td class="r">${fmtSize(e.best)}</td></tr>`).join('');
     }
-    const tabs = [['day', 'Aujourd\'hui'], ['week', 'Semaine'], ['all', 'Records']]
+    const tabs = [['day', 'Jour'], ['week', 'Semaine'], ['teams', 'Équipes'], ['all', 'Records']]
       .map(([k, l]) => `<button class="tab ${tab === k ? 'on' : ''}" data-a="lbtab" data-v="${k}">${l}</button>`).join('');
     return `<div class="screen">
       ${this.back('Classement')}
       <div class="tabs">${tabs}</div>
       <div class="panel"><table class="lb">${body}</table></div>
-      <div class="tiny center">${tab === 'week' ? 'Semaine = somme de tes meilleures boules de chaque jour. Joue tous les jours !' : ''}
-      ${Online.live ? 'Classement en ligne : tous les joueurs.' : 'Hors ligne : classement des joueurs de cet appareil.'}</div>
+      ${extra}
+      <div class="tiny center">${Online.live ? 'Classement en ligne : tous les joueurs.' : 'Hors ligne : classement des joueurs de cet appareil.'}</div>
     </div>`;
+  },
+
+  // Nouvelles depuis la dernière visite : qui m'a dépassé, mon rang d'hier
+  async news(lb) {
+    const p = this.p, key = `bousier_seen_${ONLINE_ENV}_${nameKey(p.name)}`;
+    if (!lb.online) return '';
+    const i = lb.findIndex(e => e.name === p.name), above = i < 0 ? [] : lb.slice(0, i).map(e => e.name);
+    let prev = null;
+    try { prev = JSON.parse(safeStorageGet(key) || 'null'); } catch (e) { prev = null; }
+    safeStorageSet(key, JSON.stringify({ day: this.today, above, rank: i + 1 }));
+    if (!prev) return '';
+    if (prev.day === this.today) {
+      // seulement si j'étais déjà classé à ma dernière visite
+      const fresh = i < 0 || !prev.rank ? [] : above.filter(n => !prev.above.includes(n));
+      if (fresh.length === 1) return `😈 ${fresh[0]} t'a dépassé !`;
+      if (fresh.length > 1) return `😈 ${fresh.slice(0, 2).join(' et ')}${fresh.length > 2 ? '…' : ''} t'ont dépassé !`;
+      return '';
+    }
+    const y = await Online.day(addDays(this.today, -1));
+    const r = y ? y.findIndex(e => e.name === p.name) + 1 : 0;
+    return r ? `📰 Hier, tu as fini ${r}${r === 1 ? 'er' : 'e'} sur ${y.length}.` : '';
   },
 
   scr_collection() {
@@ -2300,20 +2926,40 @@ const App = {
     </div>`;
   },
 
-  scr_profile() {
-    const cur = this.p.name;
+  async scr_profile() {
+    const p = this.p, cur = p.name;
     const list = Object.keys(Store.data.profiles).map(n => `<button class="btn ${n === cur ? '' : 'ghost'}" data-a="switchp" data-v="${esc(n)}">${n === cur ? '✔ ' : ''}${esc(n)}</button>`).join('');
+    // équipes connues, pour les proposer à la saisie
+    const recs = await Leaderboard.records();
+    this.knownTeams = [...new Map(recs.filter(e => e.team).map(e => [nameKey(e.team), e.team])).values()];
+    const account = p.account
+      ? '<div class="good">🔒 Profil protégé par mot de passe. Tu peux le retrouver sur n\'importe quel appareil.</div>'
+      : `<p>Protège ton profil avec un mot de passe pour le retrouver sur un autre téléphone.</p>
+        <input id="spass" type="password" minlength="6" placeholder="Mot de passe (6 caractères min.)" autocomplete="new-password" onkeydown="if(event.key==='Enter')App.doSecure()">
+        <div class="tiny bad form-err"></div>
+        <button class="btn" data-a="secure">🔒 Protéger mon profil</button>`;
     return `<div class="screen">
-      ${this.back('Joueurs')}
+      ${this.back('Profil')}
+      <div class="panel">
+        <div class="label">Mon compte</div>
+        ${account}
+      </div>
+      <div class="panel">
+        <div class="label">Mon équipe</div>
+        <input id="team" maxlength="14" placeholder="Ex. : Compta, Marketing…" value="${esc(p.team || '')}" list="teams">
+        <datalist id="teams">${this.knownTeams.map(t => `<option value="${esc(t)}">`).join('')}</datalist>
+        <button class="btn" data-a="saveteam">Enregistrer</button>
+      </div>
       <div class="panel">
         <div class="label">Changer de joueur</div>
         <div class="col">${list}</div>
+        <button class="btn ghost" data-a="go" data-v="login">🔑 Se connecter à un compte</button>
       </div>
       <div class="panel">
         <div class="label">Ajouter un joueur sur cet appareil</div>
-        <input maxlength="14" placeholder="Pseudo" onkeydown="if(event.key==='Enter')App.createProfileFromInput()">
+        <input id="pname" maxlength="14" placeholder="Pseudo" onkeydown="if(event.key==='Enter')App.createProfileFromInput()">
+        <div class="tiny bad form-err"></div>
         <button class="btn" data-a="newp">Créer</button>
-        <div class="tiny">Pratique pour tester le classement et les fantômes à plusieurs.</div>
       </div>
       <div class="panel">
         <button class="btn ghost" data-a="sound">${Sound.on ? '🔊 Son activé' : '🔇 Son coupé'}</button>
@@ -2322,6 +2968,23 @@ const App = {
     </div>`;
   },
 };
+
+// Titres comiques du jour, d'après la meilleure partie de chacun
+function dayTitles(lb) {
+  const runs = lb.filter(e => e.run);
+  if (runs.length < 2) return [];
+  const top = f => {
+    let best = null;
+    for (const e of runs) { const v = f(e.run); if (v > 0 && (!best || v > best.v)) best = { name: e.name, v }; }
+    return best;
+  };
+  return [
+    ['🐢', 'Le plus lent', top(r => r.time), v => fmtTime(v)],
+    ['💥', 'Roi des chocs', top(r => (r.bumps || 0) + (r.wallHits || 0)), v => v + ' chocs'],
+    ['🧲', 'L\'aspirateur', top(r => r.absorbed), v => v + ' objets'],
+    ['🌵', 'L\'ami des cactus', top(r => r.pricks || 0), v => v + ' piqûre' + (v > 1 ? 's' : '')],
+  ].filter(t => t[2]).map(([icon, label, b, fmt]) => ({ icon, label, name: b.name, value: fmt(b.v) }));
+}
 
 function medal(i) { return ['🥇', '🥈', '🥉'][i] || (i + 1) + '.'; }
 

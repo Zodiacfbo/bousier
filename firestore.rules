@@ -1,20 +1,34 @@
 rules_version = '2';
 
 // Règles du classement en ligne de Bousier.
-// Tout le monde peut lire ; chacun ne peut écrire que ses propres documents
-// (id « uid_pseudo »), avec des valeurs plausibles. À copier dans la console
-// Firebase : Firestore Database > Règles.
+// Tout le monde peut lire les classements ; chacun n'écrit que ses propres
+// documents (id « uid_pseudo »), sous un pseudo qui lui appartient, avec des
+// valeurs plausibles. À copier dans la console Firebase : Firestore Database > Règles.
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function signedIn() {
+      return request.auth != null;
+    }
     function mine(id) {
-      return request.auth != null && id.matches(request.auth.uid + '_.+');
+      return signedIn() && id.matches(request.auth.uid + '_.+');
     }
     function okName(d) {
-      return d.name is string && d.name.size() > 0 && d.name.size() <= 14;
+      return d.name is string && d.name.size() >= 2 && d.name.size() <= 14;
+    }
+    // Le pseudo du document est réservé au joueur connecté
+    function ownsName(d) {
+      return okName(d)
+        && get(/databases/$(database)/documents/names/$(d.name.lower())).data.uid == request.auth.uid;
+    }
+    function okEnv(env) {
+      return env == 'prod' || env == 'dev';
     }
     function okScore(v) {
       return v is number && v >= 0 && v <= 5000;
+    }
+    function okTeam(d) {
+      return !('team' in d) || (d.team is string && d.team.size() <= 14);
     }
     // Le jour (« AAAA-MM-JJ ») doit être aujourd'hui, à quelques heures près
     // pour couvrir tous les fuseaux horaires.
@@ -26,27 +40,49 @@ service cloud.firestore {
         && request.time < t + duration.value(38, 'h');
     }
 
+    // Réservation des pseudos (en minuscules) : premier arrivé, premier servi
+    match /names/{key} {
+      allow read: if true;
+      allow create: if signedIn() && okName(request.resource.data)
+        && key == request.resource.data.name.lower()
+        && request.resource.data.uid == request.auth.uid;
+    }
+
     match /envs/{env}/days/{day}/scores/{id} {
       allow read: if true;
-      allow write: if (env == 'prod' || env == 'dev') && mine(id) && isToday(day)
-        && okName(request.resource.data) && okScore(request.resource.data.score)
+      allow create, update: if okEnv(env) && mine(id) && isToday(day)
+        && ownsName(request.resource.data) && okScore(request.resource.data.score) && okTeam(request.resource.data)
         && (resource == null || request.resource.data.score >= resource.data.score);
     }
 
     match /envs/{env}/days/{day}/ghosts/{id} {
       allow read: if true;
-      allow write: if (env == 'prod' || env == 'dev') && mine(id) && isToday(day)
-        && okName(request.resource.data) && okScore(request.resource.data.score)
+      allow create, update: if okEnv(env) && mine(id) && isToday(day)
+        && ownsName(request.resource.data) && okScore(request.resource.data.score)
         && request.resource.data.x is list && request.resource.data.x.size() <= 20000
         && request.resource.data.y is list && request.resource.data.y.size() <= 20000
         && request.resource.data.r is list && request.resource.data.r.size() <= 20000;
     }
 
+    match /envs/{env}/days/{day}/reacts/{id} {
+      allow read: if true;
+      allow create, update: if okEnv(env) && mine(id) && isToday(day)
+        && request.resource.data.e in ['👏', '😂', '💩', '🔥']
+        && request.resource.data.target is string && request.resource.data.target.size() < 200;
+    }
+
     match /envs/{env}/players/{id} {
       allow read: if true;
-      allow write: if (env == 'prod' || env == 'dev') && mine(id)
-        && okName(request.resource.data) && okScore(request.resource.data.best)
+      allow create, update: if okEnv(env) && mine(id)
+        && ownsName(request.resource.data) && okScore(request.resource.data.best) && okTeam(request.resource.data)
         && request.resource.data.bestStreak is int && request.resource.data.bestStreak >= 0;
+    }
+
+    // Progression complète : visible et modifiable seulement par son propriétaire
+    match /envs/{env}/profiles/{id} {
+      allow read: if mine(id);
+      allow create, update: if okEnv(env) && mine(id) && ownsName(request.resource.data)
+        && request.resource.data.data is string && request.resource.data.data.size() < 500000;
     }
   }
 }
