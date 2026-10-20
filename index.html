@@ -852,6 +852,8 @@ const FIREBASE_CONFIG = {
 };
 // La version de test (/dev/) a son propre classement, séparé du vrai
 const ONLINE_ENV = location.pathname.includes('/dev/') ? 'dev' : 'prod';
+// Lien partagé avec les résultats : toujours la version officielle
+const GAME_URL = 'https://zodiacfbo.github.io/bousier/';
 
 // La version de test (/dev/) a sa propre sauvegarde pour ne pas toucher à la vraie
 const SAVE_KEY = location.pathname.includes('/dev/') ? 'bousier_dev_v1' : 'bousier_v1';
@@ -2014,6 +2016,7 @@ const App = {
       const lb = await Leaderboard.day(this.today);
       res.rank = lb.findIndex(e => e.name === p.name) + 1;
       res.players = lb.length;
+      res.online = Online.live;
       const cond = {
         premier: true, terrier: run.terrier, metre: run.sizeCm >= 100, geant: run.sizeCm >= 200, titan: run.sizeCm >= 300,
         legende: Object.keys(p.legends).length >= 1, archeo: Object.keys(p.legends).length >= 4,
@@ -2037,7 +2040,12 @@ const App = {
   shareText() {
     const p = this.p, d = Store.dayPeek(p, this.today), cfg = this.cfg;
     const squares = d.runs.map(r => r.terrier ? '🟩' : '🟥').join('') + '⬛'.repeat(Math.max(0, 3 - d.runs.length));
-    return `🪲 BOUSIER #${cfg.num} ${cfg.weather.icon}\nMa meilleure boule : ${fmtSize(d.best)}\nEssais : ${squares}${d.legend ? ' ✨' : ''}\nSérie : 🔥${Store.streakOf(p, this.today)}`;
+    // Rang calculé en fin de partie (pas d'attente réseau ici : sur iPhone le
+    // partage doit s'ouvrir tout de suite après le clic), seulement s'il vient
+    // du classement en ligne et qu'il y a du monde
+    const r = this.lastRes, rank = r && r.online ? r.rank : 0;
+    const rankTxt = rank && r.players >= 2 ? `🏆 ${rank}${rank === 1 ? 'er' : 'e'} sur ${r.players} · ` : '';
+    return `🪲 BOUSIER #${cfg.num} ${cfg.weather.icon}\nMa meilleure boule : ${fmtSize(d.best)}\nEssais : ${squares}${d.legend ? ' ✨' : ''}\n${rankTxt}Série : 🔥${Store.streakOf(p, this.today)}\n${GAME_URL}`;
   },
   async share() {
     const text = this.shareText();
