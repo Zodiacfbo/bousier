@@ -1242,10 +1242,9 @@ const Online = {
     try { const c = await withTimeout(this.connect(), 5000); return c ? this.uid(c) : null; } catch (e) { return null; }
   },
 
-  // Écran d'accueil « pseudo + mot de passe » : crée le compte si le pseudo est
-  // libre, protège un ancien profil sans mot de passe de cet appareil, sinon
-  // se connecte au compte existant.
-  async enter(name, password) {
+  // Création de profil : crée le compte si le pseudo est libre, ou protège un
+  // ancien profil sans mot de passe de cet appareil
+  async create(name, password) {
     name = name.trim();
     try {
       const c = await withTimeout(this.connect(), 8000);
@@ -1262,23 +1261,21 @@ const Online = {
         this.live = true;
         return { name: p.name, isNew: false };
       }
-      if (!owner.exists()) {
-        try {
-          if (user.isAnonymous) await withTimeout(fb.linkWithCredential(user, cred()), 10000);
-          else await withTimeout(fb.createUserWithEmailAndPassword(auth, accountEmail(name), password), 10000);
-        } catch (e) {
-          // un compte existe déjà avec ce pseudo (pseudo libéré à la main) : on s'y connecte
-          if (!String(e.code).includes('already-in-use')) throw e;
-          return this.login(name, password);
-        }
-        const uid = this.uid(c);
-        await withTimeout(fb.setDoc(this.nameRef(c, name), { uid, name, at: Date.now() }), 8000);
-        const p = Object.assign(Store.newProfile(name), { uid, account: true, nameOk: uid });
-        Store.data.profiles[name] = p; Store.data.current = name; Store.save();
-        this.live = true;
-        return { name, isNew: true };
+      if (owner.exists()) return { error: 'Ce pseudo existe déjà. Si c\'est le tien, connecte-toi.' };
+      try {
+        if (user.isAnonymous) await withTimeout(fb.linkWithCredential(user, cred()), 10000);
+        else await withTimeout(fb.createUserWithEmailAndPassword(auth, accountEmail(name), password), 10000);
+      } catch (e) {
+        // compte existant dont le pseudo a été libéré à la main : il faut s'y connecter
+        if (String(e.code).includes('already-in-use')) return { error: 'Ce pseudo existe déjà. Si c\'est le tien, connecte-toi.' };
+        throw e;
       }
-      return this.login(name, password);
+      const uid = this.uid(c);
+      await withTimeout(fb.setDoc(this.nameRef(c, name), { uid, name, at: Date.now() }), 8000);
+      const p = Object.assign(Store.newProfile(name), { uid, account: true, nameOk: uid });
+      Store.data.profiles[name] = p; Store.data.current = name; Store.save();
+      this.live = true;
+      return { name, isNew: true };
     } catch (e) { return { error: this.authError(e) }; }
   },
 
@@ -1319,7 +1316,7 @@ const Online = {
   authError(e) {
     const code = e && e.code || '';
     console.warn('Compte', e);
-    if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found') || code.includes('invalid-email')) return 'Mauvais mot de passe… ou ce pseudo est déjà pris par quelqu\'un d\'autre.';
+    if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found') || code.includes('invalid-email')) return 'Pseudo ou mot de passe incorrect.';
     if (code.includes('weak-password')) return 'Mot de passe trop court (6 caractères minimum).';
     if (code.includes('email-already-in-use') || code.includes('credential-already-in-use')) return 'Ce pseudo a déjà un compte : connecte-toi.';
     if (code.includes('too-many-requests')) return 'Trop d\'essais, réessaie dans quelques minutes.';
@@ -2465,7 +2462,9 @@ const App = {
   // --- Navigation ------------------------------------------------------------
   async show(name, arg) {
     this.screen = name;
+    const tok = this.showTok = (this.showTok || 0) + 1;
     const html = await this['scr_' + name](arg);
+    if (tok !== this.showTok) return;  // un autre écran a été demandé entre-temps
     this.ui.innerHTML = html;
     this.ui.classList.toggle('passive', name === 'none');
     const sc = this.ui.querySelector('.screen'); if (sc) sc.scrollTop = 0;
@@ -2491,7 +2490,9 @@ const App = {
       abandon: () => this.abandon(),
       sound: () => { Sound.on = !Sound.on; Store.data.settings.sound = Sound.on; Store.save(); this.show('profile'); },
       switchp: () => this.switchTo(v),
-      enter: () => this.doEnter(),
+      create: () => this.doCreate(),
+      login: () => this.doLogin(),
+      eye: () => { for (const i of this.ui.querySelectorAll('input.pw')) i.type = i.type === 'password' ? 'text' : 'password'; },
       secure: () => this.doSecure(),
       saveteam: () => this.saveTeam(),
       tuto: () => {
@@ -2511,20 +2512,36 @@ const App = {
     if (el) el.textContent = msg || '';
   },
 
-  // Écran d'accueil : pseudo + mot de passe (création ou connexion)
-  async doEnter() {
-    const name = ((this.ui.querySelector('#pname') || {}).value || '').trim(), pw = (this.ui.querySelector('#ppass') || {}).value || '';
+  formValues() {
+    const v = id => (this.ui.querySelector('#' + id) || {}).value || '';
+    return { name: v('pname').trim(), pw: v('ppass'), pw2: v('ppass2') };
+  },
+
+  async doCreate() {
+    const { name, pw, pw2 } = this.formValues();
     if (!name) return this.formError('Choisis un pseudo.');
-    const pb = Store.data.profiles[name] ? null : nameProblem(name);
+    const pb = nameProblem(name);
     if (pb) return this.formError(pb);
     if (pw.length < 6) return this.formError('Mot de passe : 6 caractères minimum.');
+    if (pw !== pw2) return this.formError('Les deux mots de passe ne sont pas identiques.');
     this.formError('Un instant…');
-    const r = await Online.enter(name, pw);
+    const r = await Online.create(name, pw);
     if (r.error) return this.formError(r.error);
     this.loadDay();
     Online.submitPlayer(this.p);
-    if (r.isNew && !Store.data.settings.tutoDone) return this.show('tuto', 0);
-    this.toast(r.isNew ? `Bienvenue, ${r.name} !` : `Content de te revoir, ${r.name} !`);
+    if (!Store.data.settings.tutoDone) return this.show('tuto', 0);
+    this.toast(`Bienvenue, ${r.name} !`);
+    this.show('home');
+  },
+
+  async doLogin() {
+    const { name, pw } = this.formValues();
+    if (!name || !pw) return this.formError('Pseudo et mot de passe, s\'il te plaît.');
+    this.formError('Connexion…');
+    const r = await Online.login(name, pw);
+    if (r.error) return this.formError(r.error);
+    this.loadDay();
+    this.toast(`Content de te revoir, ${r.name} !`);
     this.show('home');
   },
 
@@ -2533,7 +2550,7 @@ const App = {
     const t = Store.data.profiles[name];
     if (!t) return;
     const uid = await Online.currentUid();
-    if (t.account && uid && t.uid && t.uid !== uid) return this.show('name', name);
+    if (t.account && uid && t.uid && t.uid !== uid) return this.show('login', name);
     Store.switchProfile(name); this.loadDay(); this.show('home');
   },
 
@@ -2755,20 +2772,37 @@ const App = {
 
   scr_none() { return ''; },
 
-  scr_name(prefill = '') {
+  scr_name() {
     const back = this.p ? `<div class="head"><button class="btn ghost small" data-a="go" data-v="profile">◀</button><h2>Joueur</h2></div>` : '';
     return `<div class="screen center">
       ${back}
       <div class="title">BOUSIER</div>
       <div class="mascot">${pix(mascotUrl(SKINS[0], HATS[0], 12), 80, 84)}</div>
+      <button class="btn big" data-a="go" data-v="create">Créer mon profil</button>
+      <button class="btn ghost" data-a="go" data-v="login">J'ai déjà un profil : me connecter</button>
+    </div>`;
+  },
+
+  // Formulaire pseudo + mot de passe (+ confirmation à la création)
+  authForm(title, action, label, confirm, prefill = '', note = '') {
+    return `<div class="screen center">
+      <div class="head"><button class="btn ghost small" data-a="go" data-v="name">◀</button><h2>${title}</h2></div>
       <div class="panel">
         <input id="pname" maxlength="14" placeholder="Pseudo" autocomplete="username" value="${esc(prefill)}">
-        <input id="ppass" type="password" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password" onkeydown="if(event.key==='Enter')App.doEnter()">
+        <input id="ppass" class="pw" type="password" placeholder="Mot de passe${confirm ? ' (6 caractères min.)' : ''}" autocomplete="${confirm ? 'new' : 'current'}-password" ${confirm ? '' : `onkeydown="if(event.key==='Enter')App.doLogin()"`}>
+        ${confirm ? `<input id="ppass2" class="pw" type="password" placeholder="Confirme le mot de passe" autocomplete="new-password" onkeydown="if(event.key==='Enter')App.doCreate()">` : ''}
+        <button class="btn ghost small" data-a="eye">👁️ Afficher / masquer</button>
         <div class="tiny bad form-err"></div>
-        <button class="btn big" data-a="enter">JOUER !</button>
-        <div class="tiny">${prefill ? `Entre le mot de passe de ${esc(prefill)}.` : 'Nouveau ? Choisis un pseudo et un mot de passe.<br>Déjà joué ? Mets les mêmes pour retrouver ta progression.'}</div>
+        <button class="btn big" data-a="${action}">${label}</button>
       </div>
+      ${note ? `<div class="tiny center">${note}</div>` : ''}
     </div>`;
+  },
+  scr_create() {
+    return this.authForm('Nouveau profil', 'create', 'Créer et jouer !', true, '', 'Retiens bien ton mot de passe : il te permet de retrouver ta progression sur n\'importe quel téléphone.');
+  },
+  scr_login(prefill = '') {
+    return this.authForm('Connexion', 'login', 'Me connecter', false, prefill, 'Mot de passe oublié ? Demande à l\'organisateur du jeu.');
   },
 
   // Comment jouer : 3 étapes, au premier lancement ou via le bouton ❓
