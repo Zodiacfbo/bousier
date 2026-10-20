@@ -33,7 +33,7 @@ body {
 }
 #app { position: relative; overflow: hidden; box-shadow: 0 0 0 calc(var(--u)) #000, 0 0 40px rgba(0,0,0,.6); }
 #screen { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
-img.pix { image-rendering: pixelated; image-rendering: crisp-edges; display: inline-block; vertical-align: middle; }
+img.pix, canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; display: inline-block; vertical-align: middle; }
 
 #ui { position: absolute; inset: 0; font-size: calc(var(--u) * 6.5); line-height: 1.25; }
 #ui.passive { pointer-events: none; }
@@ -1134,14 +1134,14 @@ const Store = {
   profile() { return this.data.profiles[this.data.current] || null; },
 
   newProfile(name) {
-    return {
+    return this.normalize({
       name, created: dayKey(), coins: 0, streak: 0, bestStreak: 0, lastDay: null,
       badges: {}, owned: { ball: [], hat: [], theme: [] },
       equip: { ball: 'classique', hat: 'aucun', theme: 'doree' },
       collection: {}, legends: {}, weathers: {},
       stats: { runs: 0, absorbed: 0, best: 0, terriers: 0, camels: 0 },
       days: {}, team: '', uid: null, account: false, counters: {},
-    };
+    });
   },
 
   // Complète un profil créé avec une ancienne version (nouveaux emplacements, compteurs)
@@ -2721,6 +2721,7 @@ const App = {
     this.ui.innerHTML = html;
     this.ui.classList.toggle('passive', name === 'none');
     const sc = this.ui.querySelector('.screen'); if (sc) sc.scrollTop = 0;
+    if (name === 'shop') this.startPreview();
     if (name === 'name') { const i = this.ui.querySelector('input'); if (i) setTimeout(() => i.focus(), 50); }
   },
 
@@ -3018,6 +3019,49 @@ const App = {
     this.toast(`${item.name} débloqué !`);
     this.shopSel = null;
     this.show('shop');
+  },
+
+  // Aperçu animé de la boutique : le personnage roule sur place, la dune défile
+  startPreview() {
+    const cv = this.ui.querySelector('#preview');
+    if (!cv) return;
+    const p = this.p, type = this.shopTab, sel = this.shopSel ? findCos(type, this.shopSel) : null;
+    const look = t => type === t && sel ? sel : findCos(t, p.equip[t]);
+    const skin = look('ball'), hat = look('hat'), outfit = look('outfit'), trail = look('trail'), theme = findCos('theme', p.equip.theme);
+    const ctx = cv.getContext('2d'), Wp = cv.width, Hp = cv.height, specks = genSpecks(skin);
+    ctx.imageSmoothingEnabled = false;
+    const st = { ctx, particles: [], frame: 0, t: 0 }, pts = [], R = 10, speed = 40;
+    const draw = () => {
+      if (!cv.isConnected) return;  // l'écran a changé : on arrête
+      requestAnimationFrame(draw);
+      st.t += TICK; st.frame++;
+      const scroll = st.t * speed;
+      ctx.fillStyle = theme.sand; ctx.fillRect(0, 0, Wp, Hp);
+      ctx.fillStyle = theme.sandDark;
+      for (let k = 0; k < 14; k++) { const y = Math.round((k * 23 - scroll) % (Hp + 10) + Hp + 10) % (Hp + 10) - 5; ctx.fillRect((k * 37) % Wp, y, 3, 1); }
+      const b = { x: Wp / 2 + Math.sin(st.t * 1.4) * 4, y: Hp - R - 8, r: R, roll: st.t * 4 };
+      // traînée : les particules restent sur place pendant que la dune défile
+      if (trail.fx === 'rainbow') {
+        for (const q of pts) q.y -= speed * TICK;
+        pts.push({ x: b.x, y: b.y - R - 8 }); if (pts.length > 40) pts.shift();
+        drawRainbow(ctx, pts, R, st.t);
+      } else if (trail.fx) emitTrail(st, trail, b);
+      for (let i = st.particles.length - 1; i >= 0; i--) {
+        const q = st.particles[i]; q.life -= TICK;
+        if (q.life <= 0) { st.particles.splice(i, 1); continue; }
+        q.x += q.vx * TICK; q.y += (q.vy - speed) * TICK;
+      }
+      Game.prototype.drawParticles.call(st);
+      const bx = Math.round(b.x), btop = Math.round(b.y - R - 11);
+      if (outfit.cape) drawCape(ctx, bx, btop, st.t);
+      ctx.drawImage(beetleSprite(outfit, Math.floor(st.t * 6) % 2), bx - 5, btop);
+      drawHat(ctx, hat, bx, btop);
+      ctx.fillStyle = 'rgba(70,35,10,0.3)'; ctx.fillRect(bx - R + 2, b.y + R - 1, R * 2 - 1, 2);
+      drawBallFx(ctx, skin, b.x, b.y, R, st.t, 'back');
+      Game.prototype.drawBall.call(st, skin, specks, b.x, b.y, R, b.roll, 1);
+      drawBallFx(ctx, skin, b.x, b.y, R, st.t, 'front');
+    };
+    draw();
   },
 
   // =========================================================================
@@ -3337,7 +3381,7 @@ const App = {
     return `<div class="screen">
       ${this.back('Style')}
       <div class="topbar end"><span class="chip gold">🟡 ${p.coins}</span></div>
-      <div class="mascot">${type === 'theme' ? swatch(prev || eq('theme'), 3) : mascot(look('ball'), look('hat'), look('outfit'), look('trail'), 12, 1)}</div>
+      <div class="mascot">${type === 'theme' ? swatch(prev || eq('theme'), 3) : '<canvas id="preview" width="64" height="84" class="pix" style="width:calc(var(--u)*96);height:calc(var(--u)*126)"></canvas>'}</div>
       ${bar}
       <div class="tabs">${tabs}</div>
       <div class="grid three">${items.map(tile).join('')}</div>
