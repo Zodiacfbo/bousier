@@ -538,6 +538,20 @@ const ROWS = {
   couronneHat: ['y.y.y.y', 'yYyYyYy', 'YyyryyY', 'YYYYYYY'],
   nemes: ['.yCyCy.', 'yCyCyCy', 'CyCyCyC', 'yC...Cy', 'C.....C'],
   drapeau: ['krr', 'krrr', 'krr', 'k', 'k', 'k', 'k'],
+  // chapeaux du labo et d'ailleurs
+  parapluie: ['....k....', '..rwrwr..', '.rwrwrwr.', 'rwrwrwrwr', 'k.k.k.k.k', '....k....'],
+  lunettes: ['kkkkkkk', 'kcwkcwk', 'kcckcck', '.kk.kk.'],
+  charlotte: ['..www..', '.wWwWw.', 'wWwWwWw', 'hwhwhwh'],
+  casqueKevin: ['..eee..', '.elele.', 'eeeeeee', 'EkEEEkE', 'k.....k'],
+  coquille: ['..bbb..', '.bBnBb.', 'bBnBBnb', 'bnBnBnb', '.bbbbb.'],
+  pansement: ['..s....', '.sts...', '..tTt..', '...tts.', '....s..'],
+  aimant: ['hh...hh', 'rr...rr', 'rr...rr', '.rr.rr.', '..rrr..'],
+  aureole: ['.yyyyy.', 'y.....y', '.yyyyy.'],
+  fleurCactus: ['.p.p.p.', '..ppp..', '.ppypp.', '..ppp..', '...e...'],
+  // particules de traînées
+  trBulle: ['.cc.', 'cw.c', 'c..c', '.cc.'],
+  trNote: ['..vv', '..v.', '..v.', 'vvv.', 'vv..'],
+  trEtoile: ['.y.', 'ywy', '.y.'],
 };
 
 const SPR = {};
@@ -660,10 +674,144 @@ function genSpecks(skin) {
       }
     }
     for (let k = 0; k < 18; k++) pts.push({ p: randDir(), col: skin.specks[2], big: false });
+  } else if (skin.pattern === 'bands') {
+    // bandes de gaz (Saturne) : anneaux à x constant, stables quand la boule roule
+    [-0.72, -0.4, -0.08, 0.26, 0.58].forEach((x0, k) => {
+      for (let n = 0; n < 70; n++) {
+        const x = x0 + rng.range(-0.07, 0.07), a = rng.range(0, Math.PI * 2), r = Math.sqrt(1 - x * x);
+        pts.push({ p: [x, r * Math.cos(a), r * Math.sin(a)], col: skin.specks[k % 2], big: true });
+      }
+    });
+  } else if (skin.pattern === 'helix') {
+    // double hélice (ADN) et ses barreaux
+    for (let i = 0; i <= 90; i++) {
+      const x = -0.92 + i * 1.84 / 90, r = Math.sqrt(1 - x * x), a = x * Math.PI * 2.4;
+      const s1 = [x, r * Math.cos(a), r * Math.sin(a)], s2 = [x, -r * Math.cos(a), -r * Math.sin(a)];
+      pts.push({ p: s1, col: skin.specks[0], big: true }, { p: s2, col: skin.specks[1], big: true });
+      if (i % 6 === 0) for (const t of [0.2, 0.35, 0.5, 0.65, 0.8]) {
+        const m = s1.map((v, j) => v * (1 - t) + s2[j] * t), l = Math.hypot(...m) || 1;
+        pts.push({ p: m.map(v => v / l), col: skin.specks[2], big: false });
+      }
+    }
+  } else if (skin.pattern === 'cell') {
+    // noyau (gros amas), nucléole, petites mitochondries
+    const nuc = randDir();
+    for (let m = 0; m < 90; m++) {
+      const q = nuc.map(v => v + rng.range(-0.38, 0.38)), l = Math.hypot(...q);
+      pts.push({ p: q.map(v => v / l), col: skin.specks[0], big: true });
+    }
+    for (let m = 0; m < 14; m++) {
+      const q = nuc.map(v => v + rng.range(-0.1, 0.1)), l = Math.hypot(...q);
+      pts.push({ p: q.map(v => v / l), col: skin.specks[1], big: true });
+    }
+    for (let k = 0; k < 6; k++) {
+      const c0 = randDir();
+      for (let m = 0; m < 5; m++) { const q = c0.map(v => v + rng.range(-0.08, 0.08)), l = Math.hypot(...q); pts.push({ p: q.map(v => v / l), col: skin.specks[2], big: false }); }
+    }
   } else {
     for (let k = 0; k < (skin.count || 70); k++) pts.push({ p: randDir(), col: rng.pick(skin.specks), big: !!skin.bigSpecks });
   }
   return pts;
+}
+
+// Effets autour de certaines boules : anneau (Saturne), orbites (atome), halo (fiole).
+// layer 'back' = derrière la boule, 'front' = devant.
+function drawBallFx(ctx, skin, x, y, R, t, layer) {
+  if (!skin.fx || R < 2) return;
+  x = Math.round(x); y = Math.round(y);
+  if (skin.fx === 'ring') {
+    const rx = Math.round(R * 1.75), ry = Math.max(1, Math.round(R * 0.42));
+    for (let i = -rx; i <= rx; i++) {
+      const e = Math.sqrt(Math.max(0, 1 - (i / rx) ** 2)), dy = Math.round(ry * e);
+      // inclinaison légère de l'anneau
+      const tilt = Math.round(i * 0.18);
+      if (layer === 'back') { ctx.fillStyle = skin.ring[1]; ctx.fillRect(x + i, y - dy + tilt, 1, 1); }
+      else { ctx.fillStyle = skin.ring[0]; ctx.fillRect(x + i, y + dy + tilt, 1, 1); if (Math.abs(i) > R * 0.9) { ctx.fillStyle = skin.ring[1]; ctx.fillRect(x + i, y + dy + tilt - 1, 1, 1); } }
+    }
+  } else if (skin.fx === 'orbits' && layer === 'front') {
+    const rx = R * 1.55, ry = R * 0.38;
+    for (let k = 0; k < 3; k++) {
+      const rot = k * Math.PI / 3 + 0.3, c = Math.cos(rot), sn = Math.sin(rot);
+      ctx.fillStyle = 'rgba(220,245,255,0.85)';
+      for (let a = 0; a < Math.PI * 2; a += 0.04) {
+        const ex = Math.cos(a) * rx, ey = Math.sin(a) * ry;
+        ctx.fillRect(Math.round(x + ex * c - ey * sn), Math.round(y + ex * sn + ey * c), 1, 1);
+      }
+      const a = t * 3 + k * 2.1, ex = Math.cos(a) * rx, ey = Math.sin(a) * ry;
+      ctx.fillStyle = '#fff27a';
+      ctx.fillRect(Math.round(x + ex * c - ey * sn) - 1, Math.round(y + ex * sn + ey * c) - 1, 2, 2);
+    }
+  } else if (skin.fx === 'glow' && layer === 'back') {
+    const g = Math.round(R + 3 + Math.sin(t * 4));
+    ctx.fillStyle = 'rgba(120,255,140,0.22)';
+    for (let j = -g; j <= g; j++) { const w = Math.round(Math.sqrt(g * g - j * j)); ctx.fillRect(x - w, y + j, w * 2 + 1, 1); }
+  }
+}
+
+// Bousier habillé : on recolore sa carapace (+ quelques pixels en plus)
+const BEETLE_CACHE = {};
+function beetleSprite(outfit, frame) {
+  const base = frame ? 'beetleB' : 'beetleA';
+  if (!outfit || !outfit.pal) return SPR[base];
+  const key = outfit.id + base;
+  if (!BEETLE_CACHE[key]) {
+    const c = spriteFromRows(ROWS[base], { ...PAL, ...outfit.pal }), x = c.getContext('2d');
+    for (const [px, py, col] of outfit.pixels || []) { x.fillStyle = col; x.fillRect(px, py, 1, 1); }
+    BEETLE_CACHE[key] = c;
+  }
+  return BEETLE_CACHE[key];
+}
+// Cape qui flotte derrière le bousier (vers le haut de l'écran)
+function drawCape(ctx, bx, btop, t) {
+  for (let j = 0; j < 9; j++) {
+    const w = 3 + Math.floor(j / 3), off = Math.round(Math.sin(t * 6 + j * 0.7) * (j / 5));
+    ctx.fillStyle = j === 0 ? '#ffd25a' : (j + Math.floor(t * 4)) % 4 === 0 ? '#a8202a' : '#d8463a';
+    ctx.fillRect(bx - w + off, btop + 3 - j, w * 2 + 1, 1);
+  }
+}
+
+// Traînées : particules émises derrière le bousier, ou ruban (arc-en-ciel)
+const RAINBOW = ['#ff4a4a', '#ff9a3a', '#ffe14a', '#5ad85a', '#4aa8ff', '#9a5ad8'];
+function emitTrail(game, trail, b) {
+  const x = b.x + (Math.random() - 0.5) * b.r * 1.2, y = b.y - b.r - 10, P = game.particles, f = game.frame;
+  switch (trail.fx) {
+    case 'sparkle': if (f % 3 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 20, vy: -10, g: 0, life: 0.7, spr: 'trEtoile' }); break;
+    case 'bubbles': if (f % 6 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 10, vy: -25, g: 0, life: 1.1, spr: 'trBulle' }); break;
+    case 'flames': if (f % 1 === 0) P.push({ x, y: y + 4, vx: (Math.random() - 0.5) * 16, vy: -30 - Math.random() * 20, g: 0, life: 0.45, col: ['#ffe14a', '#ff9a3a', '#ff4a2a'][f % 3], s: 2 }); break;
+    case 'smoke': if (f % 3 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 14, vy: -14, g: 0, life: 1.2, col: f % 2 ? 'rgba(110,230,110,0.55)' : 'rgba(60,170,70,0.5)', s: 3 }); break;
+    case 'notes': if (f % 10 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 16, vy: -22, g: 0, life: 1.2, spr: 'trNote' }); break;
+    case 'binary': if (f % 5 === 0) P.push({ x, y, vx: 0, vy: -18, g: 0, life: 1.1, txt: Math.random() < 0.5 ? '0' : '1', col: '#5aff7a' }); break;
+  }
+}
+function drawRainbow(ctx, pts, r, t) {
+  const bw = Math.max(1, Math.round(r * 0.28)), w = bw * RAINBOW.length;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], wave = Math.round(Math.sin(t * 8 + i * 0.5));
+    const y0 = Math.round(Math.min(a.y, b.y)), h = Math.max(1, Math.round(Math.abs(a.y - b.y)) + 1);
+    ctx.globalAlpha = Math.min(1, i / pts.length * 1.6);
+    RAINBOW.forEach((col, k) => { ctx.fillStyle = col; ctx.fillRect(Math.round(b.x - w / 2) + k * bw + wave, y0, bw, h); });
+  }
+  ctx.globalAlpha = 1;
+}
+// Aperçu figé d'une traînée (menus)
+function drawTrailStatic(ctx, trail, x, yTop, yBot, r) {
+  if (!trail || !trail.fx) return;
+  const rng = makeRng(hashStr('trail' + trail.id));
+  if (trail.fx === 'rainbow') {
+    const pts = [];
+    for (let y = yTop; y <= yBot; y += 2) pts.push({ x, y });
+    drawRainbow(ctx, pts, r, 0);
+    return;
+  }
+  for (let k = 0; k < 7; k++) {
+    const px = Math.round(x + rng.range(-r * 0.7, r * 0.7)), py = Math.round(yTop + (yBot - yTop) * k / 7);
+    if (trail.fx === 'sparkle') ctx.drawImage(SPR.trEtoile, px - 1, py);
+    else if (trail.fx === 'bubbles' && k % 2 === 0) ctx.drawImage(SPR.trBulle, px - 2, py);
+    else if (trail.fx === 'notes' && k % 2 === 0) ctx.drawImage(SPR.trNote, px - 2, py);
+    else if (trail.fx === 'flames') { ctx.fillStyle = ['#ff4a2a', '#ff9a3a', '#ffe14a'][k % 3]; ctx.fillRect(px, py, 2, 2); }
+    else if (trail.fx === 'smoke') { ctx.fillStyle = 'rgba(90,210,100,0.6)'; ctx.fillRect(px - 1, py, 3, 3); }
+    else if (trail.fx === 'binary' && k % 2 === 0) drawText(ctx, rng.chance(0.5) ? '0' : '1', px, py, '#5aff7a', 1, null);
+  }
 }
 
 // Masque d'obscurité (météo nuit) — trou de lumière tramé
@@ -698,16 +846,18 @@ function buildSprites() {
 const ROCK_SIZES = [3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 18, 20];
 
 // Rendu du personnage (boule + bousier + chapeau) en image pour les menus
-function renderMascot(skin, hat, R = 9, scale = 1) {
-  const w = R * 2 + 16, h = R * 2 + 18;
+function renderMascot(skin, hat, R = 9, scale = 1, outfit = null, trail = null) {
+  const w = R * 2 + 16, h = R * 2 + 18 + (trail && trail.fx ? 14 : 0);
   const [c, x] = newCanvas(w, h);
   const bx = Math.floor(w / 2), by = h - R - 3;
+  drawTrailStatic(x, trail, bx, 0, by - R - 12, R);
   // ombre
   x.fillStyle = 'rgba(60,30,10,0.3)';
   x.fillRect(bx - R + 2, by + R - 1, R * 2 - 2, 2);
-  const beetle = SPR.beetleA;
-  x.drawImage(beetle, bx - 5, by - R - 12);
+  if (outfit && outfit.cape) drawCape(x, bx, by - R - 12, 0);
+  x.drawImage(beetleSprite(outfit, 0), bx - 5, by - R - 12);
   drawHat(x, hat, bx, by - R - 12);
+  drawBallFx(x, skin, bx, by, R, 1, 'back');
   const base = ballBase(skin, R);
   x.drawImage(base, bx - R, by - R);
   const specks = genSpecks(skin), th = 0.6;
@@ -719,6 +869,7 @@ function renderMascot(skin, hat, R = 9, scale = 1) {
     const sz = s.big && R > 6 ? 2 : 1;
     x.fillRect(Math.round(bx + px * (R - 1.5)), Math.round(by + y2 * (R - 1.5)), sz, sz);
   }
+  drawBallFx(x, skin, bx, by, R, 1, 'front');
   if (scale === 1) return c;
   const [c2, x2] = newCanvas(w * scale, h * scale);
   x2.drawImage(c, 0, 0, w * scale, h * scale);
@@ -729,7 +880,7 @@ function renderMascot(skin, hat, R = 9, scale = 1) {
 function drawHat(ctx, hat, cx, beetleTop) {
   if (!hat || !hat.sprite) return;
   const s = SPR[hat.sprite];
-  ctx.drawImage(s, Math.round(cx - s.width / 2), beetleTop + 7 - Math.floor(s.height / 2) + 1);
+  ctx.drawImage(s, Math.round(cx - s.width / 2), beetleTop + 7 - Math.floor(s.height / 2) + 1 + (hat.dy || 0));
 }
 
 </script>
@@ -800,6 +951,12 @@ const SKINS = [
   { id: 'lave', name: 'Boule de lave', price: 320, base: '#a8321c', light: '#d9582a', hi: '#ffb040', dark: '#5a1a14', out: '#1a0808', specks: ['#ffd05a', '#ff7a2a', '#3a1010'], count: 90 },
   { id: 'planete', name: 'Petite planète', price: 450, base: '#2d6aa8', light: '#4a90d0', hi: '#8ac4f0', dark: '#1a4070', out: '#0a1a30', specks: ['#5fae4a', '#3f8a33', '#ffffff'], pattern: 'planet' },
   { id: 'disco', name: 'Boule disco', badge: 'meteo', base: '#8a8aa0', light: '#c0c0d8', hi: '#ffffff', dark: '#55556a', out: '#1e1e2a', specks: ['#ff5ab4', '#5ad8ff', '#ffe05a', '#8aff6a', '#ffffff'], count: 130, bigSpecks: true },
+  { id: 'saturne', name: 'Saturne', base: '#d9b27a', light: '#ecd3a0', hi: '#fff0c8', dark: '#a87a48', out: '#3a2410', specks: ['#b8864a', '#f5e0b0'], pattern: 'bands', fx: 'ring', ring: ['#f0e2b8', '#9a8458'] },
+  { id: 'atome', name: 'Atome', base: '#7ab8f0', light: '#a8d4ff', hi: '#e8f6ff', dark: '#4a80c8', out: '#14305a', specks: ['#ffffff', '#c8e8ff'], count: 30, fx: 'orbits' },
+  { id: 'petri', name: 'Boîte de Petri', base: '#ead98a', light: '#f6eaa8', hi: '#fffbe0', dark: '#c4b060', out: '#8a90a0', specks: ['#ffffff', '#f0a0b0', '#e0c050'], pattern: 'planet' },
+  { id: 'fiole', name: 'Fiole fluo', base: '#3ccf5a', light: '#74f088', hi: '#dcffe0', dark: '#1f8a3a', out: '#0a3a1a', specks: ['#c8ffd0', '#ffffff'], count: 40, fx: 'glow' },
+  { id: 'adn', name: 'ADN', base: '#1e2a6a', light: '#2e3e9a', hi: '#5a78d8', dark: '#121a44', out: '#060a20', specks: ['#ff5a8a', '#5ad8ff', '#ffffff'], pattern: 'helix' },
+  { id: 'cellule', name: 'Cellule', base: '#f2a2bc', light: '#ffc4d6', hi: '#ffe6ef', dark: '#cc7690', out: '#6a2a40', specks: ['#8a4ab8', '#4a1a78', '#ff9a3a'], pattern: 'cell' },
   { id: 'or', name: 'Boule d\'or', badge: 'archeo', base: '#d9a92a', light: '#f2cf4a', hi: '#fff4a8', dark: '#9a6e14', out: '#3a2808', specks: ['#fff4a8', '#b8860b'] },
 ];
 const HATS = [
@@ -811,6 +968,33 @@ const HATS = [
   { id: 'sombrero', name: 'Sombrero', price: 260, sprite: 'sombrero' },
   { id: 'couronne', name: 'Couronne', badge: 'geant', sprite: 'couronneHat' },
   { id: 'nemes', name: 'Némès du pharaon', badge: 'legende', sprite: 'nemes' },
+  { id: 'parapluie', name: 'Parapluie', sprite: 'parapluie', dy: -3 },
+  { id: 'lunettes', name: 'Lunettes de protection', sprite: 'lunettes' },
+  { id: 'charlotte', name: 'Charlotte de labo', sprite: 'charlotte' },
+  { id: 'casqueKevin', name: 'Casque de Kevin', sprite: 'casqueKevin' },
+  { id: 'coquille', name: 'Coquille d\'escargot', sprite: 'coquille' },
+  { id: 'pansement', name: 'Pansement', sprite: 'pansement' },
+  { id: 'aimant', name: 'Aimant', sprite: 'aimant' },
+  { id: 'fleurCactus', name: 'Fleur de cactus', sprite: 'fleurCactus' },
+  { id: 'aureole', name: 'Auréole', sprite: 'aureole', dy: -5 },
+];
+// Tenues : recolorent la carapace du bousier (q, Q, u) + quelques pixels
+const OUTFITS = [
+  { id: 'aucune', name: 'Au naturel', price: 0 },
+  { id: 'blouse', name: 'Blouse de labo', pal: { q: '#d6d8dc', Q: '#ffffff', u: '#9aa0a8' }, pixels: [[7, 2, '#2d6aa8'], [7, 3, '#2d6aa8'], [6, 3, '#9aa0a8']] },
+  { id: 'hazmat', name: 'Combinaison anti-contamination', pal: { q: '#d9b400', Q: '#ffd84a', u: '#2c2442' }, pixels: [[4, 4, '#2c2442'], [6, 4, '#2c2442'], [5, 5, '#2c2442']] },
+  { id: 'cape', name: 'Cape de super-héros', pal: { q: '#a8202a', Q: '#d8463a', u: '#ffd25a' }, cape: true },
+  { id: 'smoking', name: 'Smoking', pal: { q: '#1d1d24', Q: '#2c2c38', u: '#ffffff' }, pixels: [[4, 8, '#d8463a'], [6, 8, '#d8463a'], [5, 8, '#8a2a2a']] },
+];
+const TRAILS = [
+  { id: 'aucune', name: 'Aucune', price: 0 },
+  { id: 'arcenciel', name: 'Arc-en-ciel', fx: 'rainbow' },
+  { id: 'etincelles', name: 'Étincelles', fx: 'sparkle' },
+  { id: 'bulles', name: 'Bulles', fx: 'bubbles' },
+  { id: 'flammes', name: 'Flammes', fx: 'flames' },
+  { id: 'fumee', name: 'Expérience ratée', fx: 'smoke' },
+  { id: 'notes', name: 'Notes de musique', fx: 'notes' },
+  { id: 'binaire', name: 'Code binaire', fx: 'binary' },
 ];
 const THEMES = [
   { id: 'doree', name: 'Dune dorée', price: 0, sand: '#e8b864', sandDark: '#c9924a', sandLight: '#f5d48c', wall: '#d49a52', wallDark: '#a8693a', wallLight: '#f2c27a' },
@@ -820,7 +1004,7 @@ const THEMES = [
   { id: 'sel', name: 'Désert de sel', badge: 'serie7', sand: '#eef0f0', sandDark: '#cdd6db', sandLight: '#ffffff', wall: '#d7e0e4', wallDark: '#a9b8c2', wallLight: '#ffffff' },
   { id: 'oasis', name: 'Oasis', badge: 'collection', sand: '#e2c98a', sandDark: '#c4a868', sandLight: '#f2e0aa', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
 ];
-const COSMETICS = { ball: SKINS, hat: HATS, theme: THEMES };
+const COSMETICS = { ball: SKINS, hat: HATS, outfit: OUTFITS, trail: TRAILS, theme: THEMES };
 const findCos = (type, id) => COSMETICS[type].find(c => c.id === id) || COSMETICS[type][0];
 
 // --- Badges ----------------------------------------------------------------
@@ -1626,6 +1810,7 @@ class Game {
     this.objs = config.course.objects.map(o => ({ ...o }));
     this.wx = config.weather; this.opts = opts;
     this.skin = opts.skin; this.hat = opts.hat; this.specks = genSpecks(opts.skin);
+    this.outfit = opts.outfit || null; this.trail = opts.trail && opts.trail.fx ? opts.trail : null; this.trailPts = [];
     this.setPalette(opts.theme, config.weather);
     this.ghosts = (opts.ghosts || []).filter(g => g.ghost && g.ghost.x).slice(0, 3);
     for (const g of this.ghosts) g.passed = false;
@@ -1720,6 +1905,13 @@ class Game {
     if (wx.shrink) b.area = Math.max(START_AREA, b.area - wx.shrink * TICK * (1 + r * 0.06));
     this.updateEvents(b);
     this.updateKevins(b);
+    if (this.trail) {
+      if (this.trail.fx === 'rainbow') { this.trailPts.push({ x: b.x, y: b.y - b.r - 8 }); if (this.trailPts.length > 45) this.trailPts.shift(); }
+      else emitTrail(this, this.trail, b);
+    }
+    // les gouttes rebondissent sur le parapluie
+    if (this.hat && this.hat.id === 'parapluie' && wx.id === 'pluie' && this.frame % 4 === 0)
+      this.particles.push({ x: b.x + (Math.random() - 0.5) * 9, y: b.y - b.r - 10, vx: (Math.random() - 0.5) * 50, vy: -35, g: 260, life: 0.3, col: '#dce8ff', s: 1 });
 
     // bords de la dune
     const [L, R] = this.edge(b.y);
@@ -2163,9 +2355,11 @@ class Game {
     const bx = Math.round(b.x), by = Math.round(b.y);
     // bousier derrière la boule
     const hop = this.phase === 'hole' ? -Math.abs(Math.sin(this.phaseT * 9)) * 6 : 0;
-    const beetle = Math.floor(b.anim) % 2 ? SPR.beetleB : SPR.beetleA;
+    const beetle = beetleSprite(this.outfit, Math.floor(b.anim) % 2);
     const btop = Math.round(by - b.r - 11 + hop + (this.phase === 'hole' ? this.phaseT * 14 : 0));
+    if (this.trail && this.trail.fx === 'rainbow' && this.phase === 'play') drawRainbow(ctx, this.trailPts, b.r, this.t);
     if (this.phase !== 'hole' || this.phaseT < 1.1) {
+      if (this.outfit && this.outfit.cape) drawCape(ctx, bx, btop, this.t);
       ctx.drawImage(beetle, bx - 5, btop);
       drawHat(ctx, this.hat, bx, btop);
     }
@@ -2174,6 +2368,7 @@ class Game {
     const rr = Math.round(R);
     ctx.fillRect(bx - rr + 2, by + rr - 1, rr * 2 - 1, 2);
     ctx.fillRect(bx - rr + 4, by + rr + 1, rr * 2 - 5, 1);
+    drawBallFx(ctx, this.skin, b.x, b.y, R, this.t, 'back');
     this.drawBall(this.skin, this.specks, b.x, b.y, R, b.roll, 1);
     // objets collés (avec projection sur la sphère)
     const c = Math.cos(b.roll), sn = Math.sin(b.roll), list = [];
@@ -2188,6 +2383,7 @@ class Game {
       if (z2 > 0.7 && s.width > R * 1.1) continue; // les gros objets ne dépassent que sur les bords
       ctx.drawImage(s, Math.round(b.x + px * R * 0.92 - s.width / 2), Math.round(b.y + y2 * R * 0.92 - s.height / 2));
     }
+    drawBallFx(ctx, this.skin, b.x, b.y, R, this.t, 'front');
   }
 
   drawGhosts() {
@@ -2217,6 +2413,7 @@ class Game {
     const ctx = this.ctx;
     for (const p of this.particles) {
       if (p.spr) { const s = SPR[p.spr]; if (s) ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2)); continue; }
+      if (p.txt) { drawText(ctx, p.txt, p.x, p.y, p.col, 1, null); continue; }
       ctx.fillStyle = p.col; ctx.fillRect(Math.round(p.x), Math.round(p.y), p.s, p.s);
     }
   }
@@ -2369,7 +2566,9 @@ function themeSwatch(t) {
   }
   return c;
 }
-function mascotUrl(skin, hat, R = 9) { return imgUrl(`m_${skin.id}_${hat.id}_${R}`, () => renderMascot(skin, hat, R)); }
+function mascotUrl(skin, hat, R = 9, outfit = OUTFITS[0], trail = TRAILS[0]) {
+  return imgUrl(`m_${skin.id}_${hat.id}_${outfit.id}_${trail.id}_${R}`, () => renderMascot(skin, hat, R, 1, outfit, trail));
+}
 
 const App = {
   init() {
@@ -2620,6 +2819,7 @@ const App = {
     Sound.init();
     this.game.start(cfg, {
       skin: findCos('ball', p.equip.ball), hat: findCos('hat', p.equip.hat), theme: findCos('theme', p.equip.theme), ghosts,
+      outfit: findCos('outfit', p.equip.outfit), trail: findCos('trail', p.equip.trail),
     });
     this.hud.wx.textContent = cfg.weather.icon;
     this.hud.tryEl.textContent = label;
