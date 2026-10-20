@@ -836,10 +836,15 @@ const QUEST_REWARD = 25, QUEST_ALL_BONUS = 25;
 <script>
 'use strict';
 // ---------------------------------------------------------------------------
-// Sauvegarde locale + classement.
-// Le classement a la même forme (asynchrone) qu'une future version en ligne
-// (Firebase) : il suffira de remplacer l'implémentation de `Leaderboard`.
+// Sauvegarde locale + classement (en ligne via Firebase, local en secours).
 // ---------------------------------------------------------------------------
+
+// Config du projet Firebase. Ces clés sont publiques par nature (comme pour
+// tout jeu web) : ce qui protège les données, ce sont les règles Firestore
+// (firestore.rules). null = classement local uniquement.
+const FIREBASE_CONFIG = null;
+// La version de test (/dev/) a son propre classement, séparé du vrai
+const ONLINE_ENV = location.pathname.includes('/dev/') ? 'dev' : 'prod';
 
 // La version de test (/dev/) a sa propre sauvegarde pour ne pas toucher à la vraie
 const SAVE_KEY = location.pathname.includes('/dev/') ? 'bousier_dev_v1' : 'bousier_v1';
@@ -902,7 +907,7 @@ const Store = {
 };
 
 // Classement local : tous les profils créés sur cet appareil
-const Leaderboard = {
+const LocalBoard = {
   async day(day) {
     return Object.values(Store.data.profiles)
       .map(p => { const d = p.days[day]; return d && d.best > 0 ? { name: p.name, score: d.best, run: d.bestRun } : null; })
@@ -926,6 +931,113 @@ const Leaderboard = {
       .map(p => ({ name: p.name, ghost: p.days[day] && p.days[day].ghost, score: p.days[day] ? p.days[day].best : 0 }))
       .filter(g => g.ghost).sort((a, b) => b.score - a.score).slice(0, 4);
   },
+};
+
+function withTimeout(promise, ms) {
+  return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
+}
+
+// Classement en ligne (Firestore). Chaque appareil a un compte anonyme ;
+// un joueur = un profil sur un appareil (id « uid_pseudo »).
+//   envs/{env}/days/{jour}/scores/{id}  meilleur score du jour
+//   envs/{env}/days/{jour}/ghosts/{id}  fantôme de ce meilleur score
+//   envs/{env}/players/{id}             records de tous les temps
+const Online = {
+  conn: null,   // promesse -> { fb, db, uid } ou null
+  live: false,  // vrai quand le dernier échange avec le serveur a réussi
+
+  connect() {
+    if (!this.conn) {
+      this.conn = (async () => {
+        if (!FIREBASE_CONFIG || !location.protocol.startsWith('http')) return null;
+        const fb = await import('./vendor/firebase.js');
+        const app = fb.initializeApp(FIREBASE_CONFIG);
+        const auth = fb.getAuth(app), db = fb.getFirestore(app);
+        if (window.BOUSIER_EMULATOR) {
+          fb.connectAuthEmulator(auth, 'http://' + BOUSIER_EMULATOR.auth, { disableWarnings: true });
+          const [host, port] = BOUSIER_EMULATOR.firestore.split(':');
+          fb.connectFirestoreEmulator(db, host, +port);
+        }
+        const cred = auth.currentUser ? { user: auth.currentUser } : await fb.signInAnonymously(auth);
+        return { fb, db, uid: cred.user.uid };
+      })().catch(e => { console.warn('Classement en ligne indisponible', e); this.conn = null; return null; });
+    }
+    return this.conn;
+  },
+
+  // Lance une opération en ligne ; null si hors ligne, lent ou en erreur
+  async run(fn, ms = 5000) {
+    try {
+      const c = await withTimeout(this.connect(), ms);
+      if (!c) return null;
+      const r = await withTimeout(fn(c), ms);
+      this.live = true;
+      return r;
+    } catch (e) {
+      console.warn('Classement en ligne', e);
+      this.live = false;
+      return null;
+    }
+  },
+
+  id(c, name) { return c.uid + '_' + encodeURIComponent(name); },
+  ref(c, ...path) { return c.fb.doc(c.db, 'envs', ONLINE_ENV, ...path); },
+  async list(c, path, field, n) {
+    const { fb } = c;
+    const snap = await fb.getDocs(fb.query(fb.collection(c.db, 'envs', ONLINE_ENV, ...path), fb.orderBy(field, 'desc'), fb.limit(n)));
+    return snap.docs.map(d => d.data());
+  },
+
+  day(day) {
+    return this.run(async c => (await this.list(c, ['days', day, 'scores'], 'score', 100))
+      .map(e => ({ name: e.name, score: e.score, run: e.run || null })));
+  },
+  week(wk) {
+    return this.run(async c => {
+      const days = await Promise.all(weekDays(wk).map(k => this.list(c, ['days', k, 'scores'], 'score', 100)));
+      const by = {};
+      for (const list of days) for (const e of list) {
+        const t = by[e.name] || (by[e.name] = { name: e.name, total: 0, played: 0 });
+        t.total += e.score; t.played++;
+      }
+      return Object.values(by).map(e => ({ ...e, total: Math.round(e.total * 10) / 10 })).sort((a, b) => b.total - a.total);
+    });
+  },
+  records() {
+    return this.run(async c => (await this.list(c, ['players'], 'best', 100))
+      .map(e => ({ name: e.name, best: e.best, bestStreak: e.bestStreak, legends: e.legends, badges: e.badges })));
+  },
+  ghosts(day) {
+    return this.run(async c => (await this.list(c, ['days', day, 'ghosts'], 'score', 4))
+      .map(e => ({ name: e.name, score: e.score, ghost: { x: e.x, y: e.y, r: e.r } })));
+  },
+
+  // Envoie le meilleur score du jour (et son fantôme) du profil
+  submitScore(p, day) {
+    const d = p.days[day];
+    if (!d || !(d.best > 0)) return Promise.resolve(null);
+    return this.run(async c => {
+      const id = this.id(c, p.name), at = Date.now();
+      const writes = [c.fb.setDoc(this.ref(c, 'days', day, 'scores', id), { name: p.name, score: d.best, run: d.bestRun, at })];
+      if (d.ghost) writes.push(c.fb.setDoc(this.ref(c, 'days', day, 'ghosts', id), { name: p.name, score: d.best, x: d.ghost.x, y: d.ghost.y, r: d.ghost.r, at }));
+      await Promise.all(writes);
+      return true;
+    }, 8000);
+  },
+  submitPlayer(p) {
+    return this.run(c => c.fb.setDoc(this.ref(c, 'players', this.id(c, p.name)), {
+      name: p.name, best: p.stats.best, bestStreak: p.bestStreak,
+      legends: Object.keys(p.legends).length, badges: Object.keys(p.badges).length, at: Date.now(),
+    }), 8000);
+  },
+};
+
+// Classement utilisé par le jeu : en ligne si possible, sinon local
+const Leaderboard = {
+  async day(day) { return (await Online.day(day)) || LocalBoard.day(day); },
+  async week(wk) { return (await Online.week(wk)) || LocalBoard.week(wk); },
+  async records() { return (await Online.records()) || LocalBoard.records(); },
+  async ghosts(day) { return (await Online.ghosts(day)) || LocalBoard.ghosts(day); },
 };
 
 </script>
@@ -1890,6 +2002,8 @@ const App = {
       if (cfg.quests.every(q => d.quests[q.id]) && !d.questBonus) { d.questBonus = true; res.coins += QUEST_ALL_BONUS; }
       p.coins += res.coins;
       // badges
+      // envoyé à chaque partie : rattrape aussi un envoi raté hors connexion
+      await Online.submitScore(p, this.today);
       const lb = await Leaderboard.day(this.today);
       res.rank = lb.findIndex(e => e.name === p.name) + 1;
       res.players = lb.length;
@@ -1906,6 +2020,7 @@ const App = {
       for (const b of BADGES) if (!p.badges[b.id] && cond[b.id]) { p.badges[b.id] = this.today; res.badges.push(b); }
       res.attemptsLeft = 3 - d.attempts;
       Store.save();
+      Online.submitPlayer(p);
     }
     this.lastRes = res;
     setTimeout(() => this.show('results'), 200);
@@ -2099,7 +2214,7 @@ const App = {
       <div class="tabs">${tabs}</div>
       <div class="panel"><table class="lb">${body}</table></div>
       <div class="tiny center">${tab === 'week' ? 'Semaine = somme de tes meilleures boules de chaque jour. Joue tous les jours !' : ''}
-      Classement local (joueurs de cet appareil). La version en ligne entre collègues viendra avec Firebase.</div>
+      ${Online.live ? 'Classement en ligne : tous les joueurs.' : 'Hors ligne : classement des joueurs de cet appareil.'}</div>
     </div>`;
   },
 
@@ -2195,7 +2310,7 @@ const App = {
 
 function medal(i) { return ['🥇', '🥈', '🥉'][i] || (i + 1) + '.'; }
 
-window.addEventListener('load', () => App.init());
+window.addEventListener('load', () => { Online.connect(); App.init(); });
 
 // Installable comme une appli (PWA) + jouable hors connexion
 if ('serviceWorker' in navigator && location.protocol.startsWith('http'))
