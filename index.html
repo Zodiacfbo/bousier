@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#1a1020">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bousier">
 <title>Bousier</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
@@ -835,7 +841,8 @@ const QUEST_REWARD = 25, QUEST_ALL_BONUS = 25;
 // (Firebase) : il suffira de remplacer l'implémentation de `Leaderboard`.
 // ---------------------------------------------------------------------------
 
-const SAVE_KEY = 'bousier_v1';
+// La version de test (/dev/) a sa propre sauvegarde pour ne pas toucher à la vraie
+const SAVE_KEY = location.pathname.includes('/dev/') ? 'bousier_dev_v1' : 'bousier_v1';
 
 const Store = {
   data: null,
@@ -2189,6 +2196,10 @@ const App = {
 function medal(i) { return ['🥇', '🥈', '🥉'][i] || (i + 1) + '.'; }
 
 window.addEventListener('load', () => App.init());
+
+// Installable comme une appli (PWA) + jouable hors connexion
+if ('serviceWorker' in navigator && location.protocol.startsWith('http'))
+  navigator.serviceWorker.register('sw.js').catch(() => { });
 
 </script>
 </body>
