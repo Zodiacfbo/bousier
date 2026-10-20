@@ -682,39 +682,13 @@ function genSpecks(skin) {
         pts.push({ p: [x, r * Math.cos(a), r * Math.sin(a)], col: skin.specks[k % 2], big: true });
       }
     });
-  } else if (skin.pattern === 'helix') {
-    // double hélice (ADN) et ses barreaux
-    for (let i = 0; i <= 90; i++) {
-      const x = -0.92 + i * 1.84 / 90, r = Math.sqrt(1 - x * x), a = x * Math.PI * 2.4;
-      const s1 = [x, r * Math.cos(a), r * Math.sin(a)], s2 = [x, -r * Math.cos(a), -r * Math.sin(a)];
-      pts.push({ p: s1, col: skin.specks[0], big: true }, { p: s2, col: skin.specks[1], big: true });
-      if (i % 6 === 0) for (const t of [0.2, 0.35, 0.5, 0.65, 0.8]) {
-        const m = s1.map((v, j) => v * (1 - t) + s2[j] * t), l = Math.hypot(...m) || 1;
-        pts.push({ p: m.map(v => v / l), col: skin.specks[2], big: false });
-      }
-    }
-  } else if (skin.pattern === 'cell') {
-    // noyau (gros amas), nucléole, petites mitochondries
-    const nuc = randDir();
-    for (let m = 0; m < 90; m++) {
-      const q = nuc.map(v => v + rng.range(-0.38, 0.38)), l = Math.hypot(...q);
-      pts.push({ p: q.map(v => v / l), col: skin.specks[0], big: true });
-    }
-    for (let m = 0; m < 14; m++) {
-      const q = nuc.map(v => v + rng.range(-0.1, 0.1)), l = Math.hypot(...q);
-      pts.push({ p: q.map(v => v / l), col: skin.specks[1], big: true });
-    }
-    for (let k = 0; k < 6; k++) {
-      const c0 = randDir();
-      for (let m = 0; m < 5; m++) { const q = c0.map(v => v + rng.range(-0.08, 0.08)), l = Math.hypot(...q); pts.push({ p: q.map(v => v / l), col: skin.specks[2], big: false }); }
-    }
   } else {
     for (let k = 0; k < (skin.count || 70); k++) pts.push({ p: randDir(), col: rng.pick(skin.specks), big: !!skin.bigSpecks });
   }
   return pts;
 }
 
-// Effets autour de certaines boules : anneau (Saturne), orbites (atome), halo (fiole).
+// Effets autour de certaines boules : anneau (Saturne), orbites (atome), halo (uranium).
 // layer 'back' = derrière la boule, 'front' = devant.
 function drawBallFx(ctx, skin, x, y, R, t, layer) {
   if (!skin.fx || R < 2) return;
@@ -953,10 +927,7 @@ const SKINS = [
   { id: 'disco', name: 'Boule disco', badge: 'meteo', base: '#8a8aa0', light: '#c0c0d8', hi: '#ffffff', dark: '#55556a', out: '#1e1e2a', specks: ['#ff5ab4', '#5ad8ff', '#ffe05a', '#8aff6a', '#ffffff'], count: 130, bigSpecks: true },
   { id: 'saturne', name: 'Saturne', base: '#d9b27a', light: '#ecd3a0', hi: '#fff0c8', dark: '#a87a48', out: '#3a2410', specks: ['#b8864a', '#f5e0b0'], pattern: 'bands', fx: 'ring', ring: ['#f0e2b8', '#9a8458'] },
   { id: 'atome', name: 'Atome', base: '#7ab8f0', light: '#a8d4ff', hi: '#e8f6ff', dark: '#4a80c8', out: '#14305a', specks: ['#ffffff', '#c8e8ff'], count: 30, fx: 'orbits' },
-  { id: 'petri', name: 'Boîte de Petri', base: '#ead98a', light: '#f6eaa8', hi: '#fffbe0', dark: '#c4b060', out: '#8a90a0', specks: ['#ffffff', '#f0a0b0', '#e0c050'], pattern: 'planet' },
-  { id: 'fiole', name: 'Fiole fluo', base: '#3ccf5a', light: '#74f088', hi: '#dcffe0', dark: '#1f8a3a', out: '#0a3a1a', specks: ['#c8ffd0', '#ffffff'], count: 40, fx: 'glow' },
-  { id: 'adn', name: 'ADN', base: '#1e2a6a', light: '#2e3e9a', hi: '#5a78d8', dark: '#121a44', out: '#060a20', specks: ['#ff5a8a', '#5ad8ff', '#ffffff'], pattern: 'helix' },
-  { id: 'cellule', name: 'Cellule', base: '#f2a2bc', light: '#ffc4d6', hi: '#ffe6ef', dark: '#cc7690', out: '#6a2a40', specks: ['#8a4ab8', '#4a1a78', '#ff9a3a'], pattern: 'cell' },
+  { id: 'uranium', name: 'Uranium', base: '#3ccf5a', light: '#74f088', hi: '#dcffe0', dark: '#1f8a3a', out: '#0a3a1a', specks: ['#c8ffd0', '#ffffff'], count: 40, fx: 'glow' },
   { id: 'or', name: 'Boule d\'or', badge: 'archeo', base: '#d9a92a', light: '#f2cf4a', hi: '#fff4a8', dark: '#9a6e14', out: '#3a2808', specks: ['#fff4a8', '#b8860b'] },
 ];
 const HATS = [
@@ -1006,6 +977,44 @@ const THEMES = [
 ];
 const COSMETICS = { ball: SKINS, hat: HATS, outfit: OUTFITS, trail: TRAILS, theme: THEMES };
 const findCos = (type, id) => COSMETICS[type].find(c => c.id === id) || COSMETICS[type][0];
+
+// --- Façons d'obtenir les objets spéciaux -------------------------------------
+// prog(p) : [actuel, objectif] (débloqué quand l'objectif est atteint) ; text : condition affichée.
+// flag : débloqué dès que ce compteur vaut 1 (exploits, secrets).
+// mystery : visible, mais seul un indice est donné. secret : invisible tant qu'il n'est pas obtenu.
+const counter = (p, k) => (p.counters && p.counters[k]) || 0;
+const UNLOCKS = {
+  'ball:saturne': { text: 'Complète la Bousipédia', prog: p => [Store.discovered(p), OBJECTS.length + LEGENDS.length] },
+  'ball:atome': { price: 500 },
+  'ball:uranium': { text: 'Rentre 10 fois dans le terrier', prog: p => [p.stats.terriers, 10] },
+  'hat:parapluie': { text: 'Joue 5 parties du jour sous la pluie', prog: p => [counter(p, 'rain'), 5] },
+  'hat:lunettes': { secret: true, flag: 'presque' },
+  'hat:charlotte': { price: 200 },
+  'hat:casqueKevin': { mystery: 'Il paraît que Kevin a perdu quelque chose…', flag: 'kevin' },
+  'hat:coquille': { text: 'Sois 3 fois « Le plus lent » du jour', prog: p => [counter(p, 't_slow'), 3] },
+  'hat:pansement': { text: 'Sois 3 fois « Roi des chocs » du jour', prog: p => [counter(p, 't_bumps'), 3] },
+  'hat:aimant': { text: 'Sois 3 fois « L\'aspirateur » du jour', prog: p => [counter(p, 't_vacuum'), 3] },
+  'hat:fleurCactus': { text: 'Sois 3 fois « L\'ami des cactus » du jour', prog: p => [counter(p, 't_cactus'), 3] },
+  'hat:aureole': { secret: true, flag: 'parfait' },
+  'outfit:blouse': { price: 400 },
+  'outfit:hazmat': { text: 'Fais une série de 14 jours', prog: p => [p.bestStreak, 14] },
+  'outfit:cape': { price: 600 },
+  'outfit:smoking': { mystery: 'Les meilleurs s\'habillent chic…', prog: p => [counter(p, 'firsts'), 3] },
+  'trail:arcenciel': { text: 'Sois champion de la semaine 👑', prog: p => [counter(p, 'champion'), 1] },
+  'trail:etincelles': { price: 250 },
+  'trail:bulles': { price: 300 },
+  'trail:flammes': { text: 'Rentre 5 fois dans le terrier sous la canicule', prog: p => [counter(p, 'heat'), 5] },
+  'trail:fumee': { secret: true, flag: 'ratee' },
+  'trail:notes': { secret: true, flag: 'silence' },
+  'trail:binaire': { secret: true, flag: 'leet' },
+};
+for (const key in UNLOCKS) { const [type, id] = key.split(':'); Object.assign(COSMETICS[type].find(c => c.id === id), UNLOCKS[key]); }
+function unlockReached(p, item) {
+  if (item.flag) return counter(p, item.flag) > 0;
+  if (item.prog) { const [a, b] = item.prog(p); return a >= b; }
+  return false;
+}
+const SECRET_COUNT = Object.values(UNLOCKS).filter(u => u.secret).length;
 
 // --- Badges ----------------------------------------------------------------
 const BADGES = [
@@ -1111,6 +1120,7 @@ const Store = {
     let d = null;
     try { d = JSON.parse(safeStorageGet(SAVE_KEY) || 'null'); } catch (e) { d = null; }
     if (!d || d.version !== 1) d = { version: 1, current: null, profiles: {}, settings: { sound: true } };
+    for (const k in d.profiles) this.normalize(d.profiles[k]);
     this.data = d;
     return d;
   },
@@ -1130,8 +1140,25 @@ const Store = {
       equip: { ball: 'classique', hat: 'aucun', theme: 'doree' },
       collection: {}, legends: {}, weathers: {},
       stats: { runs: 0, absorbed: 0, best: 0, terriers: 0, camels: 0 },
-      days: {}, team: '', uid: null, account: false,
+      days: {}, team: '', uid: null, account: false, counters: {},
     };
+  },
+
+  // Complète un profil créé avec une ancienne version (nouveaux emplacements, compteurs)
+  normalize(p) {
+    if (!p) return p;
+    p.owned = { ball: [], hat: [], outfit: [], trail: [], theme: [], ...p.owned };
+    p.equip = { outfit: 'aucune', trail: 'aucune', ...p.equip };
+    p.counters = p.counters || {};
+    return p;
+  },
+
+  // Débloque ce qui vient d'être mérité ; renvoie la liste des nouveautés
+  checkUnlocks(p) {
+    const fresh = [];
+    for (const type in COSMETICS) for (const item of COSMETICS[type])
+      if (!this.owns(p, type, item) && unlockReached(p, item)) { p.owned[type].push(item.id); fresh.push({ type, item }); }
+    return fresh;
   },
 
   createProfile(name) {
@@ -1416,6 +1443,7 @@ const Online = {
       const cloud = JSON.parse(snap.data().data);
       for (const k in cloud.days) if (p.days[k] && p.days[k].ghost) cloud.days[k].ghost = p.days[k].ghost;
       Object.assign(p, cloud, { savedAt: snap.data().at });
+      Store.normalize(p);
       safeStorageSet(SAVE_KEY, JSON.stringify(Store.data));
       return true;
     }, 8000);
@@ -1490,6 +1518,7 @@ const Online = {
       const snap = await c.fb.getDoc(this.ref(c, 'profiles', uid + '_' + encodeURIComponent(nameKey(realName))));
       const p = snap.exists() ? Object.assign(Store.newProfile(realName), JSON.parse(snap.data().data)) : Store.newProfile(realName);
       Object.assign(p, { name: realName, uid, account: true, nameOk: uid, nameTaken: false });
+      Store.normalize(p);
       Store.data.profiles[realName] = p;
       Store.data.current = realName;
       Store.save();
@@ -1961,6 +1990,7 @@ class Game {
         this.notice('DANS LE TERRIER !', '#fff4a8', 2, 3);
         for (let i = 0; i < 4; i++) this.rec.x.push(Math.round(this.course.holeX * 10)), this.rec.y.push(this.course.holeY), this.rec.r.push(0);
       } else {
+        this.run.missBy = Math.abs(b.x - this.course.holeX) - HOLE_TOL;
         this.phase = 'miss'; Sound.play('miss'); this.notice('RATE... SCORE / 2', '#ff9a8a', 2, 3);
       }
       this.phaseT = 0;
@@ -2154,7 +2184,7 @@ class Game {
       k.t += TICK;
       k.x = lerp(k.x0, k.x1, k.t / 3);
       if (!k.hit && Math.hypot(k.x - b.x, k.y - b.y) < b.r + 5) {
-        k.hit = true;
+        k.hit = true; this.run.kevinHit = true;
         this.bump({ def: {}, r: 4, hitT: -9 }, k.x - b.x, k.y - b.y, Math.hypot(k.x - b.x, k.y - b.y) || 1);
         this.floatText('PARDON !', k.x, k.y - 14, '#ffffff');
       }
@@ -2621,6 +2651,30 @@ const App = {
     this.cfg = dailyConfig(this.today);
     const p = Store.profile();
     this.game.showAttract(this.cfg, findCos('theme', p ? p.equip.theme : 'doree'));
+    this.dailyAwards();
+  },
+
+  // Une fois par jour : titres et 1re place d'hier, champion de la semaine passée
+  async dailyAwards() {
+    const p = this.p;
+    if (!p || p.awardsDay === this.today || this.awarding) return;
+    this.awarding = true;
+    try {
+      const lb = await Online.day(addDays(this.today, -1));
+      if (!lb) return;  // hors ligne : on réessaiera
+      const ct = p.counters, inc = k => { ct[k] = (ct[k] || 0) + 1; };
+      for (const t of dayTitles(lb)) if (t.name === p.name) inc('t_' + t.key);
+      if (lb.length >= 2 && lb[0].name === p.name) inc('firsts');
+      if (await Leaderboard.champion(this.today) === p.name) ct.champion = 1;
+      p.awardsDay = this.today;
+      const fresh = Store.checkUnlocks(p);
+      Store.save();
+      if (fresh.length) {
+        Sound.play('unlock');
+        this.toast(`🎁 Débloqué : ${fresh.map(f => f.item.name).join(', ')} !`);
+        if (this.screen === 'home') this.show('home');
+      }
+    } finally { this.awarding = false; }
   },
 
   tick() {
@@ -2852,6 +2906,16 @@ const App = {
   async onFinish(run) {
     const p = this.p, res = { run, mode: this.mode, coins: 0, quests: [], badges: [], newBest: false };
     this.hud.root.classList.add('hidden');
+    // exploits et compteurs pour les objets à débloquer
+    const ct = p.counters, inc = k => { ct[k] = (ct[k] || 0) + 1; }, now = new Date();
+    if (this.mode === 'daily' && run.weather === 'pluie') inc('rain');
+    if (this.mode === 'daily' && run.weather === 'canicule' && run.terrier) inc('heat');
+    if (run.kevinHit) inc('kevin');
+    if (!run.terrier && run.missBy != null && run.missBy <= 3) inc('presque');
+    if (run.terrier && run.bumps === 0 && run.wallHits === 0) inc('parfait');
+    if (run.absorbed < 5) inc('ratee');
+    if (!Sound.on) inc('silence');
+    if (now.getHours() === 13 && now.getMinutes() === 37) inc('leet');
     if (this.mode === 'daily') {
       const d = Store.dayData(p, this.today), cfg = this.cfg;
       const summary = runSummary(run);
@@ -2904,6 +2968,8 @@ const App = {
       Store.save();
       Online.submitPlayer(p);
     }
+    res.unlocked = Store.checkUnlocks(p);
+    Store.save();
     this.lastRes = res;
     setTimeout(() => this.show('results'), 200);
   },
@@ -3042,6 +3108,7 @@ const App = {
     const p = this.p, cfg = this.cfg, d = Store.dayPeek(p, this.today);
     const left = 3 - d.attempts;
     const skin = findCos('ball', p.equip.ball), hat = findCos('hat', p.equip.hat);
+    const outfit = findCos('outfit', p.equip.outfit), trail = findCos('trail', p.equip.trail);
     const [lb, champ] = await Promise.all([Leaderboard.day(this.today), Leaderboard.champion(this.today)]);
     this.champ = champ;
     const rank = lb.findIndex(e => e.name === p.name) + 1;
@@ -3057,7 +3124,7 @@ const App = {
       <div class="hero">
         <div class="title">BOUSIER</div>
         <div class="sub">Dune #${cfg.num} · ${esc(fmtDayLong(this.today))}</div>
-        <div class="mascot bob">${pix(mascotUrl(skin, hat, 10), 72, 76)}</div>
+        <div class="mascot bob">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
       </div>
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
@@ -3131,6 +3198,7 @@ const App = {
         ${r.badges.map(b => `<div class="good">🎖️ Badge : ${b.icon} ${esc(b.name)}${b.reward ? ` → débloque <b>${esc(b.reward)}</b>` : ''}</div>`).join('')}
         ${disc ? `<div class="label" style="margin-top:calc(var(--u)*3)">Nouveaux objets dans la Bousipédia</div><div class="pills">${disc}</div>` : ''}
       </div>` : ''}
+      ${(r.unlocked || []).length ? `<div class="panel banner">${r.unlocked.map(u => `🎁 Débloqué : <b>${esc(u.item.name)}</b>${u.item.secret ? ' 🤫 (secret !)' : ''}`).join('<br>')}<div class="tiny">À équiper dans 🎨 Style</div></div>` : ''}
       <div class="col">
         ${daily ? `<button class="btn" data-a="share">📋 Partager mon résultat</button>` : ''}
         ${daily && r.attemptsLeft > 0 ? `<button class="btn big" data-a="play">Réessayer (${3 - r.attemptsLeft + 1}/3)</button>` : ''}
@@ -3230,32 +3298,51 @@ const App = {
   },
 
   scr_shop() {
-    const p = this.p, type = this.shopTab, items = COSMETICS[type];
-    const skin = findCos('ball', p.equip.ball), hat = findCos('hat', p.equip.hat);
+    const p = this.p, type = this.shopTab;
+    // les secrets n'apparaissent qu'une fois obtenus
+    const items = COSMETICS[type].filter(it => !it.secret || Store.owns(p, type, it));
+    const eq = t => findCos(t, p.equip[t]);
     const prev = this.shopSel ? findCos(type, this.shopSel) : null;
-    const pSkin = type === 'ball' && prev ? prev : skin, pHat = type === 'hat' && prev ? prev : hat;
+    const look = t => type === t && prev ? prev : eq(t);
+    const mascot = (skin, hat, outfit, trail, R, scale) => {
+      const w = R * 2 + 16, h = R * 2 + 18 + (trail.fx ? 14 : 0);
+      return pix(mascotUrl(skin, hat, R, outfit, trail), w * scale, h * scale);
+    };
+    const swatch = (t, k) => pix(imgUrl('th_' + t.id, () => themeSwatch(t)), 36 * k, 22 * k);
+    const tileImg = it => type === 'theme' ? swatch(it, 1.5)
+      : mascot(type === 'ball' ? it : eq('ball'), type === 'hat' ? it : HATS[0], type === 'outfit' ? it : OUTFITS[0], type === 'trail' ? it : TRAILS[0], 8, 1.2);
+    const status = it => {
+      if (p.equip[type] === it.id) return '<span class="good">Équipé</span>';
+      if (Store.owns(p, type, it)) return 'Possédé';
+      if (it.badge) return `🔒 ${BADGES.find(b => b.id === it.badge).icon}`;
+      if (it.price) return `🟡 ${it.price}`;
+      if (it.mystery) return '❓ Mystère';
+      if (it.prog) { const [a, b] = it.prog(p); return `🔒 ${Math.min(a, b)}/${b}`; }
+      return '🔒';
+    };
     const tile = it => {
-      const owned = Store.owns(p, type, it), eq = p.equip[type] === it.id;
-      const img = type === 'theme' ? pix(imgUrl('th_' + it.id, () => themeSwatch(it)), 36 * 1.5, 22 * 1.5)
-        : type === 'ball' ? pix(mascotUrl(it, HATS[0], 8), 32 * 1.2, 34 * 1.2) : pix(mascotUrl(skin, it, 8), 32 * 1.2, 34 * 1.2);
-      const status = eq ? '<span class="good">Équipé</span>' : owned ? 'Possédé' : it.badge ? `🔒 ${BADGES.find(b => b.id === it.badge).icon}` : `🟡 ${it.price}`;
-      return `<button class="tile shop ${eq ? 'sel' : ''} ${owned ? '' : 'locked-soft'} ${this.shopSel === it.id ? 'sel2' : ''}" data-a="shopitem" data-v="${it.id}">${img}<span>${esc(it.name)}</span><span class="tiny">${status}</span></button>`;
+      const owned = Store.owns(p, type, it);
+      return `<button class="tile shop ${p.equip[type] === it.id ? 'sel' : ''} ${owned ? '' : 'locked-soft'} ${this.shopSel === it.id ? 'sel2' : ''}" data-a="shopitem" data-v="${it.id}">${tileImg(it)}<span>${esc(it.name)}</span><span class="tiny">${status(it)}</span></button>`;
     };
     let bar = '';
     if (prev) {
       if (prev.badge) { const b = BADGES.find(x => x.id === prev.badge); bar = `<div class="panel tiny">🔒 Se débloque avec le badge ${b.icon} <b>${esc(b.name)}</b> : ${esc(b.desc)}</div>`; }
-      else bar = `<button class="btn big" data-a="buy" ${p.coins < prev.price ? 'disabled' : ''}>Acheter ${esc(prev.name)} — ${prev.price} 🟡</button>${p.coins < prev.price ? `<div class="tiny center">Il te manque ${prev.price - p.coins} 🟡</div>` : ''}`;
+      else if (prev.price) bar = `<button class="btn big" data-a="buy" ${p.coins < prev.price ? 'disabled' : ''}>Acheter ${esc(prev.name)} — ${prev.price} 🟡</button>${p.coins < prev.price ? `<div class="tiny center">Il te manque ${prev.price - p.coins} 🟡</div>` : ''}`;
+      else if (prev.mystery) bar = `<div class="panel tiny">❓ <b>${esc(prev.name)}</b> : comment l'obtenir ? Mystère… Un indice : <i>${esc(prev.mystery)}</i></div>`;
+      else if (prev.prog) { const [a, b] = prev.prog(p); bar = `<div class="panel tiny">🔒 <b>${esc(prev.name)}</b> : ${esc(prev.text)} (${Math.min(a, b)}/${b})</div>`; }
     }
-    const tabs = [['ball', 'Boules'], ['hat', 'Chapeaux'], ['theme', 'Décors']]
+    const tabs = [['ball', 'Boules'], ['hat', 'Chapeaux'], ['outfit', 'Tenues'], ['trail', 'Traînées'], ['theme', 'Décors']]
       .map(([k, l]) => `<button class="tab ${type === k ? 'on' : ''}" data-a="shoptab" data-v="${k}">${l}</button>`).join('');
+    const found = Object.keys(COSMETICS).reduce((n, t) => n + COSMETICS[t].filter(it => it.secret && Store.owns(p, t, it)).length, 0);
     return `<div class="screen">
       ${this.back('Style')}
       <div class="topbar end"><span class="chip gold">🟡 ${p.coins}</span></div>
-      <div class="mascot">${type === 'theme' ? pix(imgUrl('th_' + (prev || findCos('theme', p.equip.theme)).id, () => themeSwatch(prev || findCos('theme', p.equip.theme))), 108, 66) : pix(mascotUrl(pSkin, pHat, 12), 80, 84)}</div>
+      <div class="mascot">${type === 'theme' ? swatch(prev || eq('theme'), 3) : mascot(look('ball'), look('hat'), look('outfit'), look('trail'), 12, 1)}</div>
       ${bar}
       <div class="tabs">${tabs}</div>
       <div class="grid three">${items.map(tile).join('')}</div>
-      <div class="tiny center">Gagne des 🟡 en jouant, en finissant les quêtes et en trouvant les trésors.</div>
+      <div class="tiny center">Gagne des 🟡 en jouant, en finissant les quêtes et en trouvant les trésors. Certains objets se méritent autrement…</div>
+      <div class="tiny center">🤫 Secrets trouvés : ${found} / ${SECRET_COUNT}</div>
     </div>`;
   },
 
@@ -3317,11 +3404,11 @@ function dayTitles(lb) {
     return best;
   };
   return [
-    ['🐢', 'Le plus lent', top(r => r.time), v => fmtTime(v)],
-    ['💥', 'Roi des chocs', top(r => (r.bumps || 0) + (r.wallHits || 0)), v => v + ' chocs'],
-    ['🧲', 'L\'aspirateur', top(r => r.absorbed), v => v + ' objets'],
-    ['🌵', 'L\'ami des cactus', top(r => r.pricks || 0), v => v + ' piqûre' + (v > 1 ? 's' : '')],
-  ].filter(t => t[2]).map(([icon, label, b, fmt]) => ({ icon, label, name: b.name, value: fmt(b.v) }));
+    ['🐢', 'Le plus lent', top(r => r.time), v => fmtTime(v), 'slow'],
+    ['💥', 'Roi des chocs', top(r => (r.bumps || 0) + (r.wallHits || 0)), v => v + ' chocs', 'bumps'],
+    ['🧲', 'L\'aspirateur', top(r => r.absorbed), v => v + ' objets', 'vacuum'],
+    ['🌵', 'L\'ami des cactus', top(r => r.pricks || 0), v => v + ' piqûre' + (v > 1 ? 's' : ''), 'cactus'],
+  ].filter(t => t[2]).map(([icon, label, b, fmt, key]) => ({ icon, label, key, name: b.name, value: fmt(b.v) }));
 }
 
 function medal(i) { return ['🥇', '🥈', '🥉'][i] || (i + 1) + '.'; }
