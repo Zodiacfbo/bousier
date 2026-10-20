@@ -842,7 +842,14 @@ const QUEST_REWARD = 25, QUEST_ALL_BONUS = 25;
 // Config du projet Firebase. Ces clés sont publiques par nature (comme pour
 // tout jeu web) : ce qui protège les données, ce sont les règles Firestore
 // (firestore.rules). null = classement local uniquement.
-const FIREBASE_CONFIG = null;
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyAE8Mi5r9A656BEBCfHPjpL0bKrkis7ero',
+  authDomain: 'bousier-9f615.firebaseapp.com',
+  projectId: 'bousier-9f615',
+  storageBucket: 'bousier-9f615.firebasestorage.app',
+  messagingSenderId: '136018034492',
+  appId: '1:136018034492:web:2eb28da7a4547a4b7ae839',
+};
 // La version de test (/dev/) a son propre classement, séparé du vrai
 const ONLINE_ENV = location.pathname.includes('/dev/') ? 'dev' : 'prod';
 
