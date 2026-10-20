@@ -66,6 +66,13 @@ img.pix { image-rendering: pixelated; image-rendering: crisp-edges; display: inl
 .reacts button { font: inherit; font-size: 1.3em; background: #1a1020; border: var(--u) solid var(--line); padding: var(--u) calc(var(--u) * 3); cursor: pointer; }
 .reacts button.on { box-shadow: inset 0 0 0 var(--u) var(--gold); }
 .titles td { padding: var(--u); }
+.rx-add { font-size: .7em; margin-left: calc(var(--u) * 2); padding: 0 var(--u); border: var(--u) solid var(--panel2); color: var(--muted); white-space: nowrap; }
+.tuto { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 3); text-align: center; }
+.tuto .pics { display: flex; gap: calc(var(--u) * 6); align-items: center; justify-content: center; min-height: calc(var(--u) * 40); font-size: 2.4em; }
+.tuto .pics small { display: block; font-size: .35em; }
+.steps { display: flex; gap: calc(var(--u) * 2); justify-content: center; }
+.steps span { width: calc(var(--u) * 4); height: calc(var(--u) * 4); background: var(--panel2); }
+.steps span.on { background: var(--gold); }
 b { color: #fff; }
 
 .btn {
@@ -1504,16 +1511,16 @@ function generateCourse(seed, weather, legend) {
 // --- Événements surprise -----------------------------------------------------
 // Tirés au sort avec la dune (graine à part pour ne pas changer les objets) :
 // mêmes événements, au même endroit, pour tout le monde. Annoncés juste avant.
+// name : grande alerte (court, écrit en gros) ; hint : précision en petit
 const EVENTS = {
-  flip: { name: 'ECRAN RETOURNE !', dur: 4 },
-  mirror: { name: 'COMMANDES INVERSEES !', dur: 5 },
-  camels: { name: 'EMBOUTEILLAGE DE CHAMEAUX !', dur: 0 },
-  tornado: { name: 'MINI TORNADE !', dur: 3.5 },
-  kevin: { name: 'KEVIN EN TROTTINETTE !', dur: 3 },
-  meeting: { name: 'NOUVEAU MESSAGE...', dur: 3.5 },
-  poop: { name: 'PLUIE DE CROTTES !', dur: 0 },
-  quake: { name: 'TREMBLEMENT DE TERRE !', dur: 3 },
-  mirage: { name: 'UN MIRAGE ?', dur: 0 },
+  mirror: { name: 'INVERSION !', hint: 'GAUCHE ET DROITE INVERSEES', dur: 5 },
+  camels: { name: 'CHAMEAUX !', hint: 'UN TROUPEAU TRAVERSE', dur: 0 },
+  tornado: { name: 'TORNADE !', hint: 'TIENS BON TA BOULE', dur: 3.5 },
+  kevin: { name: 'KEVIN !', hint: 'IL ARRIVE EN TROTTINETTE', dur: 3 },
+  meeting: { name: 'MESSAGE !', hint: 'UNE POP-UP VA TE GENER', dur: 3.5 },
+  poop: { name: 'CROTTES !', hint: 'IL EN PLEUT : MIAM', dur: 0 },
+  quake: { name: 'SEISME !', hint: 'LE SOL TREMBLE', dur: 3 },
+  mirage: { name: 'MIRAGE ?', hint: 'UN DES DEUX TERRIERS EST FAUX', dur: 0 },
 };
 function generateEvents(seed, holeY) {
   const rng = makeRng((seed ^ 0x5eed1e) >>> 0);
@@ -1597,8 +1604,8 @@ class Game {
     this.rec = { x: [], y: [], r: [] };
     this.t = 0; this.playTicks = 0; this.phase = 'count'; this.countT = 3.2; this.lastCount = 4;
     this.evs = (this.course.events || []).map(e => ({ ...e }));
-    this.resetEvents(); this.comment = null; this.lastSay = -9;
-    this.shake = 0; this.particles = []; this.texts = []; this.notices = [];
+    this.resetEvents(); this.lastSay = -9;
+    this.shake = 0; this.particles = []; this.texts = [];
     this.eatable = new Set(OBJECTS.filter(o => o.r <= this.ball.r * 0.8).map(o => o.id));
     this.state = 'run'; this.paused = false; this.phaseT = 0;
     this.initFx();
@@ -1643,7 +1650,7 @@ class Game {
       this.countT -= TICK;
       const c = Math.ceil(this.countT);
       if (c !== this.lastCount && c > 0) { this.lastCount = c; Sound.play('count'); }
-      if (this.countT <= 0) { this.phase = 'play'; Sound.play('go'); this.notice('ROULE !', '#fff4a8', 1); this.say('start', 1); }
+      if (this.countT <= 0) { this.phase = 'play'; Sound.play('go'); this.notice('ROULE !', '#fff4a8', 1, 2); }
       this.updateParticles();
       return;
     }
@@ -1705,7 +1712,7 @@ class Game {
       if (def.rock || this.eatable.has(def.id) || def.r > b.r * 0.8) continue;
       this.eatable.add(def.id);
       if (def.r >= 4.5 && (this.course.counts[def.id] || 0) > 0 && (!def.weather || def.weather === wx.id)) {
-        this.notice(`Miam : ${def.name} !`, '#c8ff8a', 1.6); Sound.play('unlock');
+        this.notice(`Miam : ${def.name} !`, '#c8ff8a', 1.6, 1); Sound.play('unlock');
       }
     }
 
@@ -1727,10 +1734,10 @@ class Game {
       this.run.sizeCm = radiusToCm(b.r);
       if (Math.abs(b.x - this.course.holeX) <= HOLE_TOL) {
         this.run.terrier = true; this.phase = 'hole'; Sound.play('win');
-        this.notice('DANS LE TERRIER !', '#fff4a8', 2);
+        this.notice('DANS LE TERRIER !', '#fff4a8', 2, 3);
         for (let i = 0; i < 4; i++) this.rec.x.push(Math.round(this.course.holeX * 10)), this.rec.y.push(this.course.holeY), this.rec.r.push(0);
       } else {
-        this.phase = 'miss'; Sound.play('miss'); this.notice('RATE... SCORE / 2', '#ff9a8a', 2);
+        this.phase = 'miss'; Sound.play('miss'); this.notice('RATE... SCORE / 2', '#ff9a8a', 2, 3);
       }
       this.phaseT = 0;
       if (this.hooks.hud) this.hooks.hud(this.hudState());
@@ -1798,13 +1805,13 @@ class Game {
     if (o.def.legendary) {
       run.legend = true;
       Sound.play('legend');
-      this.say('legend', 1);
-      this.notice(`TRESOR : ${o.def.name} !`, '#ffe066', 2.2);
+
+      this.notice(`TRESOR : ${o.def.name} !`, '#ffe066', 2.2, 3);
       this.burst(b.x + dx, b.y + dy, 24, ['#fff4a8', '#ffe066', '#ffffff'], 90);
     } else {
       Sound.play('pop', o.r);
       this.burst(b.x + dx, b.y + dy, Math.min(10, 2 + o.r), ['#ffffff', '#fff4a8'], 40);
-      if (o.r >= 5) this.floatText(o.def.name, b.x + dx, b.y + dy - 6, '#ffffff');
+      if (o.r >= 5 && !this.alert && this.texts.length < 2) this.floatText(o.def.name, b.x + dx, b.y + dy - 6, '#ffffff');
       if (o.r >= 6) this.say('big', 0.5);
     }
   }
@@ -1825,15 +1832,17 @@ class Game {
 
   // --- Événements surprise ---------------------------------------------------
   resetEvents() {
-    this.flip = false; this.mirror = false; this.popup = null; this.mirage = null; this.kevins = []; this.saidEnd = false;
-    this.cv.style.transform = '';
+    this.mirror = false; this.popup = null; this.mirage = null; this.kevins = []; this.saidEnd = false;
+    this.alert = null; this.msg = null;
   }
 
   updateEvents(b) {
     for (const ev of this.evs) {
       const def = EVENTS[ev.type];
-      if (!ev.state && b.y >= ev.y - 70) { ev.state = 'warn'; this.notice(def.name, '#ffb04a', 1.6); Sound.play('count'); }
-      if (ev.state === 'warn' && b.y >= ev.y) { ev.state = 'on'; ev.t = 0; this.startEvent(ev, b); }
+      if (!ev.state && b.y >= ev.y - Math.max(110, b.vy * 2.5)) {
+        ev.state = 'warn'; this.alert = { text: def.name, hint: def.hint, t: 0 }; Sound.play('count');
+      }
+      if (ev.state === 'warn' && b.y >= ev.y) { ev.state = 'on'; ev.t = 0; this.startEvent(ev, b); if (this.alert) { this.alert.on = true; this.alert.left = Math.max(def.dur, 1.2); } }
       if (ev.state === 'on') {
         ev.t += TICK;
         this.tickEvent(ev, b);
@@ -1841,7 +1850,7 @@ class Game {
       }
     }
     if (this.mirage && b.y > this.course.holeY - 120) {
-      this.mirage = null; this.notice('C\'ETAIT UN MIRAGE !', '#c8ff8a', 1.6);
+      this.mirage = null; this.notice('C\'ETAIT UN MIRAGE !', '#c8ff8a', 1.6, 2);
       this.burst(b.x, b.y + 60, 12, ['#ffffff', '#fff4a8'], 50);
     }
   }
@@ -1856,7 +1865,6 @@ class Game {
   startEvent(ev, b) {
     const rng = makeRng(ev.seed), H = this.H;
     switch (ev.type) {
-      case 'flip': this.flip = true; this.cv.style.transform = 'rotate(180deg)'; break;
       case 'mirror': this.mirror = true; break;
       case 'camels': {
         for (let i = 0; i < 5; i++) {
@@ -1913,7 +1921,6 @@ class Game {
   }
 
   endEvent(ev) {
-    if (ev.type === 'flip') { this.flip = false; this.cv.style.transform = ''; }
     if (ev.type === 'mirror') this.mirror = false;
     if (ev.type === 'meeting') this.popup = null;
   }
@@ -1937,7 +1944,10 @@ class Game {
     const c = COMMENTS[kind];
     this.sayText(c[Math.floor(Math.random() * c.length)]);
   }
-  sayText(text) { this.lastSay = this.t; this.comment = { text, t: 2 }; }
+  sayText(text) {
+    if (this.alert || (this.msg && this.msg.t > 0)) return;  // le commentateur se tait si autre chose est affiché
+    this.lastSay = this.t; this.notice(text, '#ffffff', 2, 0);
+  }
 
   // Dépassements de fantômes : de quoi faire parler le commentateur
   watchGhosts(b) {
@@ -1951,7 +1961,12 @@ class Game {
     }
   }
 
-  notice(text, col, dur) { this.notices.push({ text, col, t: dur, dur }); if (this.notices.length > 2) this.notices.shift(); }
+  // Un seul message à la fois : un message plus important remplace le courant,
+  // un moins important attend qu'il n'y ait plus rien (sinon il est ignoré)
+  notice(text, col, dur, pri = 1) {
+    if (this.msg && this.msg.t > 0 && pri < this.msg.pri) return;
+    this.msg = { text, col, t: dur, dur, pri };
+  }
   floatText(text, x, y, col) { this.texts.push({ text, x, y, col, life: 0.9 }); }
   burst(x, y, n, cols, sp) {
     for (let i = 0; i < n; i++) {
@@ -1967,8 +1982,9 @@ class Game {
       p.x += p.vx * TICK; p.y += p.vy * TICK; p.vy += (p.g || 0) * TICK; p.vx *= 0.96; if (!p.g) p.vy *= 0.96;
     }
     for (let i = this.texts.length - 1; i >= 0; i--) { const t = this.texts[i]; t.life -= TICK; t.y -= 18 * TICK; if (t.life <= 0) this.texts.splice(i, 1); }
-    if (this.comment && (this.comment.t -= TICK) <= 0) this.comment = null;
-    if (this.notices) for (let i = this.notices.length - 1; i >= 0; i--) { this.notices[i].t -= TICK; if (this.notices[i].t <= 0) this.notices.splice(i, 1); }
+    if (this.msg && (this.msg.t -= TICK) <= 0) this.msg = null;
+    // l'alerte reste affichée pendant l'événement (au moins 1,2 s)
+    if (this.alert) { this.alert.t += TICK; if (this.alert.on && (this.alert.left -= TICK) <= 0) this.alert = null; }
   }
 
   // --- Effets météo (espace écran) ----------------------------------------
@@ -2145,15 +2161,24 @@ class Game {
   drawGhosts() {
     if (!this.ghosts.length || this.phase === 'count') return;
     const idx = Math.floor(this.playTicks / GHOST_EVERY);
-    this.ghosts.forEach((g, k) => {
+    const labels = [];
+    this.ghosts.forEach(g => {
       const gh = g.ghost;
       if (idx >= gh.x.length) return;
       const x = gh.x[idx] / 10, y = gh.y[idx], r = gh.r[idx] / 10;
       if (r < 1) return;
       this.drawBall(GHOST_SKIN, null, x, y, r, 0, 0.42);
-      const role = GHOST_ROLES[g.role] || GHOST_ROLES.other;
-      drawText(this.ctx, role.label(g.name), x, y - r - 9, role.col, 1, '#1d1416', 'center');
+      // étiquette les 6 premières secondes, ensuite seulement quand le fantôme est tout près
+      if (this.run.time < 6 || Math.abs(y - this.ball.y) < 40) labels.push({ g, x, y: y - r - 9 });
     });
+    // les étiquettes qui se chevauchent sont empilées
+    labels.sort((a, b) => b.y - a.y);
+    for (let i = 0; i < labels.length; i++) for (let j = 0; j < i; j++)
+      if (Math.abs(labels[i].x - labels[j].x) < 50 && Math.abs(labels[i].y - labels[j].y) < 8) labels[i].y = labels[j].y - 8;
+    for (const l of labels) {
+      const role = GHOST_ROLES[l.g.role] || GHOST_ROLES.other;
+      drawText(this.ctx, role.label(l.g.name), l.x, l.y, role.col, 1, '#1d1416', 'center');
+    }
   }
 
   drawParticles() {
@@ -2211,11 +2236,29 @@ class Game {
     }
   }
 
+  // Grande alerte d'événement : bandeau, triangle qui clignote, texte en gros
+  drawAlert(a) {
+    const ctx = this.ctx, y = 32, blink = Math.floor(a.t * 6) % 2 === 0;
+    ctx.fillStyle = 'rgba(29,20,22,0.82)'; ctx.fillRect(0, y, W, 30);
+    ctx.fillStyle = '#ffb04a'; ctx.fillRect(0, y, W, 1); ctx.fillRect(0, y + 29, W, 1);
+    if (blink || a.on) for (const x of [10, W - 21]) {
+      ctx.fillStyle = '#ffb04a';
+      for (let j = 0; j < 10; j++) ctx.fillRect(x + 5 - (j >> 1), y + 5 + j, (j >> 1) * 2 + 1, 1);
+      ctx.fillStyle = '#1d1416'; ctx.fillRect(x + 5, y + 8, 1, 4); ctx.fillRect(x + 5, y + 13, 1, 1);
+    }
+    drawText(ctx, a.text, W / 2, y + 5, '#ffb04a', 2, '#1d1416', 'center');
+    drawText(ctx, a.hint, W / 2, y + 20, '#ffffff', 1, null, 'center');
+  }
+
   drawOverlayHud(camY) {
     const ctx = this.ctx, H = this.H;
     if (this.state === 'run' && this.phase === 'count') {
       const c = Math.ceil(this.countT);
       if (c >= 1 && c <= 3) drawText(ctx, String(c), W / 2, H * 0.45, '#fff4a8', 5, '#1d1416', 'center');
+      // rappel des règles pendant le compte à rebours
+      drawText(ctx, 'GLISSE LE DOIGT POUR DIRIGER', W / 2, H * 0.62, '#ffffff', 1, '#1d1416', 'center');
+      drawText(ctx, 'AVALE PLUS PETIT QUE TOI', W / 2, H * 0.62 + 9, '#c8ff8a', 1, '#1d1416', 'center');
+      drawText(ctx, 'VISE LE TERRIER AU BOUT !', W / 2, H * 0.62 + 18, '#fff4a8', 1, '#1d1416', 'center');
     }
     // flèche vers le terrier
     const b = this.ball, dist = this.course.holeY - b.y;
@@ -2238,11 +2281,20 @@ class Game {
       ctx.fillStyle = '#ffffff'; ctx.fillRect(x + w / 2 - 8, y + 33, 17, 8);
       drawText(ctx, 'OK', x + w / 2, y + 35, '#1d1416', 1, null, 'center');
     }
-    if (this.comment) drawText(ctx, this.comment.text, W / 2, Math.round(H * 0.72), '#ffffff', 1, '#1d1416', 'center');
-    if (this.notices) this.notices.forEach((n, k) => {
-      const a = n.t / n.dur, yy = 34 + k * 10 - (1 - a) * 4;
-      if (n.t > 0.15 || this.frame % 4 < 2) drawText(ctx, n.text, W / 2, yy, n.col, 1, '#1d1416', 'center');
-    });
+    if (this.alert) this.drawAlert(this.alert);
+    else if (this.msg) {
+      const n = this.msg;
+      if (n.t > 0.15 || this.frame % 4 < 2) drawText(ctx, n.text, W / 2, 34, n.col, 1, '#1d1416', 'center');
+    }
+    // temps restant des événements qui durent
+    let yy = this.alert ? 78 : 46;
+    for (const ev of this.evs || []) {
+      if (ev.state !== 'on' || !EVENTS[ev.type].dur) continue;
+      const k = 1 - ev.t / EVENTS[ev.type].dur, w = 60;
+      ctx.fillStyle = '#1d1416'; ctx.fillRect(W / 2 - w / 2 - 1, yy - 1, w + 2, 4);
+      ctx.fillStyle = '#ffb04a'; ctx.fillRect(W / 2 - w / 2, yy, Math.round(w * k), 2);
+      yy += 6;
+    }
   }
 }
 
@@ -2408,6 +2460,10 @@ const App = {
       login: () => this.doLogin(),
       secure: () => this.doSecure(),
       saveteam: () => this.saveTeam(),
+      tuto: () => {
+        if (v === 'done') { Store.data.settings.tutoDone = true; Store.save(); this.show('home'); }
+        else this.show('tuto', +v);
+      },
       reactsel: () => { this.reactSel = this.reactSel === v ? null : v; this.show('leaderboard'); },
       react: () => this.doReact(v),
     };
@@ -2436,7 +2492,7 @@ const App = {
     if (uid) { p.uid = uid; p.nameOk = uid; Store.save(); }
     Online.submitPlayer(p);
     this.loadDay();
-    this.show('home');
+    this.show(Store.data.settings.tutoDone ? 'home' : 'tuto', 0);
   },
 
   async doLogin() {
@@ -2657,6 +2713,7 @@ const App = {
     const p = this.p;
     return `<div class="topbar">
       <button class="chip" data-a="go" data-v="profile">${p.account ? '🔒' : '👤'} ${esc(p.name)}${this.champ === p.name ? ' 👑' : ''}</button>
+      <button class="chip" data-a="go" data-v="tuto" aria-label="Comment jouer">❓</button>
       <span class="chip">🔥 ${Store.streakOf(p, this.today)}</span>
       <span class="chip gold">🟡 ${p.coins}</span>
     </div>`;
@@ -2678,6 +2735,39 @@ const App = {
         <button class="btn big" data-a="newp">C'est parti !</button>
       </div>
       <button class="btn ghost" data-a="go" data-v="login">🔑 J'ai déjà un compte</button>
+    </div>`;
+  },
+
+  // Comment jouer : 3 étapes, au premier lancement ou via le bouton ❓
+  scr_tuto(step = 0) {
+    const steps = [
+      {
+        title: 'Dirige ta boule',
+        pics: `${pix(mascotUrl(SKINS[0], HATS[0], 10), 72, 76)}`,
+        text: 'Glisse ton doigt à gauche ou à droite pour diriger ta boule.<br><span class="tiny">Au clavier : ← → ou Q / D.</span>',
+      },
+      {
+        title: 'Grossis !',
+        pics: `<span class="good">${spriteImg('crottin', 4)}<small>✅ miam</small></span><span class="bad">${spriteImg('rock_12_0', 2)}<small>❌ aïe</small></span>`,
+        text: 'Avale ce qui est <b>plus petit que ta boule</b> pour grossir.<br>Ce qui est plus gros te freine et te fait maigrir. Attention aux cactus !',
+      },
+      {
+        title: 'Vise le terrier',
+        pics: '🕳️',
+        text: 'Au bout de la dune, rentre dans le terrier : <b>sinon ton score est divisé par 2</b>.<br>Ton score = la taille de ta boule (+10 % si tu trouves le trésor du jour).<br><span class="tiny">3 essais par jour, ton meilleur compte au classement. Une nouvelle dune chaque jour !</span>',
+      },
+    ];
+    const s = steps[step] || steps[0], last = step >= steps.length - 1;
+    return `<div class="screen center">
+      <div class="title small">COMMENT JOUER</div>
+      <div class="panel tuto">
+        <div class="label">${step + 1}. ${s.title}</div>
+        <div class="pics">${s.pics}</div>
+        <p>${s.text}</p>
+      </div>
+      <div class="steps">${steps.map((_, i) => `<span class="${i === step ? 'on' : ''}"></span>`).join('')}</div>
+      <button class="btn big" data-a="tuto" data-v="${last ? 'done' : step + 1}">${last ? 'C\'est compris, je roule !' : 'Suivant'}</button>
+      ${last ? '' : '<button class="btn ghost" data-a="tuto" data-v="done">Passer</button>'}
     </div>`;
   },
 
@@ -2806,13 +2896,13 @@ const App = {
       const rxTxt = id => { const c = rx && rx.counts[id]; return c ? `<span class="rx">${REACTIONS.filter(e => c[e]).map(e => e + c[e]).join(' ')}</span>` : ''; };
       body = lb.length ? lb.map((e, i) => {
         const pick = rx && e.name !== me;
-        let row = `<tr class="${e.name === me ? 'me' : ''} ${pick ? 'pick' : ''}" ${pick ? `data-a="reactsel" data-v="${esc(e.id)}"` : ''}><td>${medal(i)}</td><td>${who(e.name)}${rxTxt(e.id)}</td><td>${e.run && e.run.terrier ? '🕳️' : ''}${e.run && e.run.legend ? '✨' : ''}</td><td class="r">${fmtSize(e.score)}</td></tr>`;
+        let row = `<tr class="${e.name === me ? 'me' : ''} ${pick ? 'pick' : ''}" ${pick ? `data-a="reactsel" data-v="${esc(e.id)}"` : ''}><td>${medal(i)}</td><td>${who(e.name)}${rxTxt(e.id)}${pick && !rx.mine[e.id] ? '<span class="rx-add">+👏</span>' : ''}</td><td>${e.run && e.run.terrier ? '🕳️' : ''}${e.run && e.run.legend ? '✨' : ''}</td><td class="r">${fmtSize(e.score)}</td></tr>`;
         if (pick && this.reactSel === e.id) row += `<tr><td colspan="4"><div class="reacts">${REACTIONS.map(r => `<button class="${rx.mine[e.id] === r ? 'on' : ''}" data-a="react" data-v="${r}">${r}</button>`).join('')}</div></td></tr>`;
         return row;
       }).join('') : '<tr><td colspan="4" class="center tiny">Personne n\'a encore joué aujourd\'hui.</td></tr>';
       const titles = dayTitles(lb);
       if (titles.length) extra = `<div class="panel"><div class="label">Titres du jour</div><table class="lb titles">${titles.map(t => `<tr><td>${t.icon}</td><td>${esc(t.label)}</td><td>${who(t.name)}</td><td class="r tiny">${esc(t.value)}</td></tr>`).join('')}</table></div>`;
-      if (rx && lb.some(e => e.name !== me)) extra += '<div class="tiny center">Touche le score d\'un collègue pour réagir 👏 😂 💩 🔥</div>';
+      if (rx && lb.some(e => e.name !== me)) extra += '<div class="tiny center">Touche la ligne d\'un collègue pour lui envoyer une réaction 👏 😂 💩 🔥</div>';
     } else if (tab === 'week') {
       const lb = await Leaderboard.week(weekKey(this.today));
       body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">${e.played} j</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
