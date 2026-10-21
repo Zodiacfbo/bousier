@@ -223,7 +223,7 @@ async function refresh() {
   const runs = recs.reduce((n, r) => n + (r.runs || 0), 0);
   $('stats').innerHTML = [
     ['Inscrits', names.length], ['Actifs aujourd\'hui', scores.length], ['Actifs sur 7 jours', activeWeek.size],
-    ['Parties jouées', runs || '—'], ['Comptes protégés', recs.filter(r => r.account).length + ' / ' + recs.length],
+    ['Parties jouées', runs || '—'],
   ].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('');
   renderPlayers();
   $('stable').innerHTML = '<tr><th>Joueur</th><th class="r">Score</th><th class="r">Temps</th><th></th></tr>' + (scores.sort((a, b) => b.score - a.score).map(s =>
@@ -239,10 +239,10 @@ async function refresh() {
 function renderPlayers() {
   const q = nameKey($('search').value || '');
   const list = players.filter(p => !q || p.key.includes(q) || (p.rec && (p.rec.team || '').toLowerCase().includes(q)));
-  $('ptable').innerHTML = '<tr><th>Pseudo</th><th>Équipe</th><th class="r">Record</th><th class="r">Série</th><th>Dernière activité</th><th>Mdp</th><th></th></tr>' + list.map(p => {
+  $('ptable').innerHTML = '<tr><th>Pseudo</th><th>Équipe</th><th class="r">Record</th><th class="r">Série</th><th>Dernière activité</th><th></th></tr>' + list.map(p => {
     const r = p.rec;
     return `<tr><td>${esc(p.name)}</td><td>${esc(r && r.team || '')}</td><td class="r">${r ? fmtSize(r.best) : '—'}</td><td class="r">${r ? '🔥' + r.bestStreak : ''}</td>
-      <td class="muted">${fmtDate(r && r.at)}</td><td>${r ? (r.account ? '🔒' : '<span class="bad">non</span>') : ''}</td>
+      <td class="muted">${fmtDate(r && r.at)}</td>
       <td class="r"><button data-gift="${esc(p.key)}">🎁</button> <button data-forgot="${esc(p.key)}" title="Mot de passe oublié">🔑</button> <button class="danger" data-free="${esc(p.key)}" title="Libérer ce pseudo">🗑️</button></td></tr>`;
   }).join('');
 }
