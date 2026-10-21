@@ -123,6 +123,12 @@ input, textarea {
 }
 .topbar .chip:first-child { margin-right: auto; max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip.gold { color: var(--gold); }
+.chip.notif { position: relative; }
+.pill-n { position: absolute; top: calc(var(--u) * -2.5); right: calc(var(--u) * -2.5); min-width: calc(var(--u) * 7); height: calc(var(--u) * 7);
+  padding: 0 calc(var(--u) * 1.5); background: #e8423a; color: #fff; border: var(--u) solid var(--line); font-size: .7em; line-height: calc(var(--u) * 5);
+  text-align: center; font-weight: 700; }
+.panel.unread { box-shadow: inset 0 0 0 var(--u) var(--gold); }
+.new-tag { background: #e8423a; color: #fff; font-size: .75em; padding: 0 calc(var(--u) * 1.5); margin-left: calc(var(--u) * 2); }
 
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 3); }
 .card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--u); }
@@ -1059,6 +1065,15 @@ const CHANGELOG = [
   { v: 1, date: '2026-10-20', items: ['🚀 Lancement officiel de Bousier !'] },
 ];
 
+// Mes idées dont l'organisateur a changé l'état depuis ma dernière visite (pastille 💡)
+function ideasChanged(mine) {
+  const seen = Store.data.settings.ideasSeen || {};
+  return (mine || []).filter(i => i.status && i.status !== 'new' && seen[i.id] !== i.status).length;
+}
+
+// Nombre de mises à jour pas encore lues (pastille du bouton 📰)
+function unreadNews() { return CHANGELOG.filter(c => c.v > (Store.data.settings.seenVersion || 0)).length; }
+
 // --- Badges ----------------------------------------------------------------
 const BADGES = [
   { id: 'premier', icon: '🪲', name: 'Premier roulé', desc: 'Termine ta première course du jour.' },
@@ -1567,7 +1582,7 @@ const Online = {
     return this.cached('ideas', 60 * 1000, () => this.run(async c => {
       const { fb } = c, uid = this.uid(c);
       const snap = await fb.getDocs(fb.query(fb.collection(c.db, 'envs', ONLINE_ENV, 'suggestions'), fb.where('uid', '==', uid), fb.limit(50)));
-      return snap.docs.map(d => d.data()).sort((a, b) => b.at - a.at);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.at - a.at);
     }));
   },
 
@@ -3184,7 +3199,6 @@ const App = {
       create: () => this.doCreate(),
       logout: () => this.doLogout(),
       login: () => this.doLogin(),
-      newsok: () => { Store.data.settings.seenVersion = CHANGELOG[0].v; Store.save(); this.show('home'); },
       ideatype: () => { this.ideaType = v; for (const b of this.ui.querySelectorAll('[data-a="ideatype"]')) b.classList.toggle('on', b.dataset.v === v); },
       sendidea: () => this.sendIdea(),
       annok: () => { safeStorageSet('bousier_ann_' + ONLINE_ENV, v); this.show('home'); },
@@ -3588,7 +3602,8 @@ const App = {
     const p = this.p;
     return `<div class="topbar">
       <button class="chip" data-a="go" data-v="profile">${p.account ? '🔒' : '👤'} ${esc(p.name)}${this.champ === p.name ? ' 👑' : ''}</button>
-      <button class="chip" data-a="go" data-v="ideas" aria-label="Boîte à idées">💡</button>
+      <button class="chip notif" data-a="go" data-v="ideas" aria-label="Boîte à idées">💡${this.ideasBadge ? `<span class="pill-n">${this.ideasBadge}</span>` : ''}</button>
+      <button class="chip notif" data-a="go" data-v="changelog" aria-label="Nouveautés">📰${unreadNews() ? `<span class="pill-n">${unreadNews()}</span>` : ''}</button>
       <button class="chip" data-a="go" data-v="tuto" aria-label="Comment jouer">❓</button>
       <span class="chip">🔥 ${Store.streakOf(p, this.today)}</span>
       <span class="chip gold">🟡 ${p.coins}</span>
@@ -3640,6 +3655,8 @@ const App = {
   // Boîte à idées : envoyer, et suivre ce que deviennent les siennes
   async scr_ideas() {
     const mine = await Online.myIdeas();
+    const changed = new Set((mine || []).filter(i => i.status !== 'new' && (Store.data.settings.ideasSeen || {})[i.id] !== i.status).map(i => i.id));
+    if (mine) { Store.data.settings.ideasSeen = Object.fromEntries(mine.map(i => [i.id, i.status])); Store.save(); this.ideasBadge = 0; }
     const STATUS = { new: '⏳ Reçue', retained: '👍 Retenue', done: '✅ Faite', declined: '❌ Pas pour l\'instant' };
     const TYPES = [['idee', '💡 Idée'], ['bug', '🐞 Bug'], ['autre', '💬 Autre']];
     this.ideaType = this.ideaType || 'idee';
@@ -3654,16 +3671,18 @@ const App = {
       </div>
       <div class="panel">
         <div class="label">Mes messages</div>
-        ${mine && mine.length ? `<table class="lb">${mine.map(i => `<tr><td>${TYPES.find(t => t[0] === i.type)[1].split(' ')[0]}</td><td>${esc(i.text)}</td><td class="r tiny">${STATUS[i.status] || STATUS.new}</td></tr>`).join('')}</table>`
+        ${mine && mine.length ? `<table class="lb">${mine.map(i => `<tr><td>${TYPES.find(t => t[0] === i.type)[1].split(' ')[0]}</td><td>${esc(i.text)}${changed.has(i.id) ? '<span class="new-tag">NOUVEAU</span>' : ''}</td><td class="r tiny">${STATUS[i.status] || STATUS.new}</td></tr>`).join('')}</table>`
           : `<div class="tiny">${mine ? 'Rien envoyé pour l\'instant.' : 'Hors ligne : impossible d\'afficher tes messages.'}</div>`}
       </div>
     </div>`;
   },
 
   scr_changelog() {
+    const seen = Store.data.settings.seenVersion || 0;
+    Store.data.settings.seenVersion = CHANGELOG[0].v; Store.save();
     return `<div class="screen">
       ${this.back('Nouveautés')}
-      ${CHANGELOG.map(c => `<div class="panel"><div class="label">${esc(fmtDayLong(c.date))}</div><ul class="quests">${c.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
+      ${CHANGELOG.map(c => `<div class="panel ${c.v > seen ? 'unread' : ''}"><div class="label">${esc(fmtDayLong(c.date))}${c.v > seen ? '<span class="new-tag">NOUVEAU</span>' : ''}</div><ul class="quests">${c.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
     </div>`;
   },
 
@@ -3711,6 +3730,7 @@ const App = {
     this.champ = champ;
     const rank = lb.findIndex(e => e.name === p.name) + 1;
     const news = await this.news(lb);
+    this.ideasBadge = ideasChanged(await Online.myIdeas());
     const ann = await Online.announce();
     const annText = ann && ann.text && safeStorageGet('bousier_ann_' + ONLINE_ENV) !== String(ann.at) ? ann.text : '';
     const leg = cfg.legend;
@@ -3726,11 +3746,6 @@ const App = {
         <div class="sub">Dune #${cfg.num} · ${esc(fmtDayLong(this.today))}</div>
         <div class="mascot bob">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
       </div>
-      ${(Store.data.settings.seenVersion || 0) < CHANGELOG[0].v ? `<div class="panel news">
-        <div class="label">📰 Quoi de neuf ?</div>
-        <ul class="quests">${CHANGELOG[0].items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>
-        <button class="btn small" data-a="newsok">Super !</button>
-      </div>` : ''}
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
