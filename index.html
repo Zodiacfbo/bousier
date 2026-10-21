@@ -1026,6 +1026,9 @@ const THEMES = [
   { id: 'oasis', name: 'Oasis', badge: 'collection', sand: '#e2c98a', sandDark: '#c4a868', sandLight: '#f2e0aa', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
 ];
 const COSMETICS = { ball: SKINS, hat: HATS, outfit: OUTFITS, trail: TRAILS, theme: THEMES };
+// Décor imposé pendant la semaine Halloween (sable orangé, bords violets, citrouilles sur les bords)
+const HALLOWEEN_THEME = { id: 'halloween', name: 'Dune d\'Halloween', sand: '#d98c4a', sandDark: '#b0643a', sandLight: '#eca866', wall: '#3e2648', wallDark: '#26162e', wallLight: '#5c3a68', wallDeco: 'citrouille', mist: 'rgba(90,30,120,0.10)' };
+function dayTheme(id) { return isHalloween(dayKey()) ? HALLOWEEN_THEME : findCos('theme', id); }
 const findCos = (type, id) => COSMETICS[type].find(c => c.id === id) || COSMETICS[type][0];
 
 // --- Façons d'obtenir les objets spéciaux -------------------------------------
@@ -2897,6 +2900,17 @@ class Game {
     this.drawBackground(Math.round(camY));
     ctx.save();
     ctx.translate(0, -Math.round(camY));
+    if (this.theme.wallDeco) {
+      // décor de saison posé sur les bords de la dune, en alternance gauche / droite
+      const sp = SPR[this.theme.wallDeco];
+      for (let k = Math.floor((camY - 30) / 170); k * 170 < camY + H + 30; k++) {
+        const wy = k * 170 + 40, [L, R] = this.edge(wy), left = k % 2 === 0;
+        const x = left ? L - 12 : R + 12;
+        if (left ? L < 18 : R > W - 18) continue;
+        ctx.fillStyle = 'rgba(255,200,80,0.18)'; ctx.fillRect(Math.round(x) - 7, wy - 6, 15, 13);
+        ctx.drawImage(sp, Math.round(x - sp.width / 2), Math.round(wy - sp.height / 2));
+      }
+    }
     this.drawHole();
     if (this.foam) {
       for (const f of this.foam.blobs) {
@@ -2932,6 +2946,7 @@ class Game {
     ctx.restore();
 
     this.drawWeather(camY);
+    if (this.theme.mist) { ctx.fillStyle = this.theme.mist; ctx.fillRect(0, 0, W, H); }
     if (this.blackout && !(this.blackout < 0.35 && this.frame % 6 < 3)) {
       // coupure de courant : on ne voit plus que sa boule
       const LR = this.ball.r + 9, m = lightMask(LR), S = m.width, mx = Math.round(this.ball.x - LR), my = Math.round(this.ball.y - camY - LR);
@@ -3337,7 +3352,7 @@ const App = {
     Store.prune(this.today);
     this.cfg = dailyConfig(this.today);
     const p = Store.profile();
-    this.game.showAttract(this.cfg, findCos('theme', p ? p.equip.theme : 'doree'));
+    this.game.showAttract(this.cfg, dayTheme(p ? p.equip.theme : 'doree'));
     this.dailyAwards();
   },
 
@@ -3649,7 +3664,7 @@ const App = {
     const hint = cfg.mode !== 'survival' && !Store.data.settings.hintDone && !(p.stats.runs > 0);
     if (hint) { Store.data.settings.hintDone = true; Store.save(); }
     this.game.start(cfg, { hint,
-      skin: findCos('ball', p.equip.ball), hat: findCos('hat', p.equip.hat), theme: findCos('theme', p.equip.theme), ghosts,
+      skin: findCos('ball', p.equip.ball), hat: findCos('hat', p.equip.hat), theme: dayTheme(p.equip.theme), ghosts,
       outfit: findCos('outfit', p.equip.outfit), trail: findCos('trail', p.equip.trail),
     });
     this.hud.wx.textContent = cfg.weather.icon;
@@ -3684,7 +3699,7 @@ const App = {
   abandon() {
     this.game.paused = false; this.game.abort();
     this.hud.root.classList.add('hidden');
-    this.game.showAttract(this.cfg, findCos('theme', this.p.equip.theme));
+    this.game.showAttract(this.cfg, dayTheme(this.p.equip.theme));
     this.show('home');
   },
 
@@ -4235,10 +4250,12 @@ const App = {
 
   scr_collection() {
     const p = this.p;
-    const season = o => !o.season || isHalloween(this.today) || p.collection[o.id] || p.legends[o.id];
-    const list = OBJECTS.concat(SEASON_OBJECTS).filter(season).map(o => ({ id: o.id, name: o.name, sprite: o.rock ? 'rock_6_0' : o.sprite, desc: o.desc, n: p.collection[o.id] || 0, wx: o.weather, season: o.season }));
-    const legs = LEGENDS.concat(SUGAR_SKULL).filter(season).map(l => ({ id: l.id, name: l.name, sprite: l.sprite, desc: l.desc, n: p.legends[l.id] || 0, legend: true, season: l.season }));
-    const all = list.concat(legs);
+    const obj = o => ({ id: o.id, name: o.name, sprite: o.rock ? 'rock_6_0' : o.sprite, desc: o.desc, n: p.collection[o.id] || 0, wx: o.weather, season: o.season });
+    const leg = l => ({ id: l.id, name: l.name, sprite: l.sprite, desc: l.desc, n: p.legends[l.id] || 0, legend: true, season: l.season });
+    const list = OBJECTS.map(obj), legs = LEGENDS.map(leg);
+    // objets de saison : à part, ils ne comptent pas pour compléter la Bousipédia
+    const seasonal = SEASON_OBJECTS.map(obj).concat(leg(SUGAR_SKULL)).filter(e => e.n || isHalloween(this.today));
+    const classic = list.concat(legs), all = classic.concat(seasonal);
     const sel = all.find(e => e.id === this.colSel && e.n > 0);
     const tile = e => `<button class="tile ${e.n ? '' : 'locked'} ${e.legend ? 'leg' : ''} ${this.colSel === e.id ? 'sel' : ''}" data-a="colsel" data-v="${e.id}">
         ${spriteImg(e.sprite, SPR[e.sprite].width > 20 ? 1 : 2, !e.n)}
@@ -4247,7 +4264,7 @@ const App = {
     const selEntry = all.find(e => e.id === this.colSel);
     return `<div class="screen">
       ${this.back('Bousipédia')}
-      <div class="tiny center">${all.filter(e => e.n).length} / ${all.length} découverts</div>
+      <div class="tiny center">${classic.filter(e => e.n).length} / ${classic.length} découverts</div>
       ${selEntry ? `<div class="panel detail">
         <div>${spriteImg(selEntry.sprite, 3, !sel)}</div>
         <div><b>${sel ? esc(sel.name) : '???'}</b><div class="tiny">${sel ? esc(sel.desc) : 'Pas encore découvert.'}</div>
@@ -4257,6 +4274,9 @@ const App = {
       <div class="grid">${list.map(tile).join('')}</div>
       <div class="label">Trésors légendaires</div>
       <div class="grid">${legs.map(tile).join('')}</div>
+      ${seasonal.length ? `<div class="label">🎉 Objets de saison <span class="tiny">(ne comptent pas pour compléter la Bousipédia)</span></div>
+      <div class="tiny">🎃 Halloween 2026 · ${seasonal.filter(e => e.n).length} / ${seasonal.length}</div>
+      <div class="grid">${seasonal.map(tile).join('')}</div>` : ''}
     </div>`;
   },
 
