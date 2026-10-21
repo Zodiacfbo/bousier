@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.6 — Nouveaux titres du jour (21 octobre 2026)
+- 🎯 Dans le mille (rentré le plus au centre du terrier), 🙈 Raté de peu (terrier raté de moins loin),
+  🕳️ Le terrier, c'est pour les autres (le plus de terriers ratés, 2 minimum).
+- Calculés sur les 3 essais du jour de chacun ; 7 titres au total.
+
 ## v1.5 — Contour rouge (21 octobre 2026)
 - 🔴 Les objets encore trop gros pour la boule sont entourés de rouge quand ils arrivent devant elle ;
   le contour disparaît dès qu'on peut les manger. Phrase correspondante dans le tutoriel.
