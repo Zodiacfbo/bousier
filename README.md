@@ -26,8 +26,14 @@ Pour l'installer comme une appli :
 - `main` et `dev` ont des classements séparés (`envs/prod` et `envs/dev`).
 - Les règles de sécurité sont dans `firestore.rules` : à recopier dans la console Firebase après chaque modification.
 - Dans la console : Authentication > Sign-in method > activer **Anonyme** et **Adresse e-mail/Mot de passe**.
-- Mot de passe oublié : Authentication > Users, chercher l'utilisateur (`u…@bousier.game`) et changer son mot de passe.
+- Mot de passe oublié : page admin, onglet « Mot de passe oublié » (supprimer le compte dans la console, libérer le pseudo, le joueur recrée son profil, restaurer sa progression).
 - Tester en local avec l'émulateur : `npx firebase emulators:start --only auth,firestore --project demo-bousier`.
+
+## Page admin
+
+`admin.html` (non liée depuis le jeu) : activité, liste des joueurs, cadeaux (pièces, objets), suppression d'un
+score du jour, annonce sur l'accueil, mot de passe oublié. Réservée au compte organisateur : son uid est dans
+`isAdmin()` (`firestore.rules`) et `ADMIN_UIDS` (`admin.html`).
 
 ## Fichiers
 

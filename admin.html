@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Bousier — Admin</title>
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family: 'Chiffres'; src: url(fonts/vt323-latin.woff2) format('woff2'); unicode-range: U+0030-0039; size-adjust: 125%; }
+:root { --bg: #120a16; --panel: #2b1c33; --panel2: #4a3258; --ink: #fff6e6; --muted: #cdb8cf; --gold: #ffd25a; --accent: #f2a33a; --good: #9be27a; --bad: #ff8a7a; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Chiffres', 'Pixelify Sans', ui-monospace, monospace; font-size: 15px; }
+main { max-width: 980px; margin: 0 auto; padding: 16px; }
+h1 { color: var(--gold); margin: 0 0 4px; font-size: 26px; }
+h2 { color: var(--gold); font-size: 18px; margin: 0 0 10px; }
+.panel { background: var(--panel); border: 2px solid #000; box-shadow: inset 0 0 0 2px var(--panel2); padding: 14px; margin: 14px 0; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.muted { color: var(--muted); font-size: 13px; }
+.good { color: var(--good); } .bad { color: var(--bad); }
+input, select, textarea, button { font: inherit; color: var(--ink); background: #1a1020; border: 2px solid #000; box-shadow: inset 0 0 0 2px var(--panel2); padding: 7px 9px; }
+textarea { width: 100%; min-height: 60px; }
+button { cursor: pointer; background: var(--panel2); }
+button.main { background: var(--accent); color: #2a1408; font-weight: 700; }
+button.danger { background: #6a2030; }
+button:disabled { opacity: .5; cursor: default; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #ffffff14; vertical-align: middle; }
+th { color: var(--gold); font-size: 13px; }
+td.r, th.r { text-align: right; }
+.scroll { overflow-x: auto; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat { background: #1a1020; padding: 10px; text-align: center; }
+.stat b { display: block; font-size: 28px; color: var(--gold); }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 14px; }
+.tabs button.on { background: var(--accent); color: #2a1408; font-weight: 700; }
+code { background: #1a1020; padding: 2px 6px; user-select: all; }
+.hidden { display: none !important; }
+#toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--gold); color: #2a1408; font-weight: 700; padding: 10px 16px; border: 2px solid #000; display: none; max-width: 90%; }
+ol li { margin: 8px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🪲 Bousier — Admin</h1>
+  <div class="row">
+    <span class="muted" id="who">Connexion…</span>
+    <label class="muted">Version :
+      <select id="env"><option value="prod">Officielle (main)</option><option value="dev">Test (dev)</option></select>
+    </label>
+  </div>
+
+  <div id="login" class="panel hidden">
+    <h2>Connexion organisateur</h2>
+    <div class="row">
+      <input id="lname" placeholder="Pseudo" autocomplete="username">
+      <input id="lpass" type="password" placeholder="Mot de passe" autocomplete="current-password">
+      <button class="main" id="lgo">Se connecter</button>
+    </div>
+    <p class="bad" id="lerr"></p>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="tabs" id="tabs">
+      <button data-tab="activity" class="on">📈 Activité</button>
+      <button data-tab="players">👥 Joueurs</button>
+      <button data-tab="scores">🧹 Scores du jour</button>
+      <button data-tab="announce">📣 Annonce</button>
+      <button data-tab="password">🔑 Mot de passe oublié</button>
+    </div>
+
+    <section id="tab-activity" class="panel">
+      <h2>Activité</h2>
+      <div class="stats" id="stats"></div>
+      <p class="muted">Inscrits = pseudos réservés. Actifs = joueurs avec un score sur la période.</p>
+    </section>
+
+    <section id="tab-players" class="panel hidden">
+      <h2>Joueurs</h2>
+      <input id="search" placeholder="Rechercher un pseudo ou une équipe…" style="width:100%;margin-bottom:10px">
+      <div class="scroll"><table id="ptable"></table></div>
+      <div id="gift" class="panel hidden">
+        <h2>🎁 Cadeau pour <span id="gname"></span></h2>
+        <div class="row">
+          <label>Pièces <input id="gcoins" type="number" min="0" max="5000" value="0" style="width:100px"></label>
+          <label>Objet <select id="gitem"><option value="">— aucun —</option></select></label>
+        </div>
+        <p><input id="gmsg" maxlength="80" placeholder="Petit mot (facultatif), ex. « Bravo pour le concours ! »" style="width:100%"></p>
+        <div class="row"><button class="main" id="gsend">Envoyer</button><button id="gcancel">Annuler</button></div>
+        <p class="muted">Le joueur le reçoit à sa prochaine ouverture du jeu, avec un message.</p>
+      </div>
+    </section>
+
+    <section id="tab-scores" class="panel hidden">
+      <h2>Scores du jour</h2>
+      <p class="muted">Supprimer un score retire aussi son fantôme. Le joueur pourra rejouer s'il lui reste des essais.</p>
+      <div class="scroll"><table id="stable"></table></div>
+    </section>
+
+    <section id="tab-announce" class="panel hidden">
+      <h2>Annonce sur l'accueil</h2>
+      <p class="muted">Affichée en haut de l'accueil de tous les joueurs, jusqu'à ce qu'ils appuient sur OK.</p>
+      <textarea id="atext" maxlength="200" placeholder="Ex. : Fin de la saison 1 vendredi ! Bravo à…"></textarea>
+      <div class="row"><button class="main" id="asend">Publier</button><button id="aclear">Retirer l'annonce</button></div>
+      <p class="muted" id="acur"></p>
+    </section>
+
+    <section id="tab-password" class="panel hidden">
+      <h2>Mot de passe oublié</h2>
+      <p class="muted">Un mot de passe ne peut pas être changé depuis une page web : on supprime le compte, le joueur recrée son profil avec le même pseudo, puis on lui rend sa progression.</p>
+      <div class="row"><input id="fname" placeholder="Pseudo du joueur"><button id="fcheck">Préparer</button></div>
+      <div id="fsteps" class="hidden">
+        <ol>
+          <li>Dans la console Firebase, <a id="flink" target="_blank" rel="noopener" style="color:var(--gold)">Authentication → Users</a>, cherche <code id="femail"></code>, puis <b>⋮ → Supprimer le compte</b>.</li>
+          <li><button class="danger" id="ffree">Libérer le pseudo</button> <span class="muted">(supprime la réservation et l'ancienne ligne des records ; la progression est gardée de côté)</span></li>
+          <li>Le joueur fait <b>Créer mon profil</b> avec le même pseudo et un nouveau mot de passe.</li>
+          <li><button class="main" id="frestore">Restaurer sa progression</button> <span class="muted">(à faire après l'étape 3 : il la retrouve à sa prochaine ouverture du jeu)</span></li>
+        </ol>
+        <p id="fmsg"></p>
+      </div>
+    </section>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script type="module">
+// Page réservée à l'organisateur : les règles Firestore n'autorisent ces
+// opérations qu'au compte administrateur (voir isAdmin dans firestore.rules).
+import * as fb from './vendor/firebase.js';
+
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyAE8Mi5r9A656BEBCfHPjpL0bKrkis7ero',
+  authDomain: 'bousier-9f615.firebaseapp.com',
+  projectId: 'bousier-9f615',
+  storageBucket: 'bousier-9f615.firebasestorage.app',
+  messagingSenderId: '136018034492',
+  appId: '1:136018034492:web:2eb28da7a4547a4b7ae839',
+};
+const ADMIN_UIDS = ['iYDurji9CuUbdV04FBIM1d2nLiH2'];
+// Objets qu'on peut offrir (identiques à ceux du jeu)
+const GIFTABLE = {
+  ball: { sable: 'Boule de sable', neige: 'Boule de neige', pasteque: 'Pastèque', lave: 'Boule de lave', planete: 'Petite planète', disco: 'Boule disco', saturne: 'Saturne', atome: 'Atome', uranium: 'Uranium', or: 'Boule d\'or' },
+  hat: { casquette: 'Casquette', chantier: 'Casque de chantier', bob: 'Bob de touriste', fez: 'Fez', sombrero: 'Sombrero', couronne: 'Couronne', nemes: 'Némès du pharaon', parapluie: 'Parapluie', lunettes: 'Lunettes de protection', charlotte: 'Charlotte de labo', casqueKevin: 'Casque de Kevin', coquille: 'Coquille d\'escargot', pansement: 'Pansement', aimant: 'Aimant', fleurCactus: 'Fleur de cactus', aureole: 'Auréole' },
+  outfit: { blouse: 'Blouse de labo', hazmat: 'Combinaison anti-contamination', cape: 'Cape de super-héros', smoking: 'Smoking' },
+  trail: { arcenciel: 'Arc-en-ciel', etincelles: 'Étincelles', bulles: 'Bulles', flammes: 'Flammes', fumee: 'Expérience ratée', notes: 'Notes de musique', binaire: 'Code binaire' },
+};
+const TYPE_LABEL = { ball: 'Boule', hat: 'Chapeau', outfit: 'Tenue', trail: 'Traînée' };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nameKey = n => n.trim().toLowerCase();
+const accountEmail = n => 'u' + [...new TextEncoder().encode(nameKey(n))].map(b => b.toString(16).padStart(2, '0')).join('') + '@bousier.game';
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const addDays = (k, n) => { const [y, m, d] = k.split('-').map(Number); return dayKey(new Date(y, m - 1, d + n)); };
+const fmtSize = cm => cm >= 100 ? (cm / 100).toFixed(2).replace('.', ',') + ' m' : (+cm).toFixed(1).replace('.', ',') + ' cm';
+const fmtDate = ms => ms ? new Date(ms).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+let toastT;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 3000); }
+
+const app = fb.initializeApp(FIREBASE_CONFIG), auth = fb.getAuth(app), db = fb.getFirestore(app);
+if (window.BOUSIER_EMULATOR) {
+  fb.connectAuthEmulator(auth, 'http://' + BOUSIER_EMULATOR.auth, { disableWarnings: true });
+  const [h, p] = BOUSIER_EMULATOR.firestore.split(':'); fb.connectFirestoreEmulator(db, h, +p);
+  if (BOUSIER_EMULATOR.admin) ADMIN_UIDS.push(BOUSIER_EMULATOR.admin);
+}
+let env = 'prod', players = [], selected = null;
+const envRef = (...path) => fb.doc(db, 'envs', env, ...path);
+const envCol = (...path) => fb.collection(db, 'envs', env, ...path);
+const all = async (col, n = 1000) => (await fb.getDocs(fb.query(col, fb.limit(n)))).docs.map(d => ({ id: d.id, ...d.data() }));
+
+// --- connexion ---
+async function start() {
+  await auth.authStateReady();
+  const u = auth.currentUser;
+  if (!u || !ADMIN_UIDS.includes(u.uid)) {
+    $('who').textContent = u && !u.isAnonymous ? 'Ce compte n\'est pas organisateur.' : 'Non connecté.';
+    $('login').classList.remove('hidden'); $('app').classList.add('hidden');
+    return;
+  }
+  $('who').textContent = '✅ Connecté en organisateur';
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+  await refresh();
+}
+$('lgo').onclick = async () => {
+  $('lerr').textContent = 'Connexion…';
+  try { await fb.signInWithEmailAndPassword(auth, accountEmail($('lname').value), $('lpass').value); $('lerr').textContent = ''; start(); }
+  catch (e) { $('lerr').textContent = 'Pseudo ou mot de passe incorrect.'; }
+};
+$('env').onchange = () => { env = $('env').value; refresh(); };
+
+// --- onglets ---
+$('tabs').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  for (const x of $('tabs').children) x.classList.toggle('on', x === b);
+  for (const s of document.querySelectorAll('section')) s.classList.toggle('hidden', s.id !== 'tab-' + b.dataset.tab);
+};
+
+// --- chargement des données ---
+async function refresh() {
+  const today = dayKey();
+  const [names, recs, scores] = await Promise.all([
+    all(fb.collection(db, 'names')), all(envCol('players')), all(envCol('days', today, 'scores')),
+  ]);
+  const week = await Promise.all([1, 2, 3, 4, 5, 6].map(i => all(envCol('days', addDays(today, -i), 'scores'))));
+  const recBy = Object.fromEntries(recs.map(r => [nameKey(r.name), r]));
+  players = names.map(n => ({ key: n.id, name: n.name, uid: n.uid, rec: recBy[n.id] || null }))
+    .sort((a, b) => ((b.rec && b.rec.at) || 0) - ((a.rec && a.rec.at) || 0));
+  const activeWeek = new Set([...scores, ...week.flat()].map(s => nameKey(s.name)));
+  const runs = recs.reduce((n, r) => n + (r.runs || 0), 0);
+  $('stats').innerHTML = [
+    ['Inscrits', names.length], ['Actifs aujourd\'hui', scores.length], ['Actifs sur 7 jours', activeWeek.size],
+    ['Parties jouées', runs || '—'], ['Comptes protégés', recs.filter(r => r.account).length + ' / ' + recs.length],
+  ].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('');
+  renderPlayers();
+  $('stable').innerHTML = '<tr><th>Joueur</th><th class="r">Score</th><th class="r">Temps</th><th></th></tr>' + (scores.sort((a, b) => b.score - a.score).map(s =>
+    `<tr><td>${esc(s.name)}</td><td class="r">${fmtSize(s.score)}</td><td class="r">${s.time != null ? Math.round(s.time) + ' s' : '—'}</td><td class="r"><button class="danger" data-del="${esc(s.id)}">Supprimer</button></td></tr>`).join('') || '<tr><td colspan="4" class="muted">Aucun score aujourd\'hui.</td></tr>');
+  const ann = await fb.getDoc(envRef('config', 'announce'));
+  $('acur').textContent = ann.exists() && ann.data().text ? `En ligne : « ${ann.data().text} » (${fmtDate(ann.data().at)})` : 'Aucune annonce en ligne.';
+}
+
+function renderPlayers() {
+  const q = nameKey($('search').value || '');
+  const list = players.filter(p => !q || p.key.includes(q) || (p.rec && (p.rec.team || '').toLowerCase().includes(q)));
+  $('ptable').innerHTML = '<tr><th>Pseudo</th><th>Équipe</th><th class="r">Record</th><th class="r">Série</th><th>Dernière activité</th><th>Mdp</th><th></th></tr>' + list.map(p => {
+    const r = p.rec;
+    return `<tr><td>${esc(p.name)}</td><td>${esc(r && r.team || '')}</td><td class="r">${r ? fmtSize(r.best) : '—'}</td><td class="r">${r ? '🔥' + r.bestStreak : ''}</td>
+      <td class="muted">${fmtDate(r && r.at)}</td><td>${r ? (r.account ? '🔒' : '<span class="bad">non</span>') : ''}</td>
+      <td class="r"><button data-gift="${esc(p.key)}">🎁</button> <button data-forgot="${esc(p.key)}" title="Mot de passe oublié">🔑</button> <button class="danger" data-free="${esc(p.key)}" title="Libérer ce pseudo">🗑️</button></td></tr>`;
+  }).join('');
+}
+$('search').oninput = renderPlayers;
+
+// --- actions sur les joueurs ---
+for (const [type, items] of Object.entries(GIFTABLE)) for (const [id, label] of Object.entries(items))
+  $('gitem').insertAdjacentHTML('beforeend', `<option value="${type}:${id}">${TYPE_LABEL[type]} — ${esc(label)}</option>`);
+$('ptable').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const p = players.find(x => x.key === (b.dataset.gift || b.dataset.forgot || b.dataset.free)); if (!p) return;
+  if (b.dataset.gift) { selected = p; $('gname').textContent = p.name; $('gift').classList.remove('hidden'); $('gift').scrollIntoView({ behavior: 'smooth' }); }
+  if (b.dataset.forgot) { document.querySelector('[data-tab="password"]').click(); $('fname').value = p.name; $('fcheck').click(); }
+  if (b.dataset.free && confirm(`Libérer le pseudo « ${p.name} » ? Il disparaît des records et devient disponible pour un autre joueur.`)) { await freeName(p); toast('Pseudo libéré'); refresh(); }
+};
+$('gcancel').onclick = () => $('gift').classList.add('hidden');
+$('gsend').onclick = async () => {
+  const p = selected, coins = Math.max(0, Math.min(5000, parseInt($('gcoins').value, 10) || 0)), item = $('gitem').value, msg = $('gmsg').value.trim();
+  if (!coins && !item) return toast('Choisis des pièces ou un objet.');
+  const ref = envRef('gifts', p.uid + '_' + encodeURIComponent(p.key));
+  // on cumule avec un cadeau pas encore récupéré
+  const prev = await fb.getDoc(ref), g = prev.exists() ? prev.data() : { coins: 0, items: [] };
+  await fb.setDoc(ref, { coins: (g.coins || 0) + coins, items: [...(g.items || []), ...(item ? [item] : [])], msg: msg || g.msg || '', at: Date.now() });
+  $('gift').classList.add('hidden'); $('gcoins').value = 0; $('gitem').value = ''; $('gmsg').value = '';
+  toast(`🎁 Cadeau envoyé à ${p.name}`);
+};
+async function freeName(p) {
+  await fb.deleteDoc(fb.doc(db, 'names', p.key));
+  await fb.deleteDoc(envRef('players', p.uid + '_' + encodeURIComponent(p.key))).catch(() => { });
+}
+
+// --- scores du jour ---
+$('stable').onclick = async e => {
+  const id = e.target.dataset.del; if (!id || !confirm('Supprimer ce score (et son fantôme) ?')) return;
+  const today = dayKey();
+  await fb.deleteDoc(envRef('days', today, 'scores', id));
+  await fb.deleteDoc(envRef('days', today, 'ghosts', id)).catch(() => { });
+  toast('Score supprimé'); refresh();
+};
+
+// --- annonce ---
+$('asend').onclick = async () => {
+  const text = $('atext').value.trim(); if (!text) return toast('Écris une annonce.');
+  await fb.setDoc(envRef('config', 'announce'), { text, at: Date.now() }); toast('📣 Annonce publiée'); refresh();
+};
+$('aclear').onclick = async () => { await fb.setDoc(envRef('config', 'announce'), { text: '', at: Date.now() }); toast('Annonce retirée'); refresh(); };
+
+// --- mot de passe oublié ---
+$('fcheck').onclick = () => {
+  const n = $('fname').value.trim(); if (!n) return;
+  $('femail').textContent = accountEmail(n);
+  $('flink').href = `https://console.firebase.google.com/project/${FIREBASE_CONFIG.projectId}/authentication/users`;
+  $('fsteps').classList.remove('hidden'); $('fmsg').textContent = '';
+};
+$('ffree').onclick = async () => {
+  const key = nameKey($('fname').value), p = players.find(x => x.key === key);
+  if (!p) return $('fmsg').textContent = 'Ce pseudo n\'est pas (ou plus) réservé.';
+  if (!confirm(`Libérer « ${p.name} » ? (sa progression est gardée de côté)`)) return;
+  await freeName(p); $('fmsg').innerHTML = '<span class="good">Pseudo libéré.</span> Le joueur peut recréer son profil (étape 3).'; refresh();
+};
+$('frestore').onclick = async () => {
+  const name = $('fname').value.trim(), key = nameKey(name);
+  const owner = await fb.getDoc(fb.doc(db, 'names', key));
+  if (!owner.exists()) return $('fmsg').textContent = 'Le joueur n\'a pas encore recréé son profil (étape 3).';
+  const uid = owner.data().uid, mineId = uid + '_' + encodeURIComponent(key);
+  // anciennes progressions de ce pseudo (autres comptes), la plus récente d'abord
+  const olds = (await all(envCol('profiles'))).filter(d => nameKey(d.name || '') === key && d.id !== mineId).sort((a, b) => (b.at || 0) - (a.at || 0));
+  if (!olds.length) return $('fmsg').textContent = 'Aucune ancienne progression trouvée pour ce pseudo.';
+  const data = JSON.parse(olds[0].data);
+  Object.assign(data, { uid, account: true, name: owner.data().name });
+  await fb.setDoc(envRef('profiles', mineId), { name: owner.data().name, at: Date.now(), data: JSON.stringify(data) });
+  $('fmsg').innerHTML = `<span class="good">Progression restaurée</span> (sauvegarde du ${fmtDate(olds[0].at)}). ${esc(owner.data().name)} la retrouve à sa prochaine ouverture du jeu.`;
+};
+
+start();
+</script>
+</body>
+</html>

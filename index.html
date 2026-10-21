@@ -1444,6 +1444,7 @@ const Online = {
       await c.fb.setDoc(this.ref(c, 'players', this.id(c, p.name)), {
         name: p.name, best: p.stats.best, bestStreak: p.bestStreak, team: p.team || '',
         legends: Object.keys(p.legends).length, badges: Object.keys(p.badges).length, at: Date.now(),
+        account: !!p.account, runs: p.stats.runs || 0,
       });
       return true;
     }, 8000);
@@ -1455,6 +1456,30 @@ const Online = {
       delete this.mem['rx:' + day];
       return true;
     });
+  },
+
+  // Cadeaux de l'organisateur (page admin) : appliqués puis effacés
+  claimGifts(p) {
+    return this.run(async c => {
+      if (!await this.ready(c, p)) return null;
+      const ref = this.ref(c, 'gifts', this.id(c, p.name)), snap = await c.fb.getDoc(ref);
+      if (!snap.exists()) return null;
+      const g = snap.data();
+      p.coins += g.coins || 0;
+      for (const key of g.items || []) {
+        const [type, id] = key.split(':'), item = COSMETICS[type] && COSMETICS[type].find(it => it.id === id);
+        if (item && !Store.owns(p, type, item)) p.owned[type].push(id);
+      }
+      await c.fb.deleteDoc(ref);
+      return g;
+    }, 8000);
+  },
+  // Annonce de l'organisateur affichée sur l'accueil
+  announce() {
+    return this.cached('announce', 10 * 60 * 1000, () => this.run(async c => {
+      const snap = await c.fb.getDoc(this.ref(c, 'config', 'announce'));
+      return snap.exists() ? snap.data() : { text: '' };
+    }));
   },
 
   // --- Progression en ligne ---
@@ -2675,6 +2700,13 @@ const App = {
   async syncOnStart() {
     const p = this.p;
     if (p && await Online.pullProfile(p)) { this.loadDay(); if (this.screen === 'home') this.show('home'); }
+    const g = p && await Online.claimGifts(p);
+    if (g) {
+      Store.save(); Sound.play('unlock');
+      const what = [g.coins ? `+${g.coins} 🟡` : '', ...(g.items || []).map(k => { const [t, id] = k.split(':'); return findCos(t, id).name; })].filter(Boolean).join(', ');
+      this.toast(`🎁 Cadeau de l'organisateur : ${what}${g.msg ? ' — ' + g.msg : ''}`);
+      if (this.screen === 'home') this.show('home');
+    }
   },
 
   fit() {
@@ -2788,6 +2820,7 @@ const App = {
       switchp: () => this.switchTo(v),
       create: () => this.doCreate(),
       login: () => this.doLogin(),
+      annok: () => { safeStorageSet('bousier_ann_' + ONLINE_ENV, v); this.show('home'); },
       eye: () => { for (const i of this.ui.querySelectorAll('input.pw')) i.type = i.type === 'password' ? 'text' : 'password'; },
       secure: () => this.doSecure(),
       saveteam: () => this.saveTeam(),
@@ -3199,6 +3232,8 @@ const App = {
     this.champ = champ;
     const rank = lb.findIndex(e => e.name === p.name) + 1;
     const news = await this.news(lb);
+    const ann = await Online.announce();
+    const annText = ann && ann.text && safeStorageGet('bousier_ann_' + ONLINE_ENV) !== String(ann.at) ? ann.text : '';
     const leg = cfg.legend;
     const quests = cfg.quests.map(q => `<li class="${d.quests[q.id] ? 'done' : ''}">${d.quests[q.id] ? '✅' : '⬜'} ${esc(q.text)}</li>`).join('');
     const dots = [0, 1, 2].map(i => `<span class="dot ${i < d.attempts ? 'used' : ''}"></span>`).join('');
@@ -3212,6 +3247,7 @@ const App = {
         <div class="sub">Dune #${cfg.num} · ${esc(fmtDayLong(this.today))}</div>
         <div class="mascot bob">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
       </div>
+      ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
       ${p.nameTaken ? '<div class="banner bad">Ce pseudo est déjà pris en ligne : tes scores ne sont pas envoyés. Crée un autre joueur.</div>' : ''}

@@ -5,5 +5,5 @@ export {
   EmailAuthProvider, linkWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword,
 } from 'firebase/auth';
 export {
-  getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs,
+  getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, deleteDoc, collection, query, orderBy, limit, getDocs,
 } from 'firebase/firestore/lite';

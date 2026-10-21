@@ -10,6 +10,10 @@ service cloud.firestore {
     function signedIn() {
       return request.auth != null;
     }
+    // Organisateur du jeu (compte « Florent ») : page admin
+    function isAdmin() {
+      return signedIn() && request.auth.uid in ['iYDurji9CuUbdV04FBIM1d2nLiH2'];
+    }
     function mine(id) {
       return signedIn() && id.matches(request.auth.uid + '_.+');
     }
@@ -46,6 +50,7 @@ service cloud.firestore {
       allow create: if signedIn() && okName(request.resource.data)
         && key == request.resource.data.name.lower()
         && request.resource.data.uid == request.auth.uid;
+      allow delete: if isAdmin();
     }
 
     match /envs/{env}/days/{day}/scores/{id} {
@@ -53,6 +58,7 @@ service cloud.firestore {
       allow create, update: if okEnv(env) && mine(id) && isToday(day)
         && ownsName(request.resource.data) && okScore(request.resource.data.score) && okTeam(request.resource.data)
         && (resource == null || request.resource.data.score >= resource.data.score);
+      allow delete: if isAdmin();
     }
 
     match /envs/{env}/days/{day}/ghosts/{id} {
@@ -62,6 +68,7 @@ service cloud.firestore {
         && request.resource.data.x is list && request.resource.data.x.size() <= 20000
         && request.resource.data.y is list && request.resource.data.y.size() <= 20000
         && request.resource.data.r is list && request.resource.data.r.size() <= 20000;
+      allow delete: if isAdmin();
     }
 
     match /envs/{env}/days/{day}/reacts/{id} {
@@ -76,13 +83,26 @@ service cloud.firestore {
       allow create, update: if okEnv(env) && mine(id)
         && ownsName(request.resource.data) && okScore(request.resource.data.best) && okTeam(request.resource.data)
         && request.resource.data.bestStreak is int && request.resource.data.bestStreak >= 0;
+      allow delete: if isAdmin();
     }
 
-    // Progression complète : visible et modifiable seulement par son propriétaire
+    // Progression complète : visible et modifiable seulement par son propriétaire (et l'organisateur)
     match /envs/{env}/profiles/{id} {
-      allow read: if mine(id);
-      allow create, update: if okEnv(env) && mine(id) && ownsName(request.resource.data)
+      allow read: if mine(id) || isAdmin();
+      allow create, update: if okEnv(env) && (mine(id) && ownsName(request.resource.data) || isAdmin())
         && request.resource.data.data is string && request.resource.data.data.size() < 500000;
+    }
+
+    // Cadeaux de l'organisateur (pièces, objets) : le joueur les récupère puis les efface
+    match /envs/{env}/gifts/{id} {
+      allow read, delete: if mine(id) || isAdmin();
+      allow create, update: if okEnv(env) && isAdmin();
+    }
+
+    // Annonce affichée sur l'accueil de tous les joueurs
+    match /envs/{env}/config/{doc} {
+      allow read: if true;
+      allow write: if okEnv(env) && isAdmin();
     }
   }
 }
