@@ -2,7 +2,7 @@
 export { initializeApp } from 'firebase/app';
 export {
   getAuth, signInAnonymously, connectAuthEmulator,
-  EmailAuthProvider, linkWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  EmailAuthProvider, linkWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut,
 } from 'firebase/auth';
 export {
   getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, deleteDoc, collection, query, where, orderBy, limit, getDocs,

@@ -75,7 +75,7 @@ ol li { margin: 8px 0; }
     <section id="tab-activity" class="panel">
       <h2>Activité</h2>
       <div class="stats" id="stats"></div>
-      <p class="muted">Inscrits = pseudos réservés. Actifs = joueurs avec un score sur la période.</p>
+      <p class="muted">Comptes = pseudos réservés, communs à la version officielle et à la version de test. Les autres chiffres concernent la version choisie en haut.</p>
     </section>
 
     <section id="tab-players" class="panel hidden">
@@ -139,7 +139,7 @@ ol li { margin: 8px 0; }
 <script type="module">
 // Page réservée à l'organisateur : les règles Firestore n'autorisent ces
 // opérations qu'au compte administrateur (voir isAdmin dans firestore.rules).
-import * as fb from './vendor/firebase.js?v=5';  // même numéro que VENDOR_VERSION dans index.html
+import * as fb from './vendor/firebase.js?v=6';  // même numéro que VENDOR_VERSION dans index.html
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAE8Mi5r9A656BEBCfHPjpL0bKrkis7ero',
@@ -227,7 +227,7 @@ async function refresh() {
   const activeWeek = new Set([...scores, ...week.flat()].map(s => nameKey(s.name)));
   const runs = recs.reduce((n, r) => n + (r.runs || 0), 0);
   $('stats').innerHTML = [
-    ['Inscrits', names.length], ['Actifs aujourd\'hui', scores.length], ['Actifs sur 7 jours', activeWeek.size],
+    ['Comptes (communs aux 2 versions)', names.length], ['Joueurs de cette version', recs.length], ['Actifs aujourd\'hui', scores.length], ['Actifs sur 7 jours', activeWeek.size],
     ['Parties jouées', runs || '—'],
   ].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('');
   renderPlayers();
@@ -243,7 +243,7 @@ async function refresh() {
 
 function renderPlayers() {
   const q = nameKey($('search').value || '');
-  const list = players.filter(p => !q || p.key.includes(q) || (p.rec && (p.rec.team || '').toLowerCase().includes(q)));
+  const list = players.filter(p => (env === 'prod' || p.rec) && (!q || p.key.includes(q) || (p.rec && (p.rec.team || '').toLowerCase().includes(q))));
   $('ptable').innerHTML = '<tr><th>Pseudo</th><th>Équipe</th><th class="r">Record</th><th class="r">Série</th><th>Dernière activité</th><th></th></tr>' + list.map(p => {
     const r = p.rec;
     return `<tr><td>${esc(p.name)}</td><td>${esc(r && r.team || '')}</td><td class="r">${r ? fmtSize(r.best) : '—'}</td><td class="r">${r ? '🔥' + r.bestStreak : ''}</td>
