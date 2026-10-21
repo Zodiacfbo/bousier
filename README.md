@@ -50,6 +50,14 @@ Les comptes (pseudos + mots de passe) restent dans Firebase Authentication et ne
 score du jour, annonce sur l'accueil, mot de passe oublié. Réservée au compte organisateur : son uid est dans
 `isAdmin()` (`firestore.rules`) et `ADMIN_UIDS` (`admin.html`).
 
+## Versions
+
+- Chaque version publiée sur `main` reçoit un numéro (tag Git `vX.Y`) : https://github.com/Zodiacfbo/bousier/tags
+- `CHANGELOG.md` explique ce que chaque version apporte ; le panneau « Quoi de neuf ? » du jeu (`CHANGELOG`
+  dans `index.html`) en est le résumé pour les joueurs, validé par l'organisateur avant publication.
+- Nouvelle version : compléter `CHANGELOG.md`, publier sur `main`, puis
+  `git tag -a vX.Y -m "…" && git push origin vX.Y`.
+
 ## Licence
 
 © 2026 zodiacfbo — tous droits réservés, voir `LICENSE` (les composants tiers gardent leur licence).
