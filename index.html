@@ -1258,8 +1258,13 @@ function runSummary(run) {
     score: run.score, sizeCm: Math.round(run.sizeCm * 10) / 10, terrier: run.terrier, legend: run.legend,
     time: Math.round(run.time * 10) / 10, absorbed: run.absorbed, bumps: run.bumps, wallHits: run.wallHits,
     pricks: run.pricks, weather: run.weather,
+    // distance au centre du terrier (réussi) ou au bord (raté), pour les titres du jour
+    holeOff: run.holeOff != null ? Math.round(run.holeOff * 10) / 10 : null,
+    missBy: run.missBy != null ? Math.round(run.missBy * 10) / 10 : null,
   };
 }
+// Les 3 essais du jour, en résumé (titres liés au terrier)
+const runsBrief = runs => (runs || []).map(r => ({ terrier: !!r.terrier, holeOff: r.holeOff ?? null, missBy: r.missBy ?? null }));
 
 // Fantômes à affronter : le premier du jour et le rival (juste au-dessus de moi,
 // ou le dernier du classement si je n'ai pas encore de score)
@@ -1287,7 +1292,7 @@ function teamBoard(week) {
 const LocalBoard = {
   async day(day) {
     return sortBoard(Object.values(Store.data.profiles)
-      .map(p => { const d = p.days[day]; return d && d.best > 0 ? { id: p.name, name: p.name, score: d.best, time: d.bestRun && d.bestRun.time, run: d.bestRun, team: p.team || '' } : null; })
+      .map(p => { const d = p.days[day]; return d && d.best > 0 ? { id: p.name, name: p.name, score: d.best, time: d.bestRun && d.bestRun.time, run: d.bestRun, runs: runsBrief(d.runs), team: p.team || '' } : null; })
       .filter(Boolean));
   },
   async week(wk) {
@@ -1429,7 +1434,7 @@ const Online = {
     const past = day < dayKey();
     if (past) { const saved = this.pastGet(day); if (saved) { this.live = true; return saved; } }
     const lb = await this.cached('day:' + day, DAY_TTL, () => this.run(async c => sortBoard((await this.list(c, ['days', day, 'scores'], 'score', 200))
-      .map(e => ({ id: e.id, name: e.name, score: e.score, time: e.time, run: e.run || null, team: e.team || '' })))));
+      .map(e => ({ id: e.id, name: e.name, score: e.score, time: e.time, run: e.run || null, runs: e.runs || null, team: e.team || '' })))));
     if (lb && past) this.pastSet(day, lb);
     return lb ? lb.slice() : lb;
   },
@@ -1477,13 +1482,14 @@ const Online = {
       if (!await this.ready(c, p)) return false;
       const id = this.id(c, p.name), at = Date.now(), team = p.team || '';
       const time = d.bestRun && d.bestRun.time != null ? d.bestRun.time : null;
-      const writes = [c.fb.setDoc(this.ref(c, 'days', day, 'scores', id), { name: p.name, score: d.best, time, run: d.bestRun, team, at })];
+      const runs = runsBrief(d.runs);
+      const writes = [c.fb.setDoc(this.ref(c, 'days', day, 'scores', id), { name: p.name, score: d.best, time, run: d.bestRun, runs, team, at })];
       if (d.ghost) writes.push(c.fb.setDoc(this.ref(c, 'days', day, 'ghosts', id), { name: p.name, score: d.best, x: d.ghost.x, y: d.ghost.y, r: d.ghost.r, at }));
       await Promise.all(writes);
       // mon score remplace l'ancien dans le classement en mémoire (sans relecture)
       const c0 = this.mem['day:' + day];
       if (c0) {
-        const entry = { id, name: p.name, score: d.best, time, run: d.bestRun, team };
+        const entry = { id, name: p.name, score: d.best, time, run: d.bestRun, runs, team };
         c0.val = sortBoard(c0.val.filter(e => e.id !== id).concat(entry));
       }
       return true;
@@ -2257,7 +2263,7 @@ class Game {
     if (b.y >= this.course.holeY - 2) {
       this.run.sizeCm = radiusToCm(b.r);
       if (Math.abs(b.x - this.course.holeX) <= HOLE_TOL) {
-        this.run.terrier = true; this.phase = 'hole'; Sound.play('win');
+        this.run.terrier = true; this.run.holeOff = Math.abs(b.x - this.course.holeX); this.phase = 'hole'; Sound.play('win');
         this.notice('DANS LE TERRIER !', '#fff4a8', 2, 3);
         for (let i = 0; i < 4; i++) this.rec.x.push(Math.round(this.course.holeX * 10)), this.rec.y.push(this.course.holeY), this.rec.r.push(0);
       } else {
@@ -4040,7 +4046,23 @@ function dayTitles(lb) {
     for (const e of runs) { const v = f(e.run); if (v > 0 && (!best || v > best.v)) best = { name: e.name, v }; }
     return best;
   };
+  // titres liés au terrier : sur les 3 essais du jour de chacun
+  const tries = lb.filter(e => e.runs && e.runs.length);
+  const low = f => {
+    let best = null;
+    for (const e of tries) for (const r of e.runs) { const v = f(r); if (v != null && (!best || v < best.v)) best = { name: e.name, v }; }
+    return best;
+  };
+  const most = f => {
+    let best = null;
+    for (const e of tries) { const v = f(e.runs); if (v > 0 && (!best || v > best.v)) best = { name: e.name, v }; }
+    return best;
+  };
+  const missed = most(rs => rs.filter(r => !r.terrier).length);
   return [
+    ['🎯', 'Dans le mille', low(r => r.terrier && r.holeOff != null ? r.holeOff : null), v => `${Math.round(100 - v / HOLE_TOL * 100)} %`, 'bullseye'],
+    ['🙈', 'Raté de peu', low(r => !r.terrier && r.missBy != null ? r.missBy : null), v => v < 2 ? 'd\'un cheveu' : v < 6 ? 'de très peu' : 'de peu', 'close'],
+    ['🕳️', 'Le terrier, c\'est pour les autres', missed && missed.v >= 2 ? missed : null, v => v + ' ratés', 'nohole'],
     ['🐢', 'Le plus lent', top(r => r.time), v => fmtTime(v), 'slow'],
     ['💥', 'Roi des chocs', top(r => (r.bumps || 0) + (r.wallHits || 0)), v => v + ' chocs', 'bumps'],
     ['🧲', 'L\'aspirateur', top(r => r.absorbed), v => v + ' objets', 'vacuum'],
