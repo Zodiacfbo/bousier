@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.6.1 — Mises à jour immédiates (21 octobre 2026)
+- Le jeu vérifie à chaque ouverture s'il existe une version plus récente : les nouveautés arrivent
+  dès la première réouverture, sans attendre (hors connexion, rien ne change).
+
 ## v1.6 — Nouveaux titres du jour (21 octobre 2026)
 - 🎯 Dans le mille (rentré le plus au centre du terrier), 🙈 Raté de peu (terrier raté de moins loin),
   🕳️ Le terrier, c'est pour les autres (le plus de terriers ratés, 2 minimum).
