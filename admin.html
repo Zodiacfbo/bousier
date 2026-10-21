@@ -67,6 +67,7 @@ ol li { margin: 8px 0; }
       <button data-tab="activity" class="on">📈 Activité</button>
       <button data-tab="players">👥 Joueurs</button>
       <button data-tab="pstats">📊 Stats</button>
+      <button data-tab="meteo">🌦️ Météo</button>
       <button data-tab="ideas">💡 Suggestions <span id="inew"></span></button>
       <button data-tab="scores">🧹 Scores du jour</button>
       <button data-tab="announce">📣 Annonce</button>
@@ -100,6 +101,12 @@ ol li { margin: 8px 0; }
       <p class="muted">D'après la progression de chaque joueur (version choisie en haut). « Jours joués » est compté à partir du 22 octobre 2026.</p>
       <div class="row"><button class="main" id="csv">⬇️ Télécharger en tableur (CSV)</button></div>
       <div class="scroll"><table id="pstable"></table></div>
+    </section>
+
+    <section id="tab-meteo" class="panel hidden">
+      <h2>Calendrier des dunes</h2>
+      <p class="muted">Météo et trésor de chaque dune, aujourd'hui et les 30 prochains jours (identiques pour tous les joueurs).</p>
+      <div class="scroll"><table id="mtable"></table></div>
     </section>
 
     <section id="tab-ideas" class="panel hidden">
@@ -265,6 +272,46 @@ function renderPlayers() {
   }).join('');
 }
 $('search').oninput = renderPlayers;
+
+// --- calendrier des dunes : copie exacte du tirage de index.html (météo, trésor) ---
+const LAUNCH_DAY = '2026-10-20';
+const WEATHERS = [['☀️', 'Grand calme'], ['🌪️', 'Tempête de sable'], ['🌙', 'Nuit étoilée'], ['🌧️', 'Averse'], ['🔥', 'Canicule'], ['💨', 'Vent arrière']];
+const LEGENDS = ['Couronne du pharaon', 'Scarabée d\'or', 'Le téléphone de Kevin', 'Lampe magique', 'Le mug du bureau', 'Ankh sacré'];
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hashStr(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+const rnd = key => mulberry32(hashStr(key))();
+const baseWeatherIdx = day => Math.floor(rnd(day + '|meteo') * WEATHERS.length);
+function rerollWeather(day, prev) {
+  const wi = baseWeatherIdx(day);
+  return wi !== prev ? wi : (wi + 1 + Math.floor(rnd(day + '|m2') * (WEATHERS.length - 1))) % WEATHERS.length;
+}
+function weatherIdx(day) {
+  let d = LAUNCH_DAY, prev = rerollWeather(d, baseWeatherIdx(addDays(d, -1)));
+  while (d < day) { d = addDays(d, 1); prev = rerollWeather(d, prev); }
+  return prev;
+}
+const dayNumber = k => Math.round((new Date(k + 'T12:00') - new Date(LAUNCH_DAY + 'T12:00')) / 86400000) + 1;
+function renderMeteo() {
+  const today = dayKey(), rows = [];
+  for (let i = 0; i <= 30; i++) {
+    const day = addDays(today, i), [icon, name] = WEATHERS[weatherIdx(day)];
+    const date = new Date(day + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+    rows.push(`<tr${i === 0 ? ' style="font-weight:700"' : ''}><td>${date}${i === 0 ? ' (aujourd\'hui)' : ''}</td><td class="r">#${dayNumber(day)}</td><td>${icon} ${name}</td><td class="muted">${esc(LEGENDS[Math.floor(rnd(day + '|legend') * LEGENDS.length)])}</td></tr>`);
+  }
+  $('mtable').innerHTML = '<tr><th>Jour</th><th class="r">Dune</th><th>Météo</th><th>Trésor</th></tr>' + rows.join('');
+}
+renderMeteo();
 
 // --- stats par joueur ---
 const STAT_COLS = [
