@@ -555,6 +555,7 @@ const ROWS = {
   citrouille: ['...kek...', '.kkkekkk.', 'kooOoOook', 'koyoOoyok', 'kooOoOook', 'koyyyyyok', 'kooOoOook', '.kkkkkkk.'],
   chauvesouris: ['k.k...k.k', 'kQkkkkkQk', 'kQQrkrQQk', '.kQQQQQk.', '..k...k..'],
   cranesucre: ['..kkkkk..', '.kwwwwwk.', 'kwwpwpwwk', 'kwvvwvvwk', 'kwvvwvvwk', 'kwwwkwwwk', '.kwpwpwk.', '..kwkwk..', '..kkkkk..'],
+  fantome: ['..kkkk..', '.kwwwwk.', 'kwwwwwwk', 'kwkwwkwk', 'kwkwwkwk', 'kwwwwwwk', 'kwwkkwwk', 'kwwwwwwk', 'kwwwwwwk', 'kk.kk.kk'],
   sorciere: ['....kk...', '...kvk...', '..kvvk...', '..kvvvk..', '.kyyyyyk.', 'kvvvvvvvk', '.kkkkkkk.'],
   cafe: ['.w.w.', 'kkkkk.', 'kwwwkk', 'kbbbk.k', 'kwwwkk', '.kkk..'],
   tasse: ['.kkkkk..', 'knbbbnkk', 'kwwwwwk.k', 'kwrwwwk.k', 'kwwwwwkk.', '.kwwwk...', '..kkk....'],
@@ -2045,9 +2046,11 @@ const EVENTS = {
   alarm: { name: 'ALARME INCENDIE !', hint: 'MOUSSE GLISSANTE DEVANT', dur: 0, from: NEW_EVENTS_FROM },
   chaser: { name: 'SCORPION !', hint: 'IL TE POURSUIT : ESQUIVE', dur: 5, from: NEW_EVENTS_FROM },
   magnet: { name: 'AIMANT !', hint: 'LES PETITS OBJETS VIENNENT A TOI', dur: 4, from: NEW_EVENTS_FROM },
+  // semaine Halloween : une fois par dune, en plus des autres
+  spooky: { name: 'FANTOMES !', hint: 'BOUH ! ILS TE CACHENT LA VUE', dur: 4, season: 'halloween' },
 };
 // Événements tirables ce jour-là
-const eventKinds = day => Object.keys(EVENTS).filter(k => k !== 'mirage' && (!EVENTS[k].from || day >= EVENTS[k].from));
+const eventKinds = day => Object.keys(EVENTS).filter(k => k !== 'mirage' && !EVENTS[k].season && (!EVENTS[k].from || day >= EVENTS[k].from));
 const CAFE = { id: 'cafe', name: 'Café', sprite: 'cafe', r: 2.5, boost: true, glow: true };
 // Un objet se mange s'il est assez petit par rapport à la boule (sauf obstacles indestructibles)
 function edible(o, b) { return !o.def.hazard && (o.def.legendary || o.r <= b.r * 0.8); }
@@ -2060,6 +2063,16 @@ function generateEvents(seed, holeY, day) {
     evs.push({ type, y: Math.round(holeY * (0.18 + (i + rng.range(0.15, 0.85)) * 0.6 / n)), seed: rng.int(1, 1e6) });
   }
   if (rng.chance(0.35)) evs.push({ type: 'mirage', y: holeY - 650, seed: rng.int(1, 1e6) });
+  if (isHalloween(day)) {
+    // fantômes : là où ils gênent le moins les autres événements
+    const hr = makeRng(hashStr(day + '|spooky'));
+    let best = 0, bestGap = -1;
+    for (let k = 0; k < 8; k++) {
+      const y = Math.round(holeY * hr.range(0.25, 0.75)), gap = Math.min(...evs.map(e => Math.abs(e.y - y)), 9999);
+      if (gap > bestGap) { bestGap = gap; best = y; }
+    }
+    evs.push({ type: 'spooky', y: best, seed: hr.int(1, 1e6) });
+  }
   return evs;
 }
 
@@ -2610,7 +2623,7 @@ class Game {
   resetEvents() {
     this.mirror = false; this.popup = null; this.mirage = null; this.kevins = []; this.saidEnd = false;
     this.alert = null; this.msg = null;
-    this.blackout = 0; this.coffeeT = 0; this.foam = null; this.siren = 0; this.chaser = null; this.magnet = false;
+    this.blackout = 0; this.coffeeT = 0; this.foam = null; this.siren = 0; this.chaser = null; this.magnet = false; this.spooks = [];
   }
 
   updateEvents(b) {
@@ -2711,6 +2724,20 @@ class Game {
         break;
       }
       case 'magnet': this.magnet = true; Sound.play('unlock'); break;
+      case 'spooky': {
+        // des fantômes de toutes tailles passent devant l'écran ; le plus gros s'arrête pour faire BOUH
+        const H = this.H, n = rng.int(4, 5);
+        for (let i = 0; i < n; i++) {
+          const left = i % 2 === 0, big = i === 0;
+          this.spooks.push({
+            s: big ? 6 : rng.int(2, 4), y: big ? H * 0.42 : rng.range(H * 0.18, H * 0.85),
+            x: left ? -30 - i * 25 : W + 30 + i * 25, vx: (left ? 1 : -1) * rng.range(28, 55), ph: rng.range(0, 6.28),
+            big, delay: big ? 0.6 : rng.range(0, 1.6), t: 0,
+          });
+        }
+        Sound.play('miss');
+        break;
+      }
       case 'mirage': {
         const hy = this.course.holeY, side = rng.chance(0.5) ? 1 : -1;
         const [L, R] = this.edge(hy);
@@ -2744,6 +2771,18 @@ class Game {
         c.hit = true;
         this.bump({ def: { prickly: true }, r: 5, hitT: -9 }, -dx, -dy, d);
       }
+    } else if (ev.type === 'spooky') {
+      for (const g of this.spooks) {
+        g.t += TICK;
+        if (g.t < g.delay) continue;
+        if (g.big) {
+          // le gros fantôme vient se planter au milieu de l'écran, fait BOUH, puis repart
+          const k = g.t - g.delay, tx = W / 2;
+          if (k < 1.1) g.x = lerp(g.x, tx, 0.06);
+          else if (k > 2.4) g.x += g.vx * 2.2 * TICK;
+          if (k > 1.1 && !g.boo) { g.boo = true; Sound.play('bump'); this.shake = 4; }
+        } else g.x += g.vx * TICK;
+      }
     } else if (ev.type === 'magnet') {
       // les petits objets juste devant glissent vers la boule
       for (let i = lowerBound(this.objs, b.y - 10); i < this.objs.length && this.objs[i].y < b.y + 70; i++) {
@@ -2762,6 +2801,7 @@ class Game {
     if (ev.type === 'power') this.blackout = 0;
     if (ev.type === 'chaser') this.chaser = null;
     if (ev.type === 'magnet') this.magnet = false;
+    if (ev.type === 'spooky') this.spooks = [];
   }
 
   updateKevins(b) {
@@ -2899,6 +2939,16 @@ class Game {
       ctx.fillStyle = 'rgba(4,4,10,0.97)';
       ctx.fillRect(0, 0, W, Math.max(0, my)); ctx.fillRect(0, my + S, W, H);
       ctx.fillRect(0, my, Math.max(0, mx), S); ctx.fillRect(mx + S, my, W, S);
+    }
+    for (const g of this.spooks || []) {
+      if (g.t < g.delay) continue;
+      const sp = SPR.fantome, w = sp.width * g.s, h = sp.height * g.s;
+      const x = Math.round(g.x - w / 2), y = Math.round(g.y - h / 2 + Math.sin(this.t * 4 + g.ph) * 2 * g.s);
+      ctx.globalAlpha = 0.88;
+      if (g.vx < 0 && !g.big) { ctx.save(); ctx.translate(x + w, y); ctx.scale(-1, 1); ctx.drawImage(sp, 0, 0, w, h); ctx.restore(); }
+      else ctx.drawImage(sp, x, y, w, h);
+      ctx.globalAlpha = 1;
+      if (g.boo && g.t - g.delay < 2.4) drawText(ctx, 'BOUH !', W / 2, y - 12, '#ffffff', 2, '#1d1416', 'center');
     }
     if (this.siren > 0 && this.frame % 20 < 10) { ctx.fillStyle = 'rgba(255,40,30,0.18)'; ctx.fillRect(0, 0, W, H); }
     ctx.save(); ctx.translate(0, -Math.round(camY));
