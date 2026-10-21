@@ -7,6 +7,18 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.9 — Champion de la semaine (21 octobre 2026)
+- 👑 Champion de la semaine : badge avec le nombre de titres (×1, ×2…), podium récompensé
+  200 / 100 / 50 🟡, annonce sur l'accueil de tous chaque lundi.
+- 📜 Palmarès des champions (dates et podium) et podium de la semaine dernière dans l'onglet Semaine.
+- 🟡 Fin de partie : détail des pièces gagnées, ligne par ligne.
+- ⏰ Rappel le dimanche s'il manque des jours pour le classement de la semaine.
+- 📖 Tuto en 6 fiches (dune du jour et 3 essais, personnalisation, boîte à idées) ; flèches
+  « glisse ton doigt » pendant la toute première course.
+- 🏜️ L'entraînement libre ne rapporte plus rien (il faisait avancer les objets secrets).
+- Équipes masquées pour l'instant (onglet du classement et choix dans le profil).
+- Page admin : onglet Stats par joueur (export tableur) et calendrier des dunes (météo et trésor à 30 jours).
+
 ## v1.8.2 — Corrections (21 octobre 2026)
 - Noms et icônes sans doublons : badge « Premier terrier », chapeau « Couronne de géant »,
   badge 🥇 Roi Bousier (👑 reste au champion de la semaine), badge 🌟 Journée parfaite.
