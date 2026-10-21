@@ -2047,7 +2047,7 @@ const EVENTS = {
   chaser: { name: 'SCORPION !', hint: 'IL TE POURSUIT : ESQUIVE', dur: 5, from: NEW_EVENTS_FROM },
   magnet: { name: 'AIMANT !', hint: 'LES PETITS OBJETS VIENNENT A TOI', dur: 4, from: NEW_EVENTS_FROM },
   // semaine Halloween : une fois par dune, en plus des autres
-  spooky: { name: 'FANTOMES !', hint: 'BOUH ! ILS TE CACHENT LA VUE', dur: 4, season: 'halloween' },
+  spooky: { name: 'FANTÔMES !', hint: 'ATTENTION !', dur: 4, season: 'halloween' },
 };
 // Événements tirables ce jour-là
 const eventKinds = day => Object.keys(EVENTS).filter(k => k !== 'mirage' && !EVENTS[k].season && (!EVENTS[k].from || day >= EVENTS[k].from));
