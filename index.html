@@ -1153,6 +1153,8 @@ const VENDOR_VERSION = 6;
 const DEV_LOCKED = ONLINE_ENV === 'dev';
 // La Grande Fuite (mode survie) : en test sur la version dev uniquement
 const SURVIVAL_ON = ONLINE_ENV === 'dev';
+// Équipes : onglet du classement et choix dans le profil masqués pour l'instant
+const TEAMS_ON = false;
 const ADMIN_UID = 'iYDurji9CuUbdV04FBIM1d2nLiH2';
 // Clé de site reCAPTCHA v3 pour App Check (Firebase vérifie que les demandes
 // viennent bien du jeu et pas d'un script). null = App Check désactivé.
@@ -1771,7 +1773,7 @@ const Leaderboard = {
     try { const saved = JSON.parse(safeStorageGet(key) || 'null'); if (saved) return saved; } catch (e) { }
     const lb = await Online.week(wk);
     if (!lb) return null;
-    const res = { wk, players: lb.length, top: lb.length >= 2 ? lb.slice(0, 3).map(e => ({ name: e.name, total: e.total })) : [], order: lb.map(e => e.name) };
+    const res = { wk, players: lb.length, top: lb.length >= 2 ? lb.slice(0, 3).map(e => ({ name: e.name, total: e.total })) : [] };
     safeStorageSet(key, JSON.stringify(res));
     return res;
   },
@@ -3805,14 +3807,8 @@ const App = {
     const prevWk = addDays(weekKey(this.today), -7), pod = await Leaderboard.podium(prevWk);
     const podShow = pod && pod.top.length && safeStorageGet('bousier_pod_' + ONLINE_ENV) !== prevWk;
     const mine = p.weekMsg || null;
-    // bilan de ma semaine dernière (d'après cet appareil) et rappel du dimanche
-    const played = wk => weekDays(wk).filter(k => p.days[k] && p.days[k].best > 0);
-    const lastDays = played(prevWk), podDone = safeStorageGet('bousier_pod_' + ONLINE_ENV) === prevWk;
-    const recap = !podDone && lastDays.length ? {
-      days: lastDays.length, best: Math.max(...lastDays.map(k => p.days[k].best)),
-      place: pod && pod.order ? pod.order.indexOf(p.name) : -1, of: pod ? pod.players : 0,
-    } : null;
-    const nowDays = played(weekKey(this.today)).length;
+    // rappel du dimanche : jours joués cette semaine (d'après cet appareil)
+    const nowDays = weekDays(weekKey(this.today)).filter(k => p.days[k] && p.days[k].best > 0).length;
     const sunday = dayFromKey(this.today).getDay() === 0 && left > 0 && !(d.best > 0) && nowDays < WEEK_BEST;
     const annText = ann && ann.text && safeStorageGet('bousier_ann_' + ONLINE_ENV) !== String(ann.at) ? ann.text : '';
     const leg = cfg.legend;
@@ -3830,7 +3826,7 @@ const App = {
       </div>
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
-      ${podShow || mine || recap ? `<div class="banner">${podShow ? `👑 Champion de la semaine dernière : <b>${esc(pod.top[0].name)}</b> (${fmtSize(pod.top[0].total)}) !${pod.top.slice(1).map((e, i) => ` ${medal(i + 1)} ${esc(e.name)}`).join('')}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${recap ? `<div>📊 Ta semaine dernière : ${recap.days} jour${recap.days > 1 ? 's' : ''} joué${recap.days > 1 ? 's' : ''} · meilleure boule ${fmtSize(recap.best)}${recap.place >= 0 ? ` · ${placeTxt(recap.place)} sur ${recap.of}` : ''}</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
+      ${podShow || mine ? `<div class="banner">${podShow ? `👑 Champion de la semaine dernière : <b>${esc(pod.top[0].name)}</b> (${fmtSize(pod.top[0].total)}) !${pod.top.slice(1).map((e, i) => ` ${medal(i + 1)} ${esc(e.name)}`).join('')}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
       ${p.nameTaken ? '<div class="banner bad">Ce pseudo est déjà pris en ligne : tes scores ne sont pas envoyés. Crée un autre joueur.</div>' : ''}
@@ -3991,7 +3987,7 @@ const App = {
       extra = '<div class="tiny center">Records = ta meilleure boule de tous les temps · 🔥 ta plus longue série · ✨ trésors trouvés.</div>';
       body = lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">🔥${e.bestStreak} ✨${e.legends}</td><td class="r">${fmtSize(e.best)}</td></tr>`).join('');
     }
-    const tabs = [['day', 'Jour'], ['week', 'Semaine'], ['teams', 'Équipes'], ['all', 'Records'], ...(SURVIVAL_ON ? [['surv', 'Survie']] : [])]
+    const tabs = [['day', 'Jour'], ['week', 'Semaine'], ...(TEAMS_ON ? [['teams', 'Équipes']] : []), ['all', 'Records'], ...(SURVIVAL_ON ? [['surv', 'Survie']] : [])]
       .map(([k, l]) => `<button class="tab ${tab === k ? 'on' : ''}" data-a="lbtab" data-v="${k}">${l}</button>`).join('');
     return `<div class="screen">
       ${this.back('Classement')}
@@ -4123,7 +4119,7 @@ const App = {
     const p = this.p, cur = p.name;
     const list = Object.keys(Store.data.profiles).map(n => `<button class="btn ${n === cur ? '' : 'ghost'}" data-a="switchp" data-v="${esc(n)}">${n === cur ? '✔ ' : ''}${esc(n)}</button>`).join('');
     // équipes connues, pour les proposer à la saisie
-    const recs = await Leaderboard.records();
+    const recs = TEAMS_ON ? await Leaderboard.records() : [];
     this.knownTeams = [...new Map(recs.filter(e => e.team).map(e => [nameKey(e.team), e.team])).values()];
     const account = p.account
       ? '<div class="good">🔒 Connecté. Pour jouer sur un autre téléphone, mets ton pseudo et ton mot de passe.</div>'
@@ -4137,12 +4133,12 @@ const App = {
         <div class="label">Mon compte</div>
         ${account}
       </div>
-      <div class="panel">
+      ${TEAMS_ON ? `<div class="panel">
         <div class="label">Mon équipe</div>
         <input id="team" maxlength="14" placeholder="Ex. : Compta, Marketing…" value="${esc(p.team || '')}" list="teams">
         <datalist id="teams">${this.knownTeams.map(t => `<option value="${esc(t)}">`).join('')}</datalist>
         <button class="btn" data-a="saveteam">Enregistrer</button>
-      </div>
+      </div>` : ''}
       <div class="panel">
         <div class="label">Joueurs de cet appareil</div>
         <div class="col">${list}</div>
