@@ -1280,9 +1280,36 @@ function withTimeout(promise, ms) {
 // avec id = « uid_pseudo ».
 const REACTIONS = ['👏', '😂', '💩', '🔥'];
 
+// Économie de lectures (quota gratuit de Firebase : 50 000 par jour) :
+// - le classement du jour est gardé en mémoire 90 s, et mon propre score y est
+//   ajouté directement après une partie au lieu de tout relire ;
+// - les jours passés ne changent plus : lus une seule fois, puis gardés sur
+//   l'appareil (14 jours) ; la semaine et le champion se calculent avec ;
+// - records et réactions gardés en mémoire quelques minutes.
+const DAY_TTL = 90 * 1000, RECORDS_TTL = 5 * 60 * 1000, REACT_TTL = 60 * 1000;
+const PAST_KEY = `bousier_lb_${ONLINE_ENV}_`;
+
 const Online = {
   conn: null,   // promesse -> { fb, auth, db } ou null
   live: false,  // vrai quand le dernier échange avec le serveur a réussi
+  mem: {},      // cache en mémoire : clé -> { val, at }
+
+  async cached(key, ttl, fn) {
+    const c = this.mem[key];
+    if (c && Date.now() - c.at < ttl) return c.val;
+    const val = await fn();
+    if (val) this.mem[key] = { val, at: Date.now() };
+    return val;
+  },
+  pastGet(day) {
+    try { return JSON.parse(safeStorageGet(PAST_KEY + day) || 'null'); } catch (e) { return null; }
+  },
+  pastSet(day, lb) {
+    safeStorageSet(PAST_KEY + day, JSON.stringify(lb));
+    // on ne garde que les 14 derniers jours
+    const limit = PAST_KEY + addDays(dayKey(), -14);
+    try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k.startsWith(PAST_KEY) && k < limit) localStorage.removeItem(k); } } catch (e) { }
+  },
 
   connect() {
     if (!this.conn) {
@@ -1347,24 +1374,27 @@ const Online = {
   },
 
   // --- Lectures ---
-  day(day) {
-    return this.run(async c => sortBoard((await this.list(c, ['days', day, 'scores'], 'score', 200))
-      .map(e => ({ id: e.id, name: e.name, score: e.score, time: e.time, run: e.run || null, team: e.team || '' }))));
+  async day(day) {
+    const past = day < dayKey();
+    if (past) { const saved = this.pastGet(day); if (saved) { this.live = true; return saved; } }
+    const lb = await this.cached('day:' + day, DAY_TTL, () => this.run(async c => sortBoard((await this.list(c, ['days', day, 'scores'], 'score', 200))
+      .map(e => ({ id: e.id, name: e.name, score: e.score, time: e.time, run: e.run || null, team: e.team || '' })))));
+    if (lb && past) this.pastSet(day, lb);
+    return lb ? lb.slice() : lb;
   },
-  week(wk) {
-    return this.run(async c => {
-      const days = await Promise.all(weekDays(wk).map(k => this.list(c, ['days', k, 'scores'], 'score', 200)));
-      const by = {};
-      for (const list of days) for (const e of list) {
-        const t = by[e.name] || (by[e.name] = { name: e.name, team: '', total: 0, played: 0 });
-        t.total += e.score; t.played++; if (e.team) t.team = e.team;
-      }
-      return Object.values(by).map(e => ({ ...e, total: Math.round(e.total * 10) / 10 })).sort((a, b) => b.total - a.total);
-    }, 8000);
+  async week(wk) {
+    const today = dayKey(), days = await Promise.all(weekDays(wk).filter(k => k <= today).map(k => this.day(k)));
+    if (days.some(d => !d)) return null;
+    const by = {};
+    for (const list of days) for (const e of list) {
+      const t = by[e.name] || (by[e.name] = { name: e.name, team: '', total: 0, played: 0 });
+      t.total += e.score; t.played++; if (e.team) t.team = e.team;
+    }
+    return Object.values(by).map(e => ({ ...e, total: Math.round(e.total * 10) / 10 })).sort((a, b) => b.total - a.total);
   },
   records() {
-    return this.run(async c => (await this.list(c, ['players'], 'best', 100))
-      .map(e => ({ name: e.name, best: e.best, bestStreak: e.bestStreak, legends: e.legends, badges: e.badges, team: e.team || '' })));
+    return this.cached('records', RECORDS_TTL, () => this.run(async c => (await this.list(c, ['players'], 'best', 100))
+      .map(e => ({ name: e.name, best: e.best, bestStreak: e.bestStreak, legends: e.legends, badges: e.badges, team: e.team || '' }))));
   },
   ghosts(day, targets) {
     return this.run(async c => (await Promise.all(targets.map(async t => {
@@ -1376,7 +1406,7 @@ const Online = {
   },
   // { [id du score]: { '👏': 2, … } } + mes réactions { [id du score]: '👏' }
   reactions(day) {
-    return this.run(async c => {
+    return this.cached('rx:' + day, REACT_TTL, () => this.run(async c => {
       const list = await this.list(c, ['days', day, 'reacts'], 'at', 500), uid = this.uid(c);
       const counts = {}, mine = {};
       for (const r of list) {
@@ -1385,7 +1415,7 @@ const Online = {
         if (r.id.startsWith(uid + '_')) mine[r.target] = r.e;
       }
       return { counts, mine };
-    });
+    }));
   },
 
   // --- Écritures ---
@@ -1399,6 +1429,12 @@ const Online = {
       const writes = [c.fb.setDoc(this.ref(c, 'days', day, 'scores', id), { name: p.name, score: d.best, time, run: d.bestRun, team, at })];
       if (d.ghost) writes.push(c.fb.setDoc(this.ref(c, 'days', day, 'ghosts', id), { name: p.name, score: d.best, x: d.ghost.x, y: d.ghost.y, r: d.ghost.r, at }));
       await Promise.all(writes);
+      // mon score remplace l'ancien dans le classement en mémoire (sans relecture)
+      const c0 = this.mem['day:' + day];
+      if (c0) {
+        const entry = { id, name: p.name, score: d.best, time, run: d.bestRun, team };
+        c0.val = sortBoard(c0.val.filter(e => e.id !== id).concat(entry));
+      }
       return true;
     }, 8000);
   },
@@ -1416,6 +1452,7 @@ const Online = {
     return this.run(async c => {
       if (!await this.ready(c, p)) return false;
       await c.fb.setDoc(this.ref(c, 'days', day, 'reacts', this.uid(c) + '_' + target), { target, e, by: p.name, at: Date.now() });
+      delete this.mem['rx:' + day];
       return true;
     });
   },
