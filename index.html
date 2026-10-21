@@ -3887,7 +3887,7 @@ const App = {
       if (rx && lb.some(e => e.name !== me)) extra += '<div class="tiny center">Touche la ligne d\'un collègue pour lui envoyer une réaction 👏 😂 💩 🔥</div>';
     } else if (tab === 'week') {
       const lb = await Leaderboard.week(weekKey(this.today));
-      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">${e.played} j</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
+      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny ${e.played >= WEEK_BEST ? 'good' : ''}">${Math.min(e.played, WEEK_BEST)}/${WEEK_BEST}</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Rien cette semaine.</td></tr>';
       extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés. Le vainqueur porte la 👑 toute la semaine suivante.</div>`;
     } else if (tab === 'teams') {

@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.8.1 — Classement de la semaine plus lisible (21 octobre 2026)
+- La colonne des jours affiche « 2/3 », « 3/3 »… (scores qui comptent sur 3), en vert une fois les 3 atteints.
+
 ## v1.8 — Bouton Nouveautés (21 octobre 2026)
 - 📰 Bouton Nouveautés en haut de l'accueil, avec une pastille indiquant les mises à jour non lues
   (remplace le grand panneau « Quoi de neuf ? »).
