@@ -76,6 +76,8 @@ button.banner { font: inherit; width: 100%; cursor: pointer; }
 .rx-add { font-size: .7em; margin-left: calc(var(--u) * 2); padding: 0 var(--u); border: var(--u) solid var(--panel2); color: var(--muted); white-space: nowrap; }
 .tuto { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 3); text-align: center; }
 .tuto .pics { display: flex; gap: calc(var(--u) * 6); align-items: center; justify-content: center; min-height: calc(var(--u) * 40); font-size: 2.4em; }
+.steps-list { text-align: left; margin: 0; padding-left: 1.4em; line-height: 1.5; }
+.tuto-dots { display: flex; gap: calc(var(--u) * 2); }
 .tuto .pics small { display: block; font-size: .35em; }
 .steps { display: flex; gap: calc(var(--u) * 2); justify-content: center; }
 .steps span { width: calc(var(--u) * 4); height: calc(var(--u) * 4); background: var(--panel2); }
@@ -316,7 +318,7 @@ const FONT = {
   '8': '###/#.#/.#./#.#/###', '9': '###/#.#/###/..#/..#',
   '!': '.#./.#./.#./.../.#.', '.': '.../.../.../.../.#.', ',': '.../.../.../.#./#..', ':': '.../.#./.../.#./...',
   '-': '.../.../###/.../...', '+': '.../.#./###/.#./...', "'": '.#./.#./.../.../...', '?': '##./..#/.#./.../.#.',
-  '%': '#../..#/.#./#../..#', '/': '..#/..#/.#./#../#..', ' ': '.../.../.../.../...',
+  '%': '#../..#/.#./#../..#', '/': '..#/..#/.#./#../#..', '<': '..#/.#./#../.#./..#', '>': '#../.#./..#/.#./#..', ' ': '.../.../.../.../...',
 };
 const GLYPHS = {};
 for (const k in FONT) GLYPHS[k] = FONT[k].split('/');
@@ -2154,7 +2156,7 @@ class Game {
     this.resetEvents(); this.lastSay = -9;
     this.shake = 0; this.particles = []; this.texts = [];
     this.eatable = new Set(OBJECTS.filter(o => o.r <= this.ball.r * 0.8).map(o => o.id));
-    this.state = 'run'; this.paused = false; this.phaseT = 0;
+    this.state = 'run'; this.paused = false; this.phaseT = 0; this.hint = !!opts.hint;
     this.initFx();
   }
 
@@ -2957,6 +2959,16 @@ class Game {
       drawText(ctx, 'AVALE PLUS PETIT QUE TOI', W / 2, H * 0.62 + 9, '#c8ff8a', 1, '#1d1416', 'center');
       drawText(ctx, 'VISE LE TERRIER AU BOUT !', W / 2, H * 0.62 + 18, '#fff4a8', 1, '#1d1416', 'center');
     }
+    // première course : flèches animées « glisse ton doigt » pendant les premières secondes
+    if (this.hint && this.state === 'run' && this.phase === 'play' && this.run.time < 5) {
+      const y = H * 0.7, dx = Math.round(Math.sin(this.run.time * 4) * 10);
+      if (this.frame % 30 < 22) {
+        drawText(ctx, '<', W / 2 - 52 + Math.min(0, dx), y, '#fff4a8', 3, '#1d1416', 'center');
+        drawText(ctx, '>', W / 2 + 52 + Math.max(0, dx), y, '#fff4a8', 3, '#1d1416', 'center');
+      }
+      drawText(ctx, 'GLISSE TON DOIGT', W / 2, y + 2, '#ffffff', 1, '#1d1416', 'center');
+      drawText(ctx, 'A GAUCHE / A DROITE', W / 2, y + 10, '#ffffff', 1, '#1d1416', 'center');
+    }
     // flèche vers le terrier
     const b = this.ball, dist = this.course.holeY - b.y;
     if (this.state === 'run' && this.phase === 'play' && !this.mirage && dist < 1100 && this.course.holeY - camY > H - 12) {
@@ -3057,6 +3069,9 @@ const App = {
       halt: cards => this.onHalt(cards),
     });
     this.lbTab = 'day'; this.shopTab = 'ball';
+    // Android / Chrome : bouton « Installer » natif
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); this.installEvt = e; });
+    window.addEventListener('appinstalled', () => { Store.data.settings.installDone = true; Store.save(); });
     this.fit();
     window.addEventListener('resize', () => this.fit());
     this.bindInput();
@@ -3206,6 +3221,8 @@ const App = {
       login: () => this.doLogin(),
       ideatype: () => { this.ideaType = v; for (const b of this.ui.querySelectorAll('[data-a="ideatype"]')) b.classList.toggle('on', b.dataset.v === v); },
       sendidea: () => this.sendIdea(),
+      install: async () => { const e = this.installEvt; if (!e) return; this.installEvt = null; e.prompt(); const c = await e.userChoice.catch(() => null); if (c && c.outcome === 'accepted') { Store.data.settings.installDone = true; Store.save(); this.show('home'); } else this.show('install'); },
+      installok: () => { Store.data.settings.installDone = true; Store.save(); this.show('home'); },
       annok: () => { safeStorageSet('bousier_ann_' + ONLINE_ENV, v); this.show('home'); },
       eye: () => { for (const i of this.ui.querySelectorAll('input.pw')) i.type = i.type === 'password' ? 'text' : 'password'; },
       secure: () => this.doSecure(),
@@ -3388,7 +3405,9 @@ const App = {
   launch(cfg, ghosts, label) {
     const p = this.p;
     Sound.init();
-    this.game.start(cfg, {
+    const hint = cfg.mode !== 'survival' && !Store.data.settings.hintDone;
+    if (hint) { Store.data.settings.hintDone = true; Store.save(); }
+    this.game.start(cfg, { hint,
       skin: findCos('ball', p.equip.ball), hat: findCos('hat', p.equip.hat), theme: findCos('theme', p.equip.theme), ghosts,
       outfit: findCos('outfit', p.equip.outfit), trail: findCos('trail', p.equip.trail),
     });
@@ -3682,7 +3701,17 @@ const App = {
       {
         title: 'Vise le terrier',
         pics: '🕳️',
-        text: 'Au bout de la dune, rentre dans le terrier : <b>sinon ton score est divisé par 2</b>.<br>Ton score = la taille de ta boule (+10 % si tu trouves le trésor du jour).<br><span class="tiny">3 essais par jour, ton meilleur compte au classement. Une nouvelle dune chaque jour !</span>',
+        text: 'Au bout de la dune, rentre dans le terrier : <b>sinon ton score est divisé par 2</b>.<br>Ton score = la taille de ta boule (+10 % si tu trouves le trésor du jour).',
+      },
+      {
+        title: 'Une dune par jour',
+        pics: '🏜️<span class="tuto-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
+        text: 'Chaque jour, une nouvelle dune, <b>la même pour tout le monde</b>.<br><b>3 essais par jour : seul ton meilleur résultat compte</b> au classement.<br><span class="tiny">Envie de t\'exercer ? 🏜️ Entraînement libre, sans limite.</span>',
+      },
+      {
+        title: 'Personnalise ton bousier',
+        pics: `${pix(mascotUrl(findCos('ball', 'saturne') || SKINS[0], findCos('hat', 'charlotte') || HATS[0], 10, findCos('outfit', 'blouse') || OUTFITS[0]), 72, 76)}<span class="gold">🟡</span>`,
+        text: 'Gagne des pièces 🟡 en jouant et avec les <b>quêtes du jour</b>.<br>Dépense-les dans <b>🎨 Style</b> : boules, chapeaux, tenues, traînées…<br><span class="tiny">Certains objets se gagnent avec les badges 🎖️.</span>',
       },
     ];
     const s = steps[step] || steps[0], last = step >= steps.length - 1;
@@ -3698,6 +3727,30 @@ const App = {
       ${last ? '' : '<button class="btn ghost" data-a="tuto" data-v="done">Passer</button>'}
       <button class="btn ghost small" data-a="go" data-v="changelog">📰 Toutes les nouveautés</button>
       ${COPYRIGHT}
+    </div>`;
+  },
+
+  // Installer l'appli : proposé tant que le jeu tourne dans le navigateur
+  showInstall() {
+    const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+    return !standalone && !Store.data.settings.installDone;
+  },
+  scr_install() {
+    const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), android = /Android/.test(ua);
+    const how = ios
+      ? '<li>Ouvre le jeu avec <b>Safari</b>.</li><li>Touche le bouton <b>Partager</b> (carré avec une flèche ⬆️).</li><li>Choisis <b>« Sur l\'écran d\'accueil »</b>, puis <b>Ajouter</b>.</li>'
+      : android
+        ? '<li>Touche le menu <b>⋮</b> en haut à droite de Chrome.</li><li>Choisis <b>« Installer l\'application »</b> (ou « Ajouter à l\'écran d\'accueil »).</li>'
+        : '<li>Dans Chrome ou Edge, clique sur l\'icône <b>Installer</b> à droite de la barre d\'adresse.</li>';
+    return `<div class="screen center">
+      <div class="title small">INSTALLER LE JEU</div>
+      <div class="panel tuto">
+        <div class="pics">📲</div>
+        <p>Mets Bousier sur ton écran d'accueil : il s'ouvre comme une appli, <b>en un geste</b>, et marche même sans internet.</p>
+        ${this.installEvt ? '<button class="btn big" data-a="install">Installer</button>' : `<ol class="steps-list">${how}</ol>`}
+      </div>
+      <button class="btn big" data-a="installok">C'est fait !</button>
+      <button class="btn ghost" data-a="go" data-v="home">Plus tard</button>
     </div>`;
   },
 
@@ -3728,6 +3781,7 @@ const App = {
       </div>
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
+      ${this.showInstall() ? '<button class="banner" data-a="go" data-v="install">📲 Installe Bousier sur ton écran d\'accueil →</button>' : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
       ${p.nameTaken ? '<div class="banner bad">Ce pseudo est déjà pris en ligne : tes scores ne sont pas envoyés. Crée un autre joueur.</div>' : ''}
       <div class="row2">
