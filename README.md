@@ -52,11 +52,12 @@ score du jour, annonce sur l'accueil, mot de passe oublié. Réservée au compte
 
 ## Versions
 
-- Chaque version publiée sur `main` reçoit un numéro (tag Git `vX.Y`) : https://github.com/Zodiacfbo/bousier/tags
+- Chaque version publiée sur `main` est archivée dans une branche `versions/vX.Y`, à ne jamais modifier :
+  https://github.com/Zodiacfbo/bousier/branches/all?query=versions
 - `CHANGELOG.md` explique ce que chaque version apporte ; le panneau « Quoi de neuf ? » du jeu (`CHANGELOG`
   dans `index.html`) en est le résumé pour les joueurs, validé par l'organisateur avant publication.
 - Nouvelle version : compléter `CHANGELOG.md`, publier sur `main`, puis
-  `git tag -a vX.Y -m "…" && git push origin vX.Y`.
+  `git push origin main:refs/heads/versions/vX.Y`.
 
 ## Licence
 

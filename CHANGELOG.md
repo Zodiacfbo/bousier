@@ -1,7 +1,8 @@
 # Journal des versions de Bousier
 
-Chaque version est archivée sur GitHub : page **Tags** du dépôt
-(https://github.com/Zodiacfbo/bousier/tags), d'où l'on peut télécharger le jeu tel qu'il était.
+Chaque version est archivée sur GitHub dans une branche `versions/vX.Y`
+(https://github.com/Zodiacfbo/bousier/branches/all?query=versions) : on peut y consulter
+et télécharger le jeu tel qu'il était (bouton « Code » > « Download ZIP »).
 Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueurs.
 
 ---
