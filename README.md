@@ -34,4 +34,5 @@ Pour l'installer comme une appli :
 - `index.html` : tout le jeu.
 - `manifest.webmanifest`, `sw.js`, `icons/` : ce qui rend le jeu installable et jouable hors connexion.
 - `vendor/firebase.js` : le SDK Firebase intégré au projet (voir `vendor/README.md`).
+- `fonts/` : police VT323 (licence libre OFL) utilisée seulement pour les chiffres, plus lisibles.
 - `firestore.rules`, `firebase.json` : règles de sécurité du classement et config de l'émulateur.

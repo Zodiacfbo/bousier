@@ -2,7 +2,7 @@
 // Stratégie « réseau d'abord » : on sert toujours la dernière version publiée,
 // et le cache ne sert que quand il n'y a pas de réseau.
 const CACHE = 'bousier-' + new URL(self.registration.scope).pathname;
-const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'vendor/firebase.js'];
+const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'vendor/firebase.js', 'fonts/vt323-latin.woff2'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
