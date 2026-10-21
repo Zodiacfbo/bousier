@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Bousier · © 2026 zodiacfbo · Tous droits réservés (voir LICENSE) -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -79,6 +80,7 @@ button.banner { font: inherit; width: 100%; cursor: pointer; }
 .steps { display: flex; gap: calc(var(--u) * 2); justify-content: center; }
 .steps span { width: calc(var(--u) * 4); height: calc(var(--u) * 4); background: var(--panel2); }
 .steps span.on { background: var(--gold); }
+.copy { font-size: .65em; color: var(--muted); text-align: center; opacity: .8; }
 b { color: #fff; }
 
 .btn {
@@ -1102,7 +1104,10 @@ const FIREBASE_CONFIG = {
 const ONLINE_ENV = location.pathname.includes('/dev/') ? 'dev' : 'prod';
 // Lien partagé avec les résultats : toujours la version officielle
 const GAME_URL = 'https://zodiacfbo.github.io/bousier/';
-const VENDOR_VERSION = 4;
+const VENDOR_VERSION = 5;
+// Clé de site reCAPTCHA v3 pour App Check (Firebase vérifie que les demandes
+// viennent bien du jeu et pas d'un script). null = App Check désactivé.
+const APPCHECK_SITE_KEY = null;
 
 // La version de test (/dev/) a sa propre sauvegarde pour ne pas toucher à la vraie
 const SAVE_KEY = location.pathname.includes('/dev/') ? 'bousier_dev_v1' : 'bousier_v1';
@@ -1334,6 +1339,8 @@ const Online = {
         // sinon un téléphone peut garder l'ancien module en cache avec la nouvelle page
         const fb = await import('./vendor/firebase.js?v=' + VENDOR_VERSION);
         const app = fb.initializeApp(FIREBASE_CONFIG);
+        if (APPCHECK_SITE_KEY && !window.BOUSIER_EMULATOR)
+          fb.initializeAppCheck(app, { provider: new fb.ReCaptchaV3Provider(APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
         const auth = fb.getAuth(app), db = fb.getFirestore(app);
         if (window.BOUSIER_EMULATOR) {
           fb.connectAuthEmulator(auth, 'http://' + BOUSIER_EMULATOR.auth, { disableWarnings: true });
@@ -3219,6 +3226,7 @@ const App = {
       <div class="mascot">${pix(mascotUrl(SKINS[0], HATS[0], 12), 80, 84)}</div>
       <button class="btn big" data-a="go" data-v="create">Créer mon profil</button>
       <button class="btn ghost" data-a="go" data-v="login">J'ai déjà un profil : me connecter</button>
+      ${COPYRIGHT}
     </div>`;
   },
 
@@ -3235,6 +3243,7 @@ const App = {
         <button class="btn big" data-a="${action}">${label}</button>
       </div>
       ${note ? `<div class="tiny center">${note}</div>` : ''}
+      ${COPYRIGHT}
     </div>`;
   },
   scr_create() {
@@ -3305,6 +3314,7 @@ const App = {
       <button class="btn big" data-a="tuto" data-v="${last ? 'done' : step + 1}">${last ? 'C\'est compris, je roule !' : 'Suivant'}</button>
       ${last ? '' : '<button class="btn ghost" data-a="tuto" data-v="done">Passer</button>'}
       <button class="btn ghost small" data-a="go" data-v="changelog">📰 Toutes les nouveautés</button>
+      ${COPYRIGHT}
     </div>`;
   },
 
@@ -3607,6 +3617,8 @@ const App = {
 };
 
 // Titres comiques du jour, d'après la meilleure partie de chacun
+const COPYRIGHT = '<div class="copy">© 2026 zodiacfbo · Tous droits réservés</div>';
+
 function dayTitles(lb) {
   const runs = lb.filter(e => e.run);
   if (runs.length < 2) return [];

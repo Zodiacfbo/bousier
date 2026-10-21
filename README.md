@@ -29,11 +29,30 @@ Pour l'installer comme une appli :
 - Mot de passe oublié : page admin, onglet « Mot de passe oublié » (supprimer le compte dans la console, libérer le pseudo, le joueur recrée son profil, restaurer sa progression).
 - Tester en local avec l'émulateur : `npx firebase emulators:start --only auth,firestore --project demo-bousier`.
 
+## Sécurité
+
+- **App Check** (reCAPTCHA v3) : Firebase vérifie que les demandes viennent du jeu. Clé de site dans
+  `APPCHECK_SITE_KEY` (`index.html` et `admin.html`) ; `null` = désactivé.
+- **Clé Firebase** restreinte au site `zodiacfbo.github.io` dans Google Cloud (APIs et services > Identifiants).
+- **Scores** plafonnés à 25 m par les règles Firestore.
+
+## Sauvegarde
+
+Chaque lundi, `.github/workflows/backup.yml` exporte toute la base Firestore (`scripts/backup.mjs`), la chiffre
+avec le secret `BACKUP_PASSWORD` et la garde 90 jours dans l'onglet **Actions** (artefact du run).
+Secrets GitHub nécessaires : `FIREBASE_SERVICE_ACCOUNT` (clé JSON d'un compte de service Firebase) et `BACKUP_PASSWORD`.
+Déchiffrer : `openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in bousier-AAAA-MM-JJ.json.enc -out sauvegarde.json`.
+Les comptes (pseudos + mots de passe) restent dans Firebase Authentication et ne sont pas dans la sauvegarde.
+
 ## Page admin
 
 `admin.html` (non liée depuis le jeu) : activité, liste des joueurs, cadeaux (pièces, objets), suppression d'un
 score du jour, annonce sur l'accueil, mot de passe oublié. Réservée au compte organisateur : son uid est dans
 `isAdmin()` (`firestore.rules`) et `ADMIN_UIDS` (`admin.html`).
+
+## Licence
+
+© 2026 zodiacfbo — tous droits réservés, voir `LICENSE` (les composants tiers gardent leur licence).
 
 ## Fichiers
 

@@ -28,8 +28,9 @@ service cloud.firestore {
     function okEnv(env) {
       return env == 'prod' || env == 'dev';
     }
+    // Score en cm : 25 m maximum (largement au-delà d'une vraie partie)
     function okScore(v) {
-      return v is number && v >= 0 && v <= 5000;
+      return v is number && v >= 0 && v <= 2500;
     }
     function okTeam(d) {
       return !('team' in d) || (d.team is string && d.team.size() <= 14);

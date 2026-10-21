@@ -7,3 +7,4 @@ export {
 export {
   getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, deleteDoc, collection, query, where, orderBy, limit, getDocs,
 } from 'firebase/firestore/lite';
+export { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';

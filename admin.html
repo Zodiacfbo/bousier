@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Bousier · © 2026 zodiacfbo · Tous droits réservés (voir LICENSE) -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -138,7 +139,7 @@ ol li { margin: 8px 0; }
 <script type="module">
 // Page réservée à l'organisateur : les règles Firestore n'autorisent ces
 // opérations qu'au compte administrateur (voir isAdmin dans firestore.rules).
-import * as fb from './vendor/firebase.js?v=4';  // même numéro que VENDOR_VERSION dans index.html
+import * as fb from './vendor/firebase.js?v=5';  // même numéro que VENDOR_VERSION dans index.html
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAE8Mi5r9A656BEBCfHPjpL0bKrkis7ero',
@@ -169,7 +170,11 @@ const fmtDate = ms => ms ? new Date(ms).toLocaleString('fr-FR', { day: 'numeric'
 let toastT;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 3000); }
 
-const app = fb.initializeApp(FIREBASE_CONFIG), auth = fb.getAuth(app), db = fb.getFirestore(app);
+const APPCHECK_SITE_KEY = null;  // même clé que dans index.html
+const app = fb.initializeApp(FIREBASE_CONFIG);
+if (APPCHECK_SITE_KEY && !window.BOUSIER_EMULATOR)
+  fb.initializeAppCheck(app, { provider: new fb.ReCaptchaV3Provider(APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+const auth = fb.getAuth(app), db = fb.getFirestore(app);
 if (window.BOUSIER_EMULATOR) {
   fb.connectAuthEmulator(auth, 'http://' + BOUSIER_EMULATOR.auth, { disableWarnings: true });
   const [h, p] = BOUSIER_EMULATOR.firestore.split(':'); fb.connectFirestoreEmulator(db, h, +p);

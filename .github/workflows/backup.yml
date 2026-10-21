@@ -1,0 +1,44 @@
+# Sauvegarde hebdomadaire de la base Firestore, chiffrée avec le secret BACKUP_PASSWORD.
+# Le fichier chiffré est gardé 90 jours dans l'onglet Actions (artefact du run).
+# Déchiffrer : openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in bousier-AAAA-MM-JJ.json.enc -out sauvegarde.json
+name: Sauvegarde des données
+
+on:
+  schedule:
+    - cron: '17 3 * * 1'  # chaque lundi vers 4 h ou 5 h (heure de Paris)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer firebase-admin
+        run: npm install --no-save --no-package-lock firebase-admin@13
+
+      - name: Exporter la base
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/backup.mjs backup.json
+
+      - name: Chiffrer
+        env:
+          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+        run: |
+          test -n "$BACKUP_PASSWORD" || { echo "Secret BACKUP_PASSWORD manquant"; exit 1; }
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:BACKUP_PASSWORD -in backup.json -out "bousier-$(date +%F).json.enc"
+          rm backup.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bousier-sauvegarde-${{ github.run_number }}
+          path: bousier-*.json.enc
+          retention-days: 90
