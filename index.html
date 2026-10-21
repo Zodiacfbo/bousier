@@ -551,6 +551,7 @@ const ROWS = {
   scarabeeor: ['k.......k', '.k.kkk.k.', '..kyyyk..', 'kkyYyYykk', '..kyyyk..', 'kkyYyYykk', '..kyyyk..', '.k.kkk.k.', 'k.......k'],
   telephone: ['.kkkkk.', 'kGGGGGk', 'kcwccck', 'kccccck', 'kcccwck', 'kccccck', 'kccccck', 'kGGGGGk', 'kGGhGGk', '.kkkkk.'],
   lampe: ['.....kk....', '....kyyk...', '..kkyyyykkk', 'kkyyyyyyyk.', '.kYYYYYYk..', '..kkkkkk...'],
+  cafe: ['.w.w.', 'kkkkk.', 'kwwwkk', 'kbbbk.k', 'kwwwkk', '.kkk..'],
   tasse: ['.kkkkk..', 'knbbbnkk', 'kwwwwwk.k', 'kwrwwwk.k', 'kwwwwwkk.', '.kwwwk...', '..kkk....'],
   ankh: ['..kkk..', '.kyyyk.', '.ky.yk.', '.kyyyk.', 'kkkykkk', 'kyyyyyk', 'kkkykkk', '..kyk..', '..kyk..', '..kkk..'],
   // chapeaux (vus de dessus)
@@ -1808,6 +1809,7 @@ const Leaderboard = {
 // ---------------------------------------------------------------------------
 
 const W = 180;
+const NEW_EVENTS_FROM = '2026-11-02';
 const COURSE_LEN = 5800, HOLE_Y = 5500, HOLE_TOL = 11, START_AREA = 25;
 const TICK = 1 / 60, GHOST_EVERY = 3;
 const GHOST_SKIN = { id: 'ghost', base: '#d8d0f8', light: '#f0ecff', hi: '#ffffff', dark: '#a69ad8', out: '#4a3a8a' };
@@ -1877,7 +1879,7 @@ function dailyConfig(day) {
   const legend = LEGENDS[Math.floor(makeRng(hashStr(day + '|legend')).next() * LEGENDS.length)];
   const seed = hashStr('bousier|' + day);
   const weather = WEATHERS[wi];
-  const course = generateCourse(seed, weather, legend);
+  const course = generateCourse(seed, weather, legend, day);
   const qr = makeRng(hashStr(day + '|quests'));
   const pool = QUEST_GEN.slice(), quests = [];
   while (quests.length < 3) quests.push(pool.splice(Math.floor(qr.next() * pool.length), 1)[0](qr, course));
@@ -1891,7 +1893,7 @@ function practiceConfig() {
 }
 
 // --- Génération de la dune --------------------------------------------------
-function generateCourse(seed, weather, legend) {
+function generateCourse(seed, weather, legend, day = dayKey()) {
   const rng = makeRng(seed);
   const len = COURSE_LEN, holeY = HOLE_Y;
   const p = [0, 0, 0, 0, 0].map(() => rng.range(0, Math.PI * 2));
@@ -1979,7 +1981,7 @@ function generateCourse(seed, weather, legend) {
   return {
     seed, weather, legend, len, holeY, holeX, Lx, Rx, objects: final, counts,
     windPh: [rng.range(0, 6.28), rng.range(0, 6.28)],
-    events: generateEvents(seed, holeY),
+    events: generateEvents(seed, holeY, day),
   };
 }
 
@@ -1996,13 +1998,23 @@ const EVENTS = {
   poop: { name: 'CROTTES !', hint: 'IL EN PLEUT : MIAM', dur: 0 },
   quake: { name: 'SEISME !', hint: 'LE SOL TREMBLE', dur: 3 },
   mirage: { name: 'MIRAGE ?', hint: 'UN DES DEUX TERRIERS EST FAUX', dur: 0 },
+  // à partir du 2 novembre 2026 (avant, les dunes restent identiques)
+  power: { name: 'COUPURE !', hint: 'PLUS DE COURANT : TIENS LE CAP', dur: 2.5, from: NEW_EVENTS_FROM },
+  copier: { name: 'PHOTOCOPIEUSE !', hint: 'TOUT EN DOUBLE DEVANT TOI', dur: 0, from: NEW_EVENTS_FROM },
+  coffee: { name: 'PAUSE CAFE !', hint: 'ATTRAPE LES TASSES : TURBO', dur: 0, from: NEW_EVENTS_FROM },
+  alarm: { name: 'ALARME INCENDIE !', hint: 'MOUSSE GLISSANTE DEVANT', dur: 0, from: NEW_EVENTS_FROM },
+  chaser: { name: 'SCORPION !', hint: 'IL TE POURSUIT : ESQUIVE', dur: 5, from: NEW_EVENTS_FROM },
+  magnet: { name: 'AIMANT !', hint: 'LES PETITS OBJETS VIENNENT A TOI', dur: 4, from: NEW_EVENTS_FROM },
 };
+// Événements tirables ce jour-là
+const eventKinds = day => Object.keys(EVENTS).filter(k => k !== 'mirage' && (!EVENTS[k].from || day >= EVENTS[k].from));
+const CAFE = { id: 'cafe', name: 'Café', sprite: 'cafe', r: 2.5, boost: true, glow: true };
 // Un objet se mange s'il est assez petit par rapport à la boule (sauf obstacles indestructibles)
 function edible(o, b) { return !o.def.hazard && (o.def.legendary || o.r <= b.r * 0.8); }
 
-function generateEvents(seed, holeY) {
+function generateEvents(seed, holeY, day) {
   const rng = makeRng((seed ^ 0x5eed1e) >>> 0);
-  const pool = Object.keys(EVENTS).filter(k => k !== 'mirage'), n = rng.int(2, 3), evs = [];
+  const pool = eventKinds(day), n = rng.int(2, 3), evs = [];
   for (let i = 0; i < n; i++) {
     const type = pool.splice(rng.int(0, pool.length - 1), 1)[0];
     evs.push({ type, y: Math.round(holeY * (0.18 + (i + rng.range(0.15, 0.85)) * 0.6 / n)), seed: rng.int(1, 1e6) });
@@ -2104,7 +2116,7 @@ function generateSurvivalCourse(seed, weather) {
   }
   objs.sort((a, b) => a.y - b.y);
   // événements surprise réguliers (sans mirage : il n'y a pas de terrier)
-  const evs = [], kinds = Object.keys(EVENTS).filter(k => k !== 'mirage');
+  const evs = [], kinds = eventKinds(dayKey());
   for (let ey = 3200; ey < len - 1000; ey += rng.range(2600, 4200)) evs.push({ type: rng.pick(kinds), y: Math.round(ey), seed: rng.int(1, 1e6) });
   return {
     seed, weather, legend: LEGENDS[0], len, holeY: len + 5000, holeX: W / 2, Lx, Rx, objects: objs, counts: {},
@@ -2260,9 +2272,13 @@ class Game {
     if (this.mirror) target = 2 * b.x - target;
     const maxLat = Math.max(42, 150 - r * 3.4);
     const desired = clamp((target - b.x) * 7, -maxLat, maxLat);
-    const acc = 900 / (1 + r * 0.09) * (wx.grip || 1);
+    const foamy = this.foam && b.y > this.foam.y0 && b.y < this.foam.y1;
+    const acc = 900 / (1 + r * 0.09) * (wx.grip || 1) * (foamy ? 0.2 : 1);
+    if (this.coffeeT > 0) { this.coffeeT -= TICK; if (this.frame % 3 === 0) this.particles.push({ x: b.x + (Math.random() - 0.5) * 4, y: b.y - b.r - 2, vx: (Math.random() - 0.5) * 10, vy: -30, g: 0, life: 0.4, col: '#ffffff', s: 1 }); }
+    if (this.siren > 0) this.siren -= TICK;
+    if (this.blackout) this.blackout += TICK;
     b.vx += clamp(desired - b.vx, -acc * TICK, acc * TICK);
-    const vyT = (46 + r * 2.3) * (wx.speed || 1) * (this.surv ? this.survSpeed() : 1);
+    const vyT = (46 + r * 2.3) * (wx.speed || 1) * (this.surv ? this.survSpeed() : 1) * (this.coffeeT > 0 ? 1.4 : 1);
     b.vy += clamp(vyT - b.vy, -150 * TICK, 45 * TICK);
     b.x += (b.vx + this.windAt(this.t)) * TICK;
     b.y += b.vy * TICK;
@@ -2397,6 +2413,7 @@ class Game {
   absorb(o, dx, dy, d) {
     const b = this.ball, run = this.run;
     o.dead = true;
+    if (o.def.boost) { this.coffeeT = 2.5; Sound.play('unlock'); this.floatText('TURBO !', b.x, b.y - b.r - 10, '#fff4a8'); this.burst(o.x, o.y, 8, ['#ffffff', '#c99a2e'], 50); return; }
     if (o.def.pickup) { Sound.play('unlock'); this.burst(o.x, o.y, 16, ['#74f088', '#ffffff', '#dcffe0'], 70); this.applyBonus(BONUS.mystere, true); return; }
     // rendements décroissants : plus la boule est grosse, moins chaque objet compte
     const gain = o.def.legendary ? 10 : ((this.wx.absorb || 1) * 0.3 * o.r * o.r + 0.6) * 9 / (9 + b.r);
@@ -2553,6 +2570,7 @@ class Game {
   resetEvents() {
     this.mirror = false; this.popup = null; this.mirage = null; this.kevins = []; this.saidEnd = false;
     this.alert = null; this.msg = null;
+    this.blackout = 0; this.coffeeT = 0; this.foam = null; this.siren = 0; this.chaser = null; this.magnet = false;
   }
 
   updateEvents(b) {
@@ -2614,6 +2632,45 @@ class Game {
         Sound.play('unlock');
         break;
       }
+      case 'power': this.blackout = 1; Sound.play('miss'); break;
+      case 'copier': {
+        // chaque objet un peu plus loin reçoit une copie à côté de lui
+        const copies = [];
+        for (let i = lowerBound(this.objs, ev.y + 40); i < this.objs.length && this.objs[i].y < ev.y + 400; i++) {
+          const o = this.objs[i];
+          if (o.dead || o.deco || o.def.legendary || o.def.id === 'flag') continue;
+          copies.push(o);
+        }
+        for (const o of copies) {
+          const y = o.y + 6, [L, R] = this.edge(y), side = o.x < (L + R) / 2 ? 1 : -1;
+          const x = clamp(o.x + side * (o.r * 2 + 4), L + o.r + o.amp + 2, R - o.r - o.amp - 2);
+          this.spawn(o.def, x, y, o.r, o.sprite, { amp: o.amp, w: o.w, phase: o.phase + 1 });
+        }
+        Sound.play('unlock');
+        break;
+      }
+      case 'coffee': {
+        for (let i = 0; i < 5; i++) {
+          const y = ev.y + 90 + i * 45, [L, R] = this.edge(y);
+          this.spawn(CAFE, rng.range(L + 10, R - 10), y, CAFE.r);
+        }
+        break;
+      }
+      case 'alarm': {
+        const y0 = ev.y + 70, y1 = y0 + 240, blobs = [];
+        for (let y = y0; y < y1; y += 9) {
+          const [L, R] = this.edge(y);
+          for (let k = 0; k < 4; k++) blobs.push({ x: rng.range(L + 3, R - 3), y: y + rng.range(-4, 4), r: rng.int(4, 8) });
+        }
+        this.foam = { y0, y1, blobs }; this.siren = 1.6;
+        break;
+      }
+      case 'chaser': {
+        const [L, R] = this.edge(b.y - 70);
+        this.chaser = { x: clamp(b.x + (rng.chance(0.5) ? 30 : -30), L + 8, R - 8), y: b.y - 70, hit: false };
+        break;
+      }
+      case 'magnet': this.magnet = true; Sound.play('unlock'); break;
       case 'mirage': {
         const hy = this.course.holeY, side = rng.chance(0.5) ? 1 : -1;
         const [L, R] = this.edge(hy);
@@ -2636,12 +2693,35 @@ class Game {
     } else if (ev.type === 'quake') {
       this.shake = Math.max(this.shake, 3);
       b.vx += Math.sin(ev.t * 23) * 160 * TICK;
+    } else if (ev.type === 'chaser' && this.chaser) {
+      // le scorpion rattrape la boule par derrière ; on l'esquive en changeant de côté
+      const c = this.chaser, dx = b.x - c.x, dy = b.y - c.y;
+      c.x += clamp(dx, -38 * TICK, 38 * TICK);
+      c.y += Math.max(b.vy + 14, 30) * TICK;
+      c.y = Math.min(c.y, b.y + 4);
+      const d = Math.hypot(dx, dy) || 1;
+      if (!c.hit && d < b.r + 5) {
+        c.hit = true;
+        this.bump({ def: { prickly: true }, r: 5, hitT: -9 }, -dx, -dy, d);
+      }
+    } else if (ev.type === 'magnet') {
+      // les petits objets juste devant glissent vers la boule
+      for (let i = lowerBound(this.objs, b.y - 10); i < this.objs.length && this.objs[i].y < b.y + 70; i++) {
+        const o = this.objs[i];
+        if (o.dead || o.deco || !edible(o, b)) continue;
+        const dx = b.x - this.objX(o), step = clamp(dx, -110 * TICK, 110 * TICK);
+        o.x += step; o.x0 += step;
+        if (this.frame % 6 === 0) this.particles.push({ x: this.objX(o), y: o.y, vx: dx * 1.5, vy: -20, g: 0, life: 0.25, col: '#d8463a', s: 1 });
+      }
     }
   }
 
   endEvent(ev) {
     if (ev.type === 'mirror') this.mirror = false;
     if (ev.type === 'meeting') this.popup = null;
+    if (ev.type === 'power') this.blackout = 0;
+    if (ev.type === 'chaser') this.chaser = null;
+    if (ev.type === 'magnet') this.magnet = false;
   }
 
   updateKevins(b) {
@@ -2738,6 +2818,13 @@ class Game {
     ctx.save();
     ctx.translate(0, -Math.round(camY));
     this.drawHole();
+    if (this.foam) {
+      for (const f of this.foam.blobs) {
+        if (f.y < camY - 10 || f.y > camY + H + 10) continue;
+        ctx.fillStyle = '#c8d0e0'; ctx.fillRect(Math.round(f.x - f.r), Math.round(f.y - f.r / 2 + 1), f.r * 2, f.r);
+        ctx.fillStyle = '#f4f6ff'; ctx.fillRect(Math.round(f.x - f.r + 1), Math.round(f.y - f.r / 2), f.r * 2 - 2, f.r - 1);
+      }
+    }
     if (this.mirage && this.frame % 12 < 10) this.drawHole(this.mirage.x + Math.round(Math.sin(this.t * 6)));
 
     const objs = this.objs, top = camY - 50, bot = camY + H + 50;
@@ -2751,6 +2838,10 @@ class Game {
       this.drawPlayer();
       ctx.globalAlpha = 1;
       if (this.surv) this.drawSurvivalWorld();
+      if (this.chaser) {
+        const sp = SPR[this.chaser.x < this.ball.x ? 'scorpion' : 'scorpionF'], c = this.chaser;
+        ctx.drawImage(sp, Math.round(c.x - sp.width), Math.round(c.y - sp.height) + (this.frame % 8 < 4 ? 0 : 1), sp.width * 2, sp.height * 2);
+      }
       for (const k of this.kevins) {
         const sp = SPR[k.dir > 0 ? 'kevin' : 'kevinF'];
         ctx.drawImage(sp, Math.round(k.x - sp.width / 2), Math.round(k.y - sp.height / 2) - (Math.floor(k.t * 10) % 2));
@@ -2761,6 +2852,15 @@ class Game {
     ctx.restore();
 
     this.drawWeather(camY);
+    if (this.blackout && !(this.blackout < 0.35 && this.frame % 6 < 3)) {
+      // coupure de courant : on ne voit plus que sa boule
+      const LR = this.ball.r + 9, m = lightMask(LR), S = m.width, mx = Math.round(this.ball.x - LR), my = Math.round(this.ball.y - camY - LR);
+      ctx.drawImage(m, mx, my);
+      ctx.fillStyle = 'rgba(4,4,10,0.97)';
+      ctx.fillRect(0, 0, W, Math.max(0, my)); ctx.fillRect(0, my + S, W, H);
+      ctx.fillRect(0, my, Math.max(0, mx), S); ctx.fillRect(mx + S, my, W, S);
+    }
+    if (this.siren > 0 && this.frame % 20 < 10) { ctx.fillStyle = 'rgba(255,40,30,0.18)'; ctx.fillRect(0, 0, W, H); }
     ctx.save(); ctx.translate(0, -Math.round(camY));
     for (const t of this.texts) drawText(ctx, t.text, t.x, t.y, t.col, 1, '#1d1416', 'center');
     ctx.restore();
