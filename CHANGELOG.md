@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.2 — Coup de pouce (préparé le 21 octobre 2026)
+- 🚀 Chaque lundi (à partir du 26 octobre) : le dernier du classement de la semaine parmi les joueurs
+  à 3 jours sur 3 (4 joueurs à 3/3 minimum) reçoit 50 🟡 et 4 essais par jour pendant la semaine suivante.
+  Message visible par lui seul ; colonne « Coups de pouce » dans les Stats de l'admin.
+
 ## v1.10.1 — Décor d'Halloween (préparé le 21 octobre 2026)
 Actif du 26 octobre au 1er novembre seulement :
 - 🎃 Dune aux couleurs d'Halloween (sable orangé, bords violets, brume), citrouilles allumées sur les bords.

@@ -332,7 +332,7 @@ renderMeteo();
 const STAT_COLS = [
   ['name', 'Pseudo'], ['created', 'Inscrit le'], ['runs', 'Parties'], ['days', 'Jours joués'], ['best', 'Record'],
   ['terriers', 'Terriers'], ['bestStreak', 'Série max'], ['coins', 'Pièces'], ['badges', 'Badges'],
-  ['bousipedia', 'Bousipédia'], ['legends', 'Trésors'], ['champion', '👑 Champion'], ['podiums', 'Podiums'], ['team', 'Équipe'], ['saved', 'Dernière sauvegarde'],
+  ['bousipedia', 'Bousipédia'], ['legends', 'Trésors'], ['champion', '👑 Champion'], ['podiums', 'Podiums'], ['boosts', '🚀 Coups de pouce'], ['team', 'Équipe'], ['saved', 'Dernière sauvegarde'],
 ];
 function statRow(p, at) {
   const st = p.stats || {}, weeks = Object.values(p.weeks || {});
@@ -340,7 +340,7 @@ function statRow(p, at) {
     name: p.name, created: p.created || '', runs: st.runs || 0, days: st.days || 0, best: st.best || 0,
     terriers: st.terriers || 0, bestStreak: p.bestStreak || 0, coins: p.coins || 0, badges: Object.keys(p.badges || {}).length,
     bousipedia: Object.keys(p.collection || {}).length, legends: Object.keys(p.legends || {}).length,
-    champion: weeks.filter(v => v === 1).length, podiums: weeks.filter(v => v > 0).length, team: p.team || '', saved: at || 0,
+    champion: weeks.filter(v => v === 1).length, podiums: weeks.filter(v => v > 0).length, boosts: p.boosts || 0, team: p.team || '', saved: at || 0,
   };
 }
 const statCell = (k, v) => k === 'best' ? fmtSize(v) : k === 'saved' ? fmtDate(v) : v;
