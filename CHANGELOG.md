@@ -7,6 +7,14 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.4 — Déconnexion et version de test privée (21 octobre 2026)
+- 🚪 Bouton « Se déconnecter » dans le profil (la progression est envoyée en ligne avant ;
+  impossible sans internet pour ne rien perdre).
+- 🔒 Version de test (dev) réservée à l'organisateur : accueil verrouillé et données de dev
+  inaccessibles aux autres comptes (règles Firebase).
+- Page admin : distinction entre les comptes (communs aux deux versions) et les joueurs de
+  la version affichée.
+
 ## v1.3 — Sécurité (21 octobre 2026)
 - Licence « tous droits réservés » (zodiacfbo) sur GitHub, dans le code et en bas des écrans
   d'accueil, de création de profil, de connexion et du tutoriel.
