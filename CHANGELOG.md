@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.5 — Contour rouge (21 octobre 2026)
+- 🔴 Les objets encore trop gros pour la boule sont entourés de rouge quand ils arrivent devant elle ;
+  le contour disparaît dès qu'on peut les manger. Phrase correspondante dans le tutoriel.
+- En coulisses : mode « La Grande Fuite » (survie) présent mais désactivé sur la version officielle,
+  en test sur la version dev.
+
 ## v1.4 — Déconnexion et version de test privée (21 octobre 2026)
 - 🚪 Bouton « Se déconnecter » dans le profil (la progression est envoyée en ligne avant ;
   impossible sans internet pour ne rien perdre).
