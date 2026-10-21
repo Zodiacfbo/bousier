@@ -96,7 +96,7 @@ b { color: #fff; }
 .pulse { animation: pulse 1.2s steps(2) infinite; }
 @keyframes pulse { 50% { background: #ffb84a; } }
 
-input {
+input, textarea {
   font: inherit; width: 100%; color: var(--ink); background: #1a1020; border: var(--u) solid var(--line);
   box-shadow: inset 0 0 0 var(--u) var(--panel2); padding: calc(var(--u) * 3); margin-bottom: calc(var(--u) * 3);
   -webkit-user-select: text; user-select: text; outline: none;
@@ -1021,6 +1021,21 @@ function unlockReached(p, item) {
 }
 const SECRET_COUNT = Object.values(UNLOCKS).filter(u => u.secret).length;
 
+// --- Quoi de neuf ? -----------------------------------------------------------
+// La première entrée est la plus récente : elle s'affiche une fois sur l'accueil
+// des joueurs qui ne l'ont pas encore vue.
+const CHANGELOG = [
+  {
+    v: 2, date: '2026-10-21', items: [
+      '💡 Nouvelle boîte à idées : une idée, un bug ? Touche 💡 en haut de l\'accueil',
+      '🎨 Aperçu animé des objets dans Style, avant de les acheter',
+      '🔢 Chiffres plus lisibles partout',
+      '⚡ Classement plus réactif',
+    ],
+  },
+  { v: 1, date: '2026-10-20', items: ['🚀 Lancement officiel de Bousier !'] },
+];
+
 // --- Badges ----------------------------------------------------------------
 const BADGES = [
   { id: 'premier', icon: '🪲', name: 'Premier roulé', desc: 'Termine ta première course du jour.' },
@@ -1474,6 +1489,24 @@ const Online = {
       return g;
     }, 8000);
   },
+  // Boîte à idées
+  sendIdea(p, type, text) {
+    return this.run(async c => {
+      if (!await this.ready(c, p)) return false;
+      const uid = this.uid(c);
+      await c.fb.setDoc(this.ref(c, 'suggestions', uid + '_' + Date.now()), { uid, name: p.name, type, text, status: 'new', at: Date.now() });
+      delete this.mem['ideas'];
+      return true;
+    }, 8000);
+  },
+  myIdeas() {
+    return this.cached('ideas', 60 * 1000, () => this.run(async c => {
+      const { fb } = c, uid = this.uid(c);
+      const snap = await fb.getDocs(fb.query(fb.collection(c.db, 'envs', ONLINE_ENV, 'suggestions'), fb.where('uid', '==', uid), fb.limit(50)));
+      return snap.docs.map(d => d.data()).sort((a, b) => b.at - a.at);
+    }));
+  },
+
   // Annonce de l'organisateur affichée sur l'accueil
   announce() {
     return this.cached('announce', 10 * 60 * 1000, () => this.run(async c => {
@@ -2820,6 +2853,9 @@ const App = {
       switchp: () => this.switchTo(v),
       create: () => this.doCreate(),
       login: () => this.doLogin(),
+      newsok: () => { Store.data.settings.seenVersion = CHANGELOG[0].v; Store.save(); this.show('home'); },
+      ideatype: () => { this.ideaType = v; for (const b of this.ui.querySelectorAll('[data-a="ideatype"]')) b.classList.toggle('on', b.dataset.v === v); },
+      sendidea: () => this.sendIdea(),
       annok: () => { safeStorageSet('bousier_ann_' + ONLINE_ENV, v); this.show('home'); },
       eye: () => { for (const i of this.ui.querySelectorAll('input.pw')) i.type = i.type === 'password' ? 'text' : 'password'; },
       secure: () => this.doSecure(),
@@ -2856,6 +2892,7 @@ const App = {
     this.formError('Un instant…');
     const r = await Online.create(name, pw);
     if (r.error) return this.formError(r.error);
+    Store.data.settings.seenVersion = CHANGELOG[0].v;
     this.loadDay();
     Online.submitPlayer(this.p);
     if (!Store.data.settings.tutoDone) return this.show('tuto', 0);
@@ -2872,6 +2909,20 @@ const App = {
     this.loadDay();
     this.toast(`Content de te revoir, ${r.name} !`);
     this.show('home');
+  },
+
+  async sendIdea() {
+    const ta = this.ui.querySelector('#idea'), text = ta ? ta.value.trim() : '';
+    if (text.length < 5) return this.formError('Écris un peu plus, s\'il te plaît.');
+    const today = dayKey(), sent = Store.data.settings.ideasSent || {};
+    if (sent.day === today && sent.n >= 5) return this.formError('5 idées par jour maximum : reviens demain !');
+    this.formError('Envoi…');
+    const ok = await Online.sendIdea(this.p, this.ideaType || 'idee', text);
+    if (!ok) return this.formError('Envoi impossible (pas de connexion ?).');
+    Store.data.settings.ideasSent = { day: today, n: (sent.day === today ? sent.n : 0) + 1 };
+    Store.save();
+    this.toast('Merci ! Ton message est bien arrivé 💡');
+    this.show('ideas');
   },
 
   // Changer de joueur : un compte protégé qui n'est pas celui connecté demande son mot de passe
@@ -3146,6 +3197,7 @@ const App = {
     const p = this.p;
     return `<div class="topbar">
       <button class="chip" data-a="go" data-v="profile">${p.account ? '🔒' : '👤'} ${esc(p.name)}${this.champ === p.name ? ' 👑' : ''}</button>
+      <button class="chip" data-a="go" data-v="ideas" aria-label="Boîte à idées">💡</button>
       <button class="chip" data-a="go" data-v="tuto" aria-label="Comment jouer">❓</button>
       <span class="chip">🔥 ${Store.streakOf(p, this.today)}</span>
       <span class="chip gold">🟡 ${p.coins}</span>
@@ -3190,6 +3242,36 @@ const App = {
     return this.authForm('Connexion', 'login', 'Me connecter', false, prefill, 'Mot de passe oublié ? Demande à l\'organisateur du jeu.');
   },
 
+  // Boîte à idées : envoyer, et suivre ce que deviennent les siennes
+  async scr_ideas() {
+    const mine = await Online.myIdeas();
+    const STATUS = { new: '⏳ Reçue', retained: '👍 Retenue', done: '✅ Faite', declined: '❌ Pas pour l\'instant' };
+    const TYPES = [['idee', '💡 Idée'], ['bug', '🐞 Bug'], ['autre', '💬 Autre']];
+    this.ideaType = this.ideaType || 'idee';
+    return `<div class="screen">
+      ${this.back('Boîte à idées')}
+      <div class="panel">
+        <p>Une idée pour le jeu ? Un bug ? Écris-le ici, l'organisateur lit tout !</p>
+        <div class="tabs">${TYPES.map(([k, l]) => `<button class="tab ${this.ideaType === k ? 'on' : ''}" data-a="ideatype" data-v="${k}">${l}</button>`).join('')}</div>
+        <textarea id="idea" maxlength="300" rows="4" placeholder="Ton message (300 caractères max.)"></textarea>
+        <div class="tiny bad form-err"></div>
+        <button class="btn" data-a="sendidea">Envoyer</button>
+      </div>
+      <div class="panel">
+        <div class="label">Mes messages</div>
+        ${mine && mine.length ? `<table class="lb">${mine.map(i => `<tr><td>${TYPES.find(t => t[0] === i.type)[1].split(' ')[0]}</td><td>${esc(i.text)}</td><td class="r tiny">${STATUS[i.status] || STATUS.new}</td></tr>`).join('')}</table>`
+          : `<div class="tiny">${mine ? 'Rien envoyé pour l\'instant.' : 'Hors ligne : impossible d\'afficher tes messages.'}</div>`}
+      </div>
+    </div>`;
+  },
+
+  scr_changelog() {
+    return `<div class="screen">
+      ${this.back('Nouveautés')}
+      ${CHANGELOG.map(c => `<div class="panel"><div class="label">${esc(fmtDayLong(c.date))}</div><ul class="quests">${c.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
+    </div>`;
+  },
+
   // Comment jouer : 3 étapes, au premier lancement ou via le bouton ❓
   scr_tuto(step = 0) {
     const steps = [
@@ -3220,6 +3302,7 @@ const App = {
       <div class="steps">${steps.map((_, i) => `<span class="${i === step ? 'on' : ''}"></span>`).join('')}</div>
       <button class="btn big" data-a="tuto" data-v="${last ? 'done' : step + 1}">${last ? 'C\'est compris, je roule !' : 'Suivant'}</button>
       ${last ? '' : '<button class="btn ghost" data-a="tuto" data-v="done">Passer</button>'}
+      <button class="btn ghost small" data-a="go" data-v="changelog">📰 Toutes les nouveautés</button>
     </div>`;
   },
 
@@ -3247,6 +3330,11 @@ const App = {
         <div class="sub">Dune #${cfg.num} · ${esc(fmtDayLong(this.today))}</div>
         <div class="mascot bob">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
       </div>
+      ${(Store.data.settings.seenVersion || 0) < CHANGELOG[0].v ? `<div class="panel news">
+        <div class="label">📰 Quoi de neuf ?</div>
+        <ul class="quests">${CHANGELOG[0].items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>
+        <button class="btn small" data-a="newsok">Super !</button>
+      </div>` : ''}
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}

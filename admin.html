@@ -65,6 +65,7 @@ ol li { margin: 8px 0; }
     <div class="tabs" id="tabs">
       <button data-tab="activity" class="on">📈 Activité</button>
       <button data-tab="players">👥 Joueurs</button>
+      <button data-tab="ideas">💡 Suggestions <span id="inew"></span></button>
       <button data-tab="scores">🧹 Scores du jour</button>
       <button data-tab="announce">📣 Annonce</button>
       <button data-tab="password">🔑 Mot de passe oublié</button>
@@ -90,6 +91,16 @@ ol li { margin: 8px 0; }
         <div class="row"><button class="main" id="gsend">Envoyer</button><button id="gcancel">Annuler</button></div>
         <p class="muted">Le joueur le reçoit à sa prochaine ouverture du jeu, avec un message.</p>
       </div>
+    </section>
+
+    <section id="tab-ideas" class="panel hidden">
+      <h2>Suggestions</h2>
+      <div class="row" style="margin-bottom:10px">
+        <select id="ifilter"><option value="">Tout</option><option value="idee">💡 Idées</option><option value="bug">🐞 Bugs</option><option value="autre">💬 Autres</option></select>
+        <select id="isfilter"><option value="">Tous les états</option><option value="new">⏳ Reçues</option><option value="retained">👍 Retenues</option><option value="done">✅ Faites</option><option value="declined">❌ Pas pour l'instant</option></select>
+      </div>
+      <p class="muted">Le joueur voit l'état de ses messages dans sa boîte à idées.</p>
+      <div class="scroll"><table id="itable"></table></div>
     </section>
 
     <section id="tab-scores" class="panel hidden">
@@ -164,7 +175,9 @@ if (window.BOUSIER_EMULATOR) {
   const [h, p] = BOUSIER_EMULATOR.firestore.split(':'); fb.connectFirestoreEmulator(db, h, +p);
   if (BOUSIER_EMULATOR.admin) ADMIN_UIDS.push(BOUSIER_EMULATOR.admin);
 }
-let env = 'prod', players = [], selected = null;
+let env = 'prod', players = [], selected = null, ideas = [];
+const IDEA_TYPE = { idee: '💡', bug: '🐞', autre: '💬' };
+const IDEA_STATUS = { new: '⏳ Reçue', retained: '👍 Retenue', done: '✅ Faite', declined: '❌ Pas pour l\'instant' };
 const envRef = (...path) => fb.doc(db, 'envs', env, ...path);
 const envCol = (...path) => fb.collection(db, 'envs', env, ...path);
 const all = async (col, n = 1000) => (await fb.getDocs(fb.query(col, fb.limit(n)))).docs.map(d => ({ id: d.id, ...d.data() }));
@@ -215,6 +228,10 @@ async function refresh() {
   renderPlayers();
   $('stable').innerHTML = '<tr><th>Joueur</th><th class="r">Score</th><th class="r">Temps</th><th></th></tr>' + (scores.sort((a, b) => b.score - a.score).map(s =>
     `<tr><td>${esc(s.name)}</td><td class="r">${fmtSize(s.score)}</td><td class="r">${s.time != null ? Math.round(s.time) + ' s' : '—'}</td><td class="r"><button class="danger" data-del="${esc(s.id)}">Supprimer</button></td></tr>`).join('') || '<tr><td colspan="4" class="muted">Aucun score aujourd\'hui.</td></tr>');
+  ideas = (await fb.getDocs(fb.query(envCol('suggestions'), fb.orderBy('at', 'desc'), fb.limit(300)))).docs.map(d => ({ id: d.id, ...d.data() }));
+  const fresh = ideas.filter(i => i.status === 'new').length;
+  $('inew').textContent = fresh ? `(${fresh})` : '';
+  renderIdeas();
   const ann = await fb.getDoc(envRef('config', 'announce'));
   $('acur').textContent = ann.exists() && ann.data().text ? `En ligne : « ${ann.data().text} » (${fmtDate(ann.data().at)})` : 'Aucune annonce en ligne.';
 }
@@ -230,6 +247,27 @@ function renderPlayers() {
   }).join('');
 }
 $('search').oninput = renderPlayers;
+
+function renderIdeas() {
+  const t = $('ifilter').value, st = $('isfilter').value;
+  const list = ideas.filter(i => (!t || i.type === t) && (!st || i.status === st));
+  $('itable').innerHTML = '<tr><th></th><th>Message</th><th>De</th><th>Reçu</th><th>État</th><th></th></tr>' + (list.map(i =>
+    `<tr><td>${IDEA_TYPE[i.type] || ''}</td><td>${esc(i.text)}</td><td>${esc(i.name)}</td><td class="muted">${fmtDate(i.at)}</td>
+      <td><select data-status="${esc(i.id)}">${Object.entries(IDEA_STATUS).map(([k, l]) => `<option value="${k}" ${i.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
+      <td class="r"><button class="danger" data-idel="${esc(i.id)}">🗑️</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucun message.</td></tr>');
+}
+$('ifilter').onchange = $('isfilter').onchange = renderIdeas;
+$('itable').onchange = async e => {
+  const id = e.target.dataset.status; if (!id) return;
+  const i = ideas.find(x => x.id === id), { id: _, ...data } = i;
+  await fb.setDoc(envRef('suggestions', id), { ...data, status: e.target.value });
+  i.status = e.target.value; toast('État mis à jour');
+  $('inew').textContent = ideas.filter(x => x.status === 'new').length ? `(${ideas.filter(x => x.status === 'new').length})` : '';
+};
+$('itable').onclick = async e => {
+  const id = e.target.dataset.idel; if (!id || !confirm('Supprimer ce message ?')) return;
+  await fb.deleteDoc(envRef('suggestions', id)); ideas = ideas.filter(x => x.id !== id); renderIdeas(); toast('Message supprimé');
+};
 
 // --- actions sur les joueurs ---
 for (const [type, items] of Object.entries(GIFTABLE)) for (const [id, label] of Object.entries(items))

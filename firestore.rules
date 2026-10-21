@@ -99,6 +99,16 @@ service cloud.firestore {
       allow create, update: if okEnv(env) && isAdmin();
     }
 
+    // Boîte à idées : chacun envoie et relit les siennes ; l'organisateur lit tout et change l'état
+    match /envs/{env}/suggestions/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if okEnv(env) && mine(id) && request.resource.data.uid == request.auth.uid
+        && ownsName(request.resource.data)
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 300
+        && request.resource.data.type in ['idee', 'bug', 'autre'] && request.resource.data.status == 'new';
+      allow update, delete: if isAdmin();
+    }
+
     // Annonce affichée sur l'accueil de tous les joueurs
     match /envs/{env}/config/{doc} {
       allow read: if true;
