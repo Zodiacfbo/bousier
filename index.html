@@ -1281,12 +1281,12 @@ function withTimeout(promise, ms) {
 const REACTIONS = ['👏', '😂', '💩', '🔥'];
 
 // Économie de lectures (quota gratuit de Firebase : 50 000 par jour) :
-// - le classement du jour est gardé en mémoire 90 s, et mon propre score y est
+// - le classement du jour est gardé en mémoire 30 s, et mon propre score y est
 //   ajouté directement après une partie au lieu de tout relire ;
 // - les jours passés ne changent plus : lus une seule fois, puis gardés sur
 //   l'appareil (14 jours) ; la semaine et le champion se calculent avec ;
 // - records et réactions gardés en mémoire quelques minutes.
-const DAY_TTL = 90 * 1000, RECORDS_TTL = 5 * 60 * 1000, REACT_TTL = 60 * 1000;
+const DAY_TTL = 30 * 1000, RECORDS_TTL = 5 * 60 * 1000, REACT_TTL = 30 * 1000;
 const PAST_KEY = `bousier_lb_${ONLINE_ENV}_`;
 
 const Online = {
