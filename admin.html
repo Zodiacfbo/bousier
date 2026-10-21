@@ -66,6 +66,7 @@ ol li { margin: 8px 0; }
     <div class="tabs" id="tabs">
       <button data-tab="activity" class="on">📈 Activité</button>
       <button data-tab="players">👥 Joueurs</button>
+      <button data-tab="pstats">📊 Stats</button>
       <button data-tab="ideas">💡 Suggestions <span id="inew"></span></button>
       <button data-tab="scores">🧹 Scores du jour</button>
       <button data-tab="announce">📣 Annonce</button>
@@ -92,6 +93,13 @@ ol li { margin: 8px 0; }
         <div class="row"><button class="main" id="gsend">Envoyer</button><button id="gcancel">Annuler</button></div>
         <p class="muted">Le joueur le reçoit à sa prochaine ouverture du jeu, avec un message.</p>
       </div>
+    </section>
+
+    <section id="tab-pstats" class="panel hidden">
+      <h2>Statistiques par joueur</h2>
+      <p class="muted">D'après la progression de chaque joueur (version choisie en haut). « Jours joués » est compté à partir du 22 octobre 2026.</p>
+      <div class="row"><button class="main" id="csv">⬇️ Télécharger en tableur (CSV)</button></div>
+      <div class="scroll"><table id="pstable"></table></div>
     </section>
 
     <section id="tab-ideas" class="panel hidden">
@@ -180,7 +188,7 @@ if (window.BOUSIER_EMULATOR) {
   const [h, p] = BOUSIER_EMULATOR.firestore.split(':'); fb.connectFirestoreEmulator(db, h, +p);
   if (BOUSIER_EMULATOR.admin) ADMIN_UIDS.push(BOUSIER_EMULATOR.admin);
 }
-let env = 'prod', players = [], selected = null, ideas = [];
+let env = 'prod', players = [], selected = null, ideas = [], pstats = [];
 const IDEA_TYPE = { idee: '💡', bug: '🐞', autre: '💬' };
 const IDEA_STATUS = { new: '⏳ Reçue', retained: '👍 Retenue', done: '✅ Faite', declined: '❌ Pas pour l\'instant' };
 const envRef = (...path) => fb.doc(db, 'envs', env, ...path);
@@ -227,7 +235,10 @@ async function refresh() {
   const activeWeek = new Set([...scores, ...week.flat()].map(s => nameKey(s.name)));
   // parties jouées : d'après la progression complète de chaque joueur (lisible par l'organisateur)
   const profs = await all(envCol('profiles'));
-  const runs = profs.reduce((n, d) => { try { return n + ((JSON.parse(d.data).stats || {}).runs || 0); } catch (e) { return n; } }, 0);
+  pstats = profs.map(d => { try { return statRow(JSON.parse(d.data), d.at); } catch (e) { return null; } }).filter(Boolean)
+    .sort((a, b) => b.runs - a.runs);
+  const runs = pstats.reduce((n, r) => n + r.runs, 0);
+  renderStats();
   $('stats').innerHTML = [
     ['Comptes (communs aux 2 versions)', names.length], ['Joueurs de cette version', recs.length], ['Actifs aujourd\'hui', scores.length], ['Actifs sur 7 jours', activeWeek.size],
     ['Parties jouées', runs || '—'],
@@ -254,6 +265,34 @@ function renderPlayers() {
   }).join('');
 }
 $('search').oninput = renderPlayers;
+
+// --- stats par joueur ---
+const STAT_COLS = [
+  ['name', 'Pseudo'], ['created', 'Inscrit le'], ['runs', 'Parties'], ['days', 'Jours joués'], ['best', 'Record'],
+  ['terriers', 'Terriers'], ['bestStreak', 'Série max'], ['coins', 'Pièces'], ['badges', 'Badges'],
+  ['bousipedia', 'Bousipédia'], ['legends', 'Trésors'], ['champion', '👑 Champion'], ['podiums', 'Podiums'], ['team', 'Équipe'], ['saved', 'Dernière sauvegarde'],
+];
+function statRow(p, at) {
+  const st = p.stats || {}, weeks = Object.values(p.weeks || {});
+  return {
+    name: p.name, created: p.created || '', runs: st.runs || 0, days: st.days || 0, best: st.best || 0,
+    terriers: st.terriers || 0, bestStreak: p.bestStreak || 0, coins: p.coins || 0, badges: Object.keys(p.badges || {}).length,
+    bousipedia: Object.keys(p.collection || {}).length, legends: Object.keys(p.legends || {}).length,
+    champion: weeks.filter(v => v === 1).length, podiums: weeks.filter(v => v > 0).length, team: p.team || '', saved: at || 0,
+  };
+}
+const statCell = (k, v) => k === 'best' ? fmtSize(v) : k === 'saved' ? fmtDate(v) : v;
+function renderStats() {
+  $('pstable').innerHTML = '<tr>' + STAT_COLS.map(([, l]) => `<th>${l}</th>`).join('') + '</tr>'
+    + (pstats.map(r => '<tr>' + STAT_COLS.map(([k]) => `<td>${esc(statCell(k, r[k]))}</td>`).join('') + '</tr>').join('') || '<tr><td class="muted">Aucun joueur.</td></tr>');
+}
+$('csv').onclick = () => {
+  const q = v => `"${String(v).replace(/"/g, '""')}"`;
+  const csv = [STAT_COLS.map(([k, l]) => q(k === 'best' ? 'Record (m)' : l)).join(';'), ...pstats.map(r => STAT_COLS.map(([k]) => q(k === 'best' ? (r[k] / 100).toFixed(2).replace('.', ',') : k === 'saved' ? fmtDate(r[k]) : r[k])).join(';'))].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `bousier-stats-${env}-${dayKey()}.csv`; a.click();
+};
 
 function renderIdeas() {
   const t = $('ifilter').value, st = $('isfilter').value;

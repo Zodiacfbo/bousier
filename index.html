@@ -1096,6 +1096,7 @@ const BADGES = [
   { id: 'collection', icon: '📖', name: 'Encyclopédiste', desc: 'Découvre 26 objets de la Bousipédia.', reward: 'Oasis' },
   { id: 'parfait', icon: '🌟', name: 'Journée parfaite', desc: 'Réussis les 3 quêtes du jour.' },
   { id: 'roi', icon: '🥇', name: 'Roi Bousier', desc: 'Termine une journée 1er du classement (2 joueurs min.).' },
+  { id: 'champion', icon: '👑', name: 'Champion de la semaine', desc: 'Termine une semaine 1er du classement (2 joueurs min.).' },
 ];
 
 // --- Quêtes du jour --------------------------------------------------------
@@ -1221,6 +1222,7 @@ const Store = {
     p.equip = { outfit: 'aucune', trail: 'aucune', ...p.equip };
     p.counters = p.counters || {};
     p.survival = p.survival || { best: 0, runs: 0 };
+    p.weeks = p.weeks || {};  // { semaine: place (0 = hors podium) }
     return p;
   },
 
@@ -1269,6 +1271,14 @@ const Store = {
 // Classement de la semaine : somme des WEEK_BEST meilleurs jours de chacun
 // (on n'est pas pénalisé si on ne joue pas tous les jours)
 const WEEK_BEST = 3;
+// Podium de la semaine : pièces pour les 3 premiers ; première semaine comptée
+const PODIUM_COINS = [200, 100, 50];
+const FIRST_WEEK = '2026-10-19';
+function fmtWeek(wk) {
+  const f = k => dayFromKey(k).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  return `du ${f(wk)} au ${f(addDays(wk, 6))}`;
+}
+function placeTxt(i) { return i === 0 ? '1er' : (i + 1) + 'e'; }
 function weekTotal(scores) {
   const top = scores.slice().sort((a, b) => b - a).slice(0, WEEK_BEST);
   return Math.round(top.reduce((a, b) => a + b, 0) * 10) / 10;
@@ -1752,16 +1762,26 @@ const Leaderboard = {
     if (mine) list.push({ name: p.name, role: 'self', ghost: mine });
     return list;
   },
-  // Champion de la semaine précédente (couronne 👑), mis en cache
-  champs: {},
+  // Podium d'une semaine terminée (3 premiers, 2 joueurs min.), gardé sur l'appareil
+  async podium(wk) {
+    const key = `bousier_wk_${ONLINE_ENV}_${wk}`;
+    try { const saved = JSON.parse(safeStorageGet(key) || 'null'); if (saved) return saved; } catch (e) { }
+    const lb = await Online.week(wk);
+    if (!lb) return null;
+    const res = { wk, players: lb.length, top: lb.length >= 2 ? lb.slice(0, 3).map(e => ({ name: e.name, total: e.total })) : [] };
+    safeStorageSet(key, JSON.stringify(res));
+    return res;
+  },
+  // Toutes les semaines terminées, de la plus récente à la plus ancienne
+  async palmares(today) {
+    const weeks = [];
+    for (let wk = addDays(weekKey(today), -7); wk >= FIRST_WEEK; wk = addDays(wk, -7)) weeks.push(wk);
+    return (await Promise.all(weeks.map(wk => this.podium(wk)))).filter(w => w && w.top.length);
+  },
+  // Champion de la semaine précédente (couronne 👑)
   async champion(today) {
-    const wk = weekKey(addDays(weekKey(today), -7));
-    if (!(wk in this.champs)) {
-      const lb = await Online.week(wk);
-      if (!lb) return null;
-      this.champs[wk] = lb.length >= 2 ? lb[0].name : null;
-    }
-    return this.champs[wk];
+    const pod = await this.podium(addDays(weekKey(today), -7));
+    return pod && pod.top.length ? pod.top[0].name : null;
   },
 };
 
@@ -3132,7 +3152,7 @@ const App = {
         // badge Roi Bousier : 1er du classement final de la veille
         if (!p.badges.roi) { p.badges.roi = this.today; roi = true; }
       }
-      if (await Leaderboard.champion(this.today) === p.name) ct.champion = 1;
+      await this.weeklyAwards();
       p.awardsDay = this.today;
       const fresh = Store.checkUnlocks(p);
       Store.save();
@@ -3142,6 +3162,24 @@ const App = {
         if (this.screen === 'home') this.show('home');
       }
     } finally { this.awarding = false; }
+  },
+
+  // Podium des semaines terminées : pièces, titres de champion, message à l'accueil
+  async weeklyAwards() {
+    const p = this.p, prev = addDays(weekKey(this.today), -7);
+    let wk = weekKey(p.created > FIRST_WEEK ? p.created : FIRST_WEEK);
+    for (; wk <= prev; wk = addDays(wk, 7)) {
+      if (p.weeks[wk] != null) continue;
+      const pod = await Leaderboard.podium(wk);
+      if (!pod) return;  // hors ligne : on réessaiera
+      const i = pod.top.findIndex(e => e.name === p.name);
+      p.weeks[wk] = i + 1;
+      if (i < 0) continue;
+      p.coins += PODIUM_COINS[i];
+      p.weekMsg = { wk, place: i, coins: PODIUM_COINS[i] };
+      if (i === 0 && !p.badges.champion) p.badges.champion = this.today;
+    }
+    p.counters.champion = Object.values(p.weeks).filter(v => v === 1).length;
   },
 
   tick() {
@@ -3217,6 +3255,7 @@ const App = {
       login: () => this.doLogin(),
       ideatype: () => { this.ideaType = v; for (const b of this.ui.querySelectorAll('[data-a="ideatype"]')) b.classList.toggle('on', b.dataset.v === v); },
       sendidea: () => this.sendIdea(),
+      podok: () => { safeStorageSet('bousier_pod_' + ONLINE_ENV, v); if (this.p.weekMsg) { delete this.p.weekMsg; Store.save(); } this.show('home'); },
       annok: () => { safeStorageSet('bousier_ann_' + ONLINE_ENV, v); this.show('home'); },
       eye: () => { for (const i of this.ui.querySelectorAll('input.pw')) i.type = i.type === 'password' ? 'text' : 'password'; },
       secure: () => this.doSecure(),
@@ -3361,6 +3400,7 @@ const App = {
       p.streak = p.lastDay === addDays(this.today, -1) ? p.streak + 1 : 1;
       p.bestStreak = Math.max(p.bestStreak, p.streak);
       p.lastDay = this.today;
+      p.stats.days = (p.stats.days || 0) + 1;  // jours joués (statistique pour l'organisateur)
     }
     d.attempts++;  // l'essai est consommé dès le départ (pas de triche en rechargeant)
     Store.save();
@@ -3445,16 +3485,18 @@ const App = {
   async onFinish(run) {
     const p = this.p, res = { run, mode: this.mode, coins: 0, quests: [], badges: [], newBest: false };
     this.hud.root.classList.add('hidden');
-    // exploits et compteurs pour les objets à débloquer
+    // exploits et compteurs pour les objets à débloquer (pas en entraînement : aucune récompense)
     const ct = p.counters, inc = k => { ct[k] = (ct[k] || 0) + 1; }, now = new Date();
-    if (this.mode === 'daily' && run.weather === 'pluie') inc('rain');
-    if (this.mode === 'daily' && run.weather === 'canicule' && run.terrier) inc('heat');
-    if (run.kevinHit) inc('kevin');
-    if (!run.terrier && run.missBy != null && run.missBy <= 3) inc('presque');
-    if (run.terrier && run.bumps === 0 && run.wallHits === 0) inc('parfait');
-    if (run.absorbed < 5) inc('ratee');
-    if (!Sound.on) inc('silence');
-    if (now.getHours() === 13 && now.getMinutes() === 37) inc('leet');
+    if (this.mode !== 'practice') {
+      if (this.mode === 'daily' && run.weather === 'pluie') inc('rain');
+      if (this.mode === 'daily' && run.weather === 'canicule' && run.terrier) inc('heat');
+      if (run.kevinHit) inc('kevin');
+      if (!run.terrier && run.missBy != null && run.missBy <= 3) inc('presque');
+      if (run.terrier && run.bumps === 0 && run.wallHits === 0) inc('parfait');
+      if (run.absorbed < 5) inc('ratee');
+      if (!Sound.on) inc('silence');
+      if (now.getHours() === 13 && now.getMinutes() === 37) inc('leet');
+    }
     if (this.mode === 'daily') {
       const d = Store.dayData(p, this.today), cfg = this.cfg;
       const summary = runSummary(run);
@@ -3518,7 +3560,7 @@ const App = {
       if (res.newRecord) await Online.submitSurvival(p);
       res.top = await Online.survivalTop();
     }
-    res.unlocked = Store.checkUnlocks(p);
+    res.unlocked = this.mode === 'practice' ? [] : Store.checkUnlocks(p);
     Store.save();
     this.lastRes = res;
     setTimeout(() => this.show('results'), 200);
@@ -3602,8 +3644,8 @@ const App = {
       <span class="chip gold">🟡 ${p.coins}</span>
     </div>`;
   },
-  back(title) {
-    return `<div class="head"><button class="btn ghost small" data-a="go" data-v="home">◀</button><h2>${title}</h2></div>`;
+  back(title, to = 'home') {
+    return `<div class="head"><button class="btn ghost small" data-a="go" data-v="${to}">◀</button><h2>${title}</h2></div>`;
   },
 
   scr_none() { return ''; },
@@ -3707,6 +3749,11 @@ const App = {
         pics: `${pix(mascotUrl(findCos('ball', 'saturne') || SKINS[0], findCos('hat', 'charlotte') || HATS[0], 10, findCos('outfit', 'blouse') || OUTFITS[0]), 72, 76)}<span class="gold">🟡</span>`,
         text: 'Gagne des pièces 🟡 en jouant et avec les <b>quêtes du jour</b>.<br>Dépense-les dans <b>🎨 Style</b> : boules, chapeaux, tenues, traînées…<br><span class="tiny">Certains objets se gagnent avec les badges 🎖️.</span>',
       },
+      {
+        title: 'Ton avis compte',
+        pics: '💡',
+        text: 'Une idée, un bug, un message ?<br>Touche <b>💡</b> en haut de l\'accueil : <b>tes retours aident à améliorer le jeu !</b>',
+      },
     ];
     const s = steps[step] || steps[0], last = step >= steps.length - 1;
     return `<div class="screen center">
@@ -3735,6 +3782,9 @@ const App = {
     const news = await this.news(lb);
     this.ideasBadge = ideasChanged(await Online.myIdeas());
     const ann = await Online.announce();
+    const prevWk = addDays(weekKey(this.today), -7), pod = await Leaderboard.podium(prevWk);
+    const podShow = pod && pod.top.length && safeStorageGet('bousier_pod_' + ONLINE_ENV) !== prevWk;
+    const mine = p.weekMsg || null;
     const annText = ann && ann.text && safeStorageGet('bousier_ann_' + ONLINE_ENV) !== String(ann.at) ? ann.text : '';
     const leg = cfg.legend;
     const quests = cfg.quests.map(q => `<li class="${d.quests[q.id] ? 'done' : ''}">${d.quests[q.id] ? '✅' : '⬜'} ${esc(q.text)}</li>`).join('');
@@ -3750,6 +3800,7 @@ const App = {
         <div class="mascot bob">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
       </div>
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
+      ${podShow || mine ? `<div class="banner">${podShow ? `👑 Champion de la semaine dernière : <b>${esc(pod.top[0].name)}</b> (${fmtSize(pod.top[0].total)}) !${pod.top.slice(1).map((e, i) => ` ${medal(i + 1)} ${esc(e.name)}`).join('')}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
       ${p.nameTaken ? '<div class="banner bad">Ce pseudo est déjà pris en ligne : tes scores ne sont pas envoyés. Crée un autre joueur.</div>' : ''}
@@ -3890,7 +3941,11 @@ const App = {
       const lb = await Leaderboard.week(weekKey(this.today));
       body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny ${e.played >= WEEK_BEST ? 'good' : ''}">${Math.min(e.played, WEEK_BEST)}/${WEEK_BEST}</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Rien cette semaine.</td></tr>';
-      extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés. Le vainqueur porte la 👑 toute la semaine suivante.</div>`;
+      extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés. Le vainqueur porte la 👑 toute la semaine suivante ; le podium gagne ${PODIUM_COINS.join(' / ')} 🟡.</div>`;
+      const pod = await Leaderboard.podium(addDays(weekKey(this.today), -7));
+      if (pod && pod.top.length) extra += `<div class="panel"><div class="label">Podium de la semaine dernière <span class="tiny">(${fmtWeek(pod.wk)})</span></div>
+        <table class="lb">${pod.top.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.name)}${i === 0 ? ' 👑' : ''}</td><td class="tiny gold">+${PODIUM_COINS[i]} 🟡</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')}</table></div>`;
+      extra += '<button class="btn ghost" data-a="go" data-v="palmares">📜 Palmarès des champions</button>';
     } else if (tab === 'teams') {
       const lb = await Leaderboard.teams(weekKey(this.today)), mine = nameKey(this.p.team || '');
       body = lb.length ? lb.map((e, i) => `<tr class="${nameKey(e.team) === mine ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.team)}</td><td class="tiny">${e.players} j.</td><td class="r">${fmtSize(e.avg)}</td></tr>`).join('')
@@ -3914,6 +3969,16 @@ const App = {
       <div class="panel"><table class="lb">${body}</table></div>
       ${extra}
       <div class="tiny center">${Online.live ? 'Classement en ligne : tous les joueurs.' : 'Hors ligne : classement des joueurs de cet appareil.'}</div>
+    </div>`;
+  },
+
+  async scr_palmares() {
+    const list = await Leaderboard.palmares(this.today), me = this.p.name;
+    const rows = list.map(w => `<tr class="${w.top[0].name === me ? 'me' : ''}"><td class="tiny">${fmtWeek(w.wk)}</td><td>👑 ${esc(w.top[0].name)}<div class="tiny">${w.top.slice(1).map((e, i) => `${medal(i + 1)} ${esc(e.name)}`).join(' ')}</div></td><td class="r">${fmtSize(w.top[0].total)}</td></tr>`).join('');
+    return `<div class="screen">
+      ${this.back('Palmarès', 'leaderboard')}
+      <div class="panel"><table class="lb">${rows || '<tr><td class="center tiny">Pas encore de champion : la première semaine n\'est pas terminée.</td></tr>'}</table></div>
+      <div class="tiny center">Les champions de chaque semaine (lundi → dimanche), avec le podium.</div>
     </div>`;
   },
 
@@ -4019,7 +4084,7 @@ const App = {
       ${this.back('Badges')}
       <div class="tiny center">${Object.keys(p.badges).length} / ${BADGES.length} obtenus</div>
       <div class="badges">${BADGES.map(b => `<div class="panel bdg ${p.badges[b.id] ? '' : 'locked'}">
-        <div class="bico">${b.icon}</div><div><b>${esc(b.name)}</b><div class="tiny">${esc(b.desc)}</div>
+        <div class="bico">${b.icon}</div><div><b>${esc(b.name)}</b>${b.id === 'champion' && p.counters.champion ? ` <span class="gold">×${p.counters.champion}</span>` : ''}<div class="tiny">${esc(b.desc)}</div>
         ${b.reward ? `<div class="tiny gold">Récompense : ${esc(b.reward)}</div>` : ''}</div></div>`).join('')}</div>
     </div>`;
   },
