@@ -1248,6 +1248,14 @@ const Store = {
   },
 };
 
+// Classement de la semaine : somme des WEEK_BEST meilleurs jours de chacun
+// (on n'est pas pénalisé si on ne joue pas tous les jours)
+const WEEK_BEST = 3;
+function weekTotal(scores) {
+  const top = scores.slice().sort((a, b) => b - a).slice(0, WEEK_BEST);
+  return Math.round(top.reduce((a, b) => a + b, 0) * 10) / 10;
+}
+
 // À score égal, le plus rapide passe devant
 function sortBoard(list) {
   return list.sort((a, b) => b.score - a.score || (a.time ?? Infinity) - (b.time ?? Infinity));
@@ -1299,9 +1307,8 @@ const LocalBoard = {
   async week(wk) {
     const days = weekDays(wk);
     return Object.values(Store.data.profiles).map(p => {
-      let total = 0, played = 0;
-      for (const k of days) { const d = p.days[k]; if (d && d.best > 0) { total += d.best; played++; } }
-      return { name: p.name, team: p.team || '', total: Math.round(total * 10) / 10, played };
+      const scores = days.map(k => p.days[k]).filter(d => d && d.best > 0).map(d => d.best);
+      return { name: p.name, team: p.team || '', total: weekTotal(scores), played: scores.length };
     }).filter(e => e.played > 0).sort((a, b) => b.total - a.total);
   },
   async records() {
@@ -1444,10 +1451,10 @@ const Online = {
     if (days.some(d => !d)) return null;
     const by = {};
     for (const list of days) for (const e of list) {
-      const t = by[e.name] || (by[e.name] = { name: e.name, team: '', total: 0, played: 0 });
-      t.total += e.score; t.played++; if (e.team) t.team = e.team;
+      const t = by[e.name] || (by[e.name] = { name: e.name, team: '', scores: [] });
+      t.scores.push(e.score); if (e.team) t.team = e.team;
     }
-    return Object.values(by).map(e => ({ ...e, total: Math.round(e.total * 10) / 10 })).sort((a, b) => b.total - a.total);
+    return Object.values(by).map(e => ({ name: e.name, team: e.team, total: weekTotal(e.scores), played: e.scores.length })).sort((a, b) => b.total - a.total);
   },
   records() {
     return this.cached('records', RECORDS_TTL, () => this.run(async c => (await this.list(c, ['players'], 'best', 100))
@@ -3865,7 +3872,7 @@ const App = {
       const lb = await Leaderboard.week(weekKey(this.today));
       body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">${e.played} j</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Rien cette semaine.</td></tr>';
-      extra = '<div class="tiny center">Semaine = somme de tes meilleures boules de chaque jour. Joue tous les jours ! Le vainqueur porte la 👑 toute la semaine suivante.</div>';
+      extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés : pas besoin de jouer tous les jours ! Le vainqueur porte la 👑 toute la semaine suivante.</div>`;
     } else if (tab === 'teams') {
       const lb = await Leaderboard.teams(weekKey(this.today)), mine = nameKey(this.p.team || '');
       body = lb.length ? lb.map((e, i) => `<tr class="${nameKey(e.team) === mine ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.team)}</td><td class="tiny">${e.players} j.</td><td class="r">${fmtSize(e.avg)}</td></tr>`).join('')
