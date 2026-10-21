@@ -1102,6 +1102,7 @@ const FIREBASE_CONFIG = {
 const ONLINE_ENV = location.pathname.includes('/dev/') ? 'dev' : 'prod';
 // Lien partagé avec les résultats : toujours la version officielle
 const GAME_URL = 'https://zodiacfbo.github.io/bousier/';
+const VENDOR_VERSION = 4;
 
 // La version de test (/dev/) a sa propre sauvegarde pour ne pas toucher à la vraie
 const SAVE_KEY = location.pathname.includes('/dev/') ? 'bousier_dev_v1' : 'bousier_v1';
@@ -1329,7 +1330,9 @@ const Online = {
     if (!this.conn) {
       this.conn = (async () => {
         if (!FIREBASE_CONFIG || !location.protocol.startsWith('http')) return null;
-        const fb = await import('./vendor/firebase.js');
+        // numéro de version : à changer à chaque reconstruction de vendor/firebase.js,
+        // sinon un téléphone peut garder l'ancien module en cache avec la nouvelle page
+        const fb = await import('./vendor/firebase.js?v=' + VENDOR_VERSION);
         const app = fb.initializeApp(FIREBASE_CONFIG);
         const auth = fb.getAuth(app), db = fb.getFirestore(app);
         if (window.BOUSIER_EMULATOR) {
