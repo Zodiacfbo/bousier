@@ -76,7 +76,6 @@ button.banner { font: inherit; width: 100%; cursor: pointer; }
 .rx-add { font-size: .7em; margin-left: calc(var(--u) * 2); padding: 0 var(--u); border: var(--u) solid var(--panel2); color: var(--muted); white-space: nowrap; }
 .tuto { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 3); text-align: center; }
 .tuto .pics { display: flex; gap: calc(var(--u) * 6); align-items: center; justify-content: center; min-height: calc(var(--u) * 40); font-size: 2.4em; }
-.steps-list { text-align: left; margin: 0; padding-left: 1.4em; line-height: 1.5; }
 .tuto-dots { display: flex; gap: calc(var(--u) * 2); }
 .tuto .pics small { display: block; font-size: .35em; }
 .steps { display: flex; gap: calc(var(--u) * 2); justify-content: center; }
@@ -3069,9 +3068,6 @@ const App = {
       halt: cards => this.onHalt(cards),
     });
     this.lbTab = 'day'; this.shopTab = 'ball';
-    // Android / Chrome : bouton « Installer » natif
-    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); this.installEvt = e; });
-    window.addEventListener('appinstalled', () => { Store.data.settings.installDone = true; Store.save(); });
     this.fit();
     window.addEventListener('resize', () => this.fit());
     this.bindInput();
@@ -3221,8 +3217,6 @@ const App = {
       login: () => this.doLogin(),
       ideatype: () => { this.ideaType = v; for (const b of this.ui.querySelectorAll('[data-a="ideatype"]')) b.classList.toggle('on', b.dataset.v === v); },
       sendidea: () => this.sendIdea(),
-      install: async () => { const e = this.installEvt; if (!e) return; this.installEvt = null; e.prompt(); const c = await e.userChoice.catch(() => null); if (c && c.outcome === 'accepted') { Store.data.settings.installDone = true; Store.save(); this.show('home'); } else this.show('install'); },
-      installok: () => { Store.data.settings.installDone = true; Store.save(); this.show('home'); },
       annok: () => { safeStorageSet('bousier_ann_' + ONLINE_ENV, v); this.show('home'); },
       eye: () => { for (const i of this.ui.querySelectorAll('input.pw')) i.type = i.type === 'password' ? 'text' : 'password'; },
       secure: () => this.doSecure(),
@@ -3405,7 +3399,7 @@ const App = {
   launch(cfg, ghosts, label) {
     const p = this.p;
     Sound.init();
-    const hint = cfg.mode !== 'survival' && !Store.data.settings.hintDone;
+    const hint = cfg.mode !== 'survival' && !Store.data.settings.hintDone && !(p.stats.runs > 0);
     if (hint) { Store.data.settings.hintDone = true; Store.save(); }
     this.game.start(cfg, { hint,
       skin: findCos('ball', p.equip.ball), hat: findCos('hat', p.equip.hat), theme: findCos('theme', p.equip.theme), ghosts,
@@ -3730,30 +3724,6 @@ const App = {
     </div>`;
   },
 
-  // Installer l'appli : proposé tant que le jeu tourne dans le navigateur
-  showInstall() {
-    const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
-    return !standalone && !Store.data.settings.installDone;
-  },
-  scr_install() {
-    const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), android = /Android/.test(ua);
-    const how = ios
-      ? '<li>Ouvre le jeu avec <b>Safari</b>.</li><li>Touche le bouton <b>Partager</b> (carré avec une flèche ⬆️).</li><li>Choisis <b>« Sur l\'écran d\'accueil »</b>, puis <b>Ajouter</b>.</li>'
-      : android
-        ? '<li>Touche le menu <b>⋮</b> en haut à droite de Chrome.</li><li>Choisis <b>« Installer l\'application »</b> (ou « Ajouter à l\'écran d\'accueil »).</li>'
-        : '<li>Dans Chrome ou Edge, clique sur l\'icône <b>Installer</b> à droite de la barre d\'adresse.</li>';
-    return `<div class="screen center">
-      <div class="title small">INSTALLER LE JEU</div>
-      <div class="panel tuto">
-        <div class="pics">📲</div>
-        <p>Mets Bousier sur ton écran d'accueil : il s'ouvre comme une appli, <b>en un geste</b>, et marche même sans internet.</p>
-        ${this.installEvt ? '<button class="btn big" data-a="install">Installer</button>' : `<ol class="steps-list">${how}</ol>`}
-      </div>
-      <button class="btn big" data-a="installok">C'est fait !</button>
-      <button class="btn ghost" data-a="go" data-v="home">Plus tard</button>
-    </div>`;
-  },
-
   async scr_home() {
     const p = this.p, cfg = this.cfg, d = Store.dayPeek(p, this.today);
     const left = 3 - d.attempts;
@@ -3781,7 +3751,6 @@ const App = {
       </div>
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
-      ${this.showInstall() ? '<button class="banner" data-a="go" data-v="install">📲 Installe Bousier sur ton écran d\'accueil →</button>' : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
       ${p.nameTaken ? '<div class="banner bad">Ce pseudo est déjà pris en ligne : tes scores ne sont pas envoyés. Crée un autre joueur.</div>' : ''}
       <div class="row2">
