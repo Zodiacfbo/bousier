@@ -41,6 +41,23 @@ body {
 #screen { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
 img.pix, canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; display: inline-block; vertical-align: middle; }
 
+/* Semaine Halloween : couleurs des menus et décor de l'accueil */
+#app.halloween { --gold: #ff9a3a; --panel: rgba(34, 16, 46, 0.93); --panel2: #5e2e72; --muted: #d6b4dc; }
+#app.halloween .hero .title::after { content: ' 🎃'; font-size: .45em; vertical-align: middle; }
+.hw-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.hw-web { position: absolute; top: 0; opacity: .7; }
+.hw-web.r { right: 0; transform: scaleX(-1); }
+.hw-bat { position: absolute; left: -10%; animation: hwfly 16s linear infinite; }
+.hw-bat img { animation: hwflap .25s steps(2) infinite; }
+@keyframes hwfly { 0% { left: -12%; transform: translateY(0); } 30% { left: 110%; transform: translateY(-20px); } 100% { left: 110%; } }
+@keyframes hwflap { 50% { transform: scaleY(.5); } }
+.hw-spider { position: absolute; left: 14%; pointer-events: auto; cursor: pointer; display: flex; flex-direction: column; align-items: center;
+  transform: translateY(-60px); transition: transform 2.6s ease-in-out; }
+.hw-spider.down { transform: translateY(var(--drop)); }
+.hw-spider.up { transition-duration: .35s; }
+.hw-spider .thread { width: var(--u); background: rgba(230,230,240,.6); }
+.hw-spider .body { animation: hwsway 2.4s ease-in-out infinite; transform-origin: 50% -40px; }
+@keyframes hwsway { 50% { transform: rotate(8deg); } }
 #ui { position: absolute; inset: 0; font-size: calc(var(--u) * 6.5); line-height: 1.25; }
 #ui.passive { pointer-events: none; }
 .screen {
@@ -556,6 +573,9 @@ const ROWS = {
   chauvesouris: ['k.k...k.k', 'kQkkkkkQk', 'kQQrkrQQk', '.kQQQQQk.', '..k...k..'],
   cranesucre: ['..kkkkk..', '.kwwwwwk.', 'kwwpwpwwk', 'kwvvwvvwk', 'kwvvwvvwk', 'kwwwkwwwk', '.kwpwpwk.', '..kwkwk..', '..kkkkk..'],
   fantome: ['..kkkk..', '.kwwwwk.', 'kwwwwwwk', 'kwkwwkwk', 'kwkwwkwk', 'kwwwwwwk', 'kwwkkwwk', 'kwwwwwwk', 'kwwwwwwk', 'kk.kk.kk'],
+  cranesucreWink: ['..kkkkk..', '.kwwwwwk.', 'kwwpwpwwk', 'kwwwwvvwk', 'kwkkwvvwk', 'kwwwkwwwk', '.kwpwpwk.', '..kwkwk..', '..kkkkk..'],
+  araignee: ['k.k.k.k', '.kkkkk.', 'kkrkrkk', '.kkkkk.', 'k.k.k.k'],
+  toile: ['h.....h.....h', '.h....h....h.', '..hhhhhhhhh..', '..h.h.h.h.h..', 'hhhh.hhh.hhhh', '..h.h.h.h.h..', '..hhhhhhhhh..', '.h..h.h.h..h.', 'h...h.h.h...h', '....h.h.h....', '.....hhh.....', '......h......'],
   sorciere: ['....kk...', '...kvk...', '..kvvk...', '..kvvvk..', '.kyyyyyk.', 'kvvvvvvvk', '.kkkkkkk.'],
   cafe: ['.w.w.', 'kkkkk.', 'kwwwkk', 'kbbbk.k', 'kwwwkk', '.kkk..'],
   tasse: ['.kkkkk..', 'knbbbnkk', 'kwwwwwk.k', 'kwrwwwk.k', 'kwwwwwkk.', '.kwwwk...', '..kkk....'],
@@ -3440,6 +3460,7 @@ const App = {
   // --- Navigation ------------------------------------------------------------
   async show(name, arg) {
     this.screen = name;
+    this.halloweenDeco(name);
     const tok = this.showTok = (this.showTok || 0) + 1;
     const html = await this['scr_' + name](arg);
     if (tok !== this.showTok) return;  // un autre écran a été demandé entre-temps
@@ -3449,6 +3470,36 @@ const App = {
     if (name === 'shop') this.startPreview();
     if (name === 'results') this.countCoins();
     if (name === 'name') { const i = this.ui.querySelector('input'); if (i) setTimeout(() => i.focus(), 50); }
+  },
+
+  // Semaine Halloween : menus aux couleurs de la fête ; toiles, chauves-souris et araignée sur l'accueil
+  halloweenDeco(name) {
+    const on = isHalloween(dayKey()), app = this.appEl;
+    app.classList.toggle('halloween', on);
+    if (!this.hwBack) {
+      this.hwBack = document.createElement('div'); this.hwBack.className = 'hw-layer';
+      this.hwFront = document.createElement('div'); this.hwFront.className = 'hw-layer'; this.hwFront.style.zIndex = 5;
+      app.insertBefore(this.hwBack, this.ui); app.appendChild(this.hwFront);
+    }
+    const home = on && name === 'home';
+    if (!home) { this.hwBack.innerHTML = ''; this.hwFront.innerHTML = ''; clearTimeout(this.hwT); this.hwShown = false; return; }
+    if (this.hwShown) return;
+    this.hwShown = true;
+    this.hwBack.innerHTML = `<div class="hw-web">${spriteImg('toile', 3)}</div><div class="hw-web r">${spriteImg('toile', 3)}</div>`
+      + [[22, 0], [58, 5.5], [40, 11]].map(([y, d]) => `<div class="hw-bat" style="top:${y}%;animation-delay:${d}s">${spriteImg('chauvesouris', 2)}</div>`).join('');
+    // l'araignée descend de temps en temps (le 31 : le crâne en sucre, qui fait un clin d'œil)
+    const skull = dayKey() === HALLOWEEN.night;
+    const H = app.clientHeight, th = Math.round(H * 0.6);
+    this.hwFront.innerHTML = `<div class="hw-spider" style="top:${-th}px;--drop:${Math.round(H * 0.24)}px"><div class="thread" style="height:${th}px"></div><div class="body">${spriteImg(skull ? 'cranesucre' : 'araignee', 3)}</div></div>`;
+    const sp = this.hwFront.querySelector('.hw-spider');
+    const cycle = () => {
+      if (!sp.isConnected) return;
+      sp.classList.remove('up'); sp.classList.add('down');
+      if (skull) setTimeout(() => { const img = sp.querySelector('img'); if (img) { img.src = imgUrl('cranesucreWink', null); setTimeout(() => { img.src = imgUrl('cranesucre', null); }, 500); } }, 3200);
+      this.hwT = setTimeout(() => { sp.classList.remove('down'); this.hwT = setTimeout(cycle, 7000 + Math.random() * 6000); }, 6000);
+    };
+    sp.addEventListener('click', e => { e.stopPropagation(); clearTimeout(this.hwT); sp.classList.add('up'); sp.classList.remove('down'); Sound.play('click'); this.hwT = setTimeout(cycle, 9000); });
+    this.hwT = setTimeout(cycle, 1500);
   },
 
   onClick(e) {
