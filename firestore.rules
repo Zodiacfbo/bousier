@@ -115,6 +115,15 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // La Grande Fuite (mode survie) : record de distance de chacun, en mètres
+    match /envs/{env}/survival/{id} {
+      allow read: if openEnv(env);
+      allow create, update: if okEnv(env) && mine(id) && ownsName(request.resource.data)
+        && request.resource.data.best is int && request.resource.data.best >= 0 && request.resource.data.best <= 20000
+        && (resource == null || request.resource.data.best >= resource.data.best);
+      allow delete: if isAdmin();
+    }
+
     // Annonce affichée sur l'accueil de tous les joueurs
     match /envs/{env}/config/{doc} {
       allow read: if openEnv(env);

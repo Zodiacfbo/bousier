@@ -197,6 +197,13 @@ table { width: 100%; border-collapse: collapse; }
 #hud-pause { pointer-events: auto; font: inherit; font-weight: 700; color: var(--ink); background: rgba(18,10,22,.8); border: var(--u) solid var(--line); padding: var(--u) calc(var(--u) * 3); cursor: pointer; }
 .hud-prog { position: relative; height: calc(var(--u) * 4); margin: calc(var(--u) * 3) calc(var(--u) * 4) 0 calc(var(--u) * 2); background: rgba(18,10,22,.6); border: var(--u) solid var(--line); }
 #hud-bar { height: 100%; width: 0; background: var(--gold); }
+#hud.surv #hud-beetle, #hud.surv .hud-hole { display: none; }
+.cards { display: flex; flex-direction: column; gap: calc(var(--u) * 3); }
+.card { font: inherit; color: var(--ink); background: var(--panel); border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) var(--gold); padding: calc(var(--u) * 4); cursor: pointer; text-align: left; display: flex; gap: calc(var(--u) * 3); align-items: center; }
+.card.pact { box-shadow: inset 0 0 0 var(--u) #ff6ad0; background: #3a1838; }
+.card .ico { font-size: 2em; }
+.card b { display: block; color: var(--gold); }
+.card.pact b { color: #ff9ad8; }
 #hud-beetle { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: .8em; }
 .hud-hole { position: absolute; right: calc(var(--u) * -4); top: 50%; transform: translateY(-50%); font-size: .8em; }
 
@@ -555,6 +562,11 @@ const ROWS = {
   aimant: ['hh...hh', 'rr...rr', 'rr...rr', '.rr.rr.', '..rrr..'],
   aureole: ['.yyyyy.', 'y.....y', '.yyyyy.'],
   fleurCactus: ['.p.p.p.', '..ppp..', '.ppypp.', '..ppp..', '...e...'],
+  // mode survie : obstacles indestructibles, tube à essai mystère, chapeau
+  pics: ['..h...h..', '.hWh.hWh.', 'hWWWhWWWh', 'GgGgGgGgG', 'GGGGGGGGG'],
+  baril: ['.kkkkk.', 'kyyyyyk', 'kyykyyk', 'kykkkyk', 'kyykyyk', 'kYYYYYk', '.kkkkk.'],
+  tube: ['.w.', 'kWk', 'kWk', 'klk', 'klk', 'kek', '.k.'],
+  bandana: ['.rrrrr.', 'rwrrwrr', 'rrrrrrr', '.r...r.'],
   // particules de traînées
   trBulle: ['.cc.', 'cw.c', 'c..c', '.cc.'],
   trNote: ['..vv', '..v.', '..v.', 'vvv.', 'vv..'],
@@ -761,6 +773,7 @@ function emitTrail(game, trail, b) {
     case 'flames': if (f % 1 === 0) P.push({ x, y: y + 4, vx: (Math.random() - 0.5) * 16, vy: -30 - Math.random() * 20, g: 0, life: 0.45, col: ['#ffe14a', '#ff9a3a', '#ff4a2a'][f % 3], s: 2 }); break;
     case 'smoke': if (f % 3 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 14, vy: -14, g: 0, life: 1.2, col: f % 2 ? 'rgba(110,230,110,0.55)' : 'rgba(60,170,70,0.5)', s: 3 }); break;
     case 'notes': if (f % 10 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 16, vy: -22, g: 0, life: 1.2, spr: 'trNote' }); break;
+    case 'dust': if (f % 2 === 0) P.push({ x, y: y + 6, vx: (Math.random() - 0.5) * 40, vy: -20 - Math.random() * 20, g: 30, life: 0.6, col: f % 4 ? '#ffd25a' : '#fff4a8', s: 2 }); break;
     case 'binary': if (f % 5 === 0) P.push({ x, y, vx: 0, vy: -18, g: 0, life: 1.1, txt: Math.random() < 0.5 ? '0' : '1', col: '#5aff7a' }); break;
   }
 }
@@ -791,6 +804,7 @@ function drawTrailStatic(ctx, trail, x, yTop, yBot, r) {
     else if (trail.fx === 'notes' && k % 2 === 0) ctx.drawImage(SPR.trNote, px - 2, py);
     else if (trail.fx === 'flames') { ctx.fillStyle = ['#ff4a2a', '#ff9a3a', '#ffe14a'][k % 3]; ctx.fillRect(px, py, 2, 2); }
     else if (trail.fx === 'smoke') { ctx.fillStyle = 'rgba(90,210,100,0.6)'; ctx.fillRect(px - 1, py, 3, 3); }
+    else if (trail.fx === 'dust') { ctx.fillStyle = k % 2 ? '#ffd25a' : '#fff4a8'; ctx.fillRect(px - 1, py, 2, 2); }
     else if (trail.fx === 'binary' && k % 2 === 0) drawText(ctx, rng.chance(0.5) ? '0' : '1', px, py, '#5aff7a', 1, null);
   }
 }
@@ -955,6 +969,7 @@ const HATS = [
   { id: 'aimant', name: 'Aimant', sprite: 'aimant' },
   { id: 'fleurCactus', name: 'Fleur de cactus', sprite: 'fleurCactus' },
   { id: 'aureole', name: 'Auréole', sprite: 'aureole', dy: -5 },
+  { id: 'bandana', name: 'Bandana du survivant', sprite: 'bandana', survival: true },
 ];
 // Tenues : recolorent la carapace du bousier (q, Q, u) + quelques pixels
 const OUTFITS = [
@@ -973,6 +988,7 @@ const TRAILS = [
   { id: 'fumee', name: 'Expérience ratée', fx: 'smoke' },
   { id: 'notes', name: 'Notes de musique', fx: 'notes' },
   { id: 'binaire', name: 'Code binaire', fx: 'binary' },
+  { id: 'survivant', name: 'Tempête du survivant', fx: 'dust', survival: true },
 ];
 const THEMES = [
   { id: 'doree', name: 'Dune dorée', price: 0, sand: '#e8b864', sandDark: '#c9924a', sandLight: '#f5d48c', wall: '#d49a52', wallDark: '#a8693a', wallLight: '#f2c27a' },
@@ -1014,6 +1030,8 @@ const UNLOCKS = {
   'trail:fumee': { secret: true, flag: 'ratee' },
   'trail:notes': { secret: true, flag: 'silence' },
   'trail:binaire': { secret: true, flag: 'leet' },
+  'hat:bandana': { text: 'Parcours 1 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 1000] },
+  'trail:survivant': { text: 'Parcours 2 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 2000] },
 };
 for (const key in UNLOCKS) { const [type, id] = key.split(':'); Object.assign(COSMETICS[type].find(c => c.id === id), UNLOCKS[key]); }
 function unlockReached(p, item) {
@@ -1109,6 +1127,8 @@ const VENDOR_VERSION = 6;
 // La version de test (/dev/) est réservée à l'organisateur (compte Florent) :
 // verrouillée ici et, surtout, dans les règles Firestore (okEnv / openEnv).
 const DEV_LOCKED = ONLINE_ENV === 'dev';
+// La Grande Fuite (mode survie) : en test sur la version dev uniquement
+const SURVIVAL_ON = ONLINE_ENV === 'dev';
 const ADMIN_UID = 'iYDurji9CuUbdV04FBIM1d2nLiH2';
 // Clé de site reCAPTCHA v3 pour App Check (Firebase vérifie que les demandes
 // viennent bien du jeu et pas d'un script). null = App Check désactivé.
@@ -1180,6 +1200,7 @@ const Store = {
     p.owned = { ball: [], hat: [], outfit: [], trail: [], theme: [], ...p.owned };
     p.equip = { outfit: 'aucune', trail: 'aucune', ...p.equip };
     p.counters = p.counters || {};
+    p.survival = p.survival || { best: 0, runs: 0 };
     return p;
   },
 
@@ -1503,6 +1524,19 @@ const Online = {
       return g;
     }, 8000);
   },
+  // La Grande Fuite : record de distance
+  submitSurvival(p) {
+    return this.run(async c => {
+      if (!await this.ready(c, p)) return false;
+      await c.fb.setDoc(this.ref(c, 'survival', this.id(c, p.name)), { name: p.name, best: Math.floor(p.survival.best), at: Date.now() });
+      delete this.mem.survival;
+      return true;
+    }, 8000);
+  },
+  survivalTop() {
+    return this.cached('survival', DAY_TTL, () => this.run(async c => (await this.list(c, ['survival'], 'best', 50)).map(e => ({ name: e.name, best: e.best }))));
+  },
+
   // Boîte à idées
   sendIdea(p, type, text) {
     return this.run(async c => {
@@ -1895,6 +1929,9 @@ const EVENTS = {
   quake: { name: 'SEISME !', hint: 'LE SOL TREMBLE', dur: 3 },
   mirage: { name: 'MIRAGE ?', hint: 'UN DES DEUX TERRIERS EST FAUX', dur: 0 },
 };
+// Un objet se mange s'il est assez petit par rapport à la boule (sauf obstacles indestructibles)
+function edible(o, b) { return !o.def.hazard && (o.def.legendary || o.r <= b.r * 0.8); }
+
 function generateEvents(seed, holeY) {
   const rng = makeRng((seed ^ 0x5eed1e) >>> 0);
   const pool = Object.keys(EVENTS).filter(k => k !== 'mirage'), n = rng.int(2, 3), evs = [];
@@ -1904,6 +1941,107 @@ function generateEvents(seed, holeY) {
   }
   if (rng.chance(0.35)) evs.push({ type: 'mirage', y: holeY - 650, seed: rng.int(1, 1e6) });
   return evs;
+}
+
+// --- La Grande Fuite (mode survie) -------------------------------------------------
+// Dune sans fin qui accélère ; la taille de la boule sert de vie (sous 10 cm,
+// c'est perdu) et elle fond avec la faim. Halte tous les 250 m : 1 bonus au choix
+// parmi 3. Objets propres au mode (hors Bousipédia) :
+const SURV_OBJ = {
+  pics: { id: 'pics', name: 'Pics', sprite: 'pics', r: 5, hazard: true, prickly: true },
+  baril: { id: 'baril', name: 'Baril toxique', sprite: 'baril', r: 6, hazard: true },
+  tube: { id: 'tube', name: 'Tube à essai', sprite: 'tube', r: 3, pickup: true, glow: true },
+};
+const SURV = {
+  len: 120000,           // 12 km de dune
+  startArea: 100,        // boule de départ : 40 cm
+  deathArea: START_AREA, // sous la taille de départ du mode classique (10 cm) : perdu
+  haltEvery: 2500,       // 250 m
+};
+// dur : durée en secondes (0 = immédiat). pact : bonus avec contrepartie.
+const BONUSES = [
+  { id: 'cafe', icon: '☕', name: 'Café du labo', desc: 'Turbo pendant 10 s', dur: 10 },
+  { id: 'aimant', icon: '🧲', name: 'Aimant à crottes', desc: 'Ce qui se mange vient à toi (12 s)', dur: 12 },
+  { id: 'fantome', icon: '👻', name: 'Boule fantôme', desc: 'Tu traverses tout pendant 6 s', dur: 6 },
+  { id: 'bouclier', icon: '🩹', name: 'Bouclier pansement', desc: 'Les 3 prochains chocs ne font rien', dur: 0 },
+  { id: 'feu', icon: '🔥', name: 'Boule de feu', desc: 'Tu brûles les obstacles (10 s)', dur: 10 },
+  { id: 'rebond', icon: '🏀', name: 'Boule rebondissante', desc: 'Les chocs ne te font pas maigrir (12 s)', dur: 12 },
+  { id: 'engrais', icon: '🌱', name: 'Engrais', desc: '+50 % de taille tout de suite', dur: 0 },
+  { id: 'matrix', icon: '🐌', name: 'Ralenti Matrix', desc: 'Tout ralentit pendant 8 s', dur: 8 },
+  { id: 'chameau', icon: '🐪', name: 'Chameau ami', desc: 'Il dégage la route devant toi (15 s)', dur: 15 },
+  { id: 'kevin', icon: '🛴', name: 'Kevin à la rescousse', desc: 'Pour une fois, il fonce dans les obstacles (10 s)', dur: 10 },
+  { id: 'raccourci', icon: '🚀', name: 'Raccourci du labo', desc: 'Distance ×2 pendant 15 s', dur: 15 },
+  { id: 'mystere', icon: '🧪', name: 'Tube mystère', desc: 'Génial… ou catastrophique ?', dur: 0 },
+];
+const PACTS = [
+  { id: 'pacteFeu', icon: '😈', name: 'Pacte du feu', desc: 'Boule de feu 25 s… mais tu as 2× plus faim', dur: 25, pact: true },
+  { id: 'pacteGeant', icon: '😈', name: 'Pacte du géant', desc: 'Taille ×2… mais commandes inversées 12 s', dur: 12, pact: true },
+  { id: 'pacteVitesse', icon: '😈', name: 'Pacte de vitesse', desc: '5 pansements… mais +25 % de vitesse pour toujours', dur: 0, pact: true },
+];
+const BONUS = Object.fromEntries([...BONUSES, ...PACTS].map(b => [b.id, b]));
+
+function survivalConfig() {
+  const seed = ((Math.random() * 1e9) >>> 0) || 1, rng = makeRng(seed);
+  const weather = rng.pick(WEATHERS.filter(w => w.id !== 'nuit'));
+  return { seed, weather, legend: LEGENDS[0], course: generateSurvivalCourse(seed, weather), quests: [], mode: 'survival' };
+}
+
+function generateSurvivalCourse(seed, weather) {
+  const rng = makeRng(seed), len = SURV.len;
+  const p = [0, 0, 0, 0].map(() => rng.range(0, Math.PI * 2));
+  const Lx = new Float32Array(len), Rx = new Float32Array(len);
+  for (let y = 0; y < len; y++) {
+    const cx = W / 2 + 24 * Math.sin(y * 0.0021 + p[0]) + 10 * Math.sin(y * 0.0057 + p[1]);
+    // la dune se resserre un peu avec la distance
+    let hw = Math.max(48, 74 - y / 2500) + 12 * Math.sin(y * 0.0033 + p[2]) + 5 * Math.sin(y * 0.011 + p[3]);
+    if (y < 300) hw = lerp(76, hw, y / 300);
+    Lx[y] = Math.max(5, cx - hw); Rx[y] = Math.min(W - 5, cx + hw);
+  }
+  const types = OBJECTS.filter(o => !o.weather || o.weather === weather.id);
+  const objs = [], recent = [];
+  const mk = (def, x, y, r, sprite) => {
+    const o = { def, x, x0: x, y, r, sprite: sprite || def.sprite, dead: false, hitT: -9, phase: rng.range(0, 6.28), amp: 0, w: 0 };
+    if (def.move === 'side') { o.amp = rng.range(8, 18); o.w = rng.range(1.2, 2.4); }
+    if (def.move === 'slow') { o.amp = rng.range(4, 8); o.w = rng.range(0.3, 0.5); }
+    return o;
+  };
+  const place = o => {
+    for (const q of recent) if (Math.hypot(q.x - o.x, q.y - o.y) < q.r + o.r + 3 + q.amp + o.amp) return false;
+    objs.push(o); recent.push(o); if (recent.length > 12) recent.shift();
+    return true;
+  };
+  let y = 220, nextTube = 1800;
+  while (y < len - 300) {
+    // t : taille des objets (grossit sur les 1 600 premiers mètres) ; danger : part d'obstacles
+    const t = Math.min(1, y / 16000), danger = Math.min(1, y / 30000);
+    y += rng.range(6, 12) * (1 + t * 0.4);
+    const L = Lx[y | 0], R = Rx[y | 0];
+    if (y > nextTube) { nextTube += rng.range(1600, 2800); place(mk(SURV_OBJ.tube, rng.range(L + 14, R - 14), y, 3)); continue; }
+    if (y > 1500 && rng.chance(0.015 + danger * 0.05)) {
+      const def = rng.chance(0.5) ? SURV_OBJ.pics : SURV_OBJ.baril;
+      place(mk(def, rng.range(L + 10, R - 10), y, def.r)); continue;
+    }
+    let tot = 0;
+    const ws = types.map(o => { const w = o.w * Math.exp(-(((Math.max(t, 0.05) - o.tp) / (o.s + 0.15)) ** 2)) * (o.prickly || o.rock ? 1 + danger * 2 : 1); tot += w; return w; });
+    let pick = rng.next() * tot, def = types[0];
+    for (let i = 0; i < types.length; i++) { pick -= ws[i]; if (pick <= 0) { def = types[i]; break; } }
+    let o;
+    if (def.rock) {
+      const want = clamp(3 + t * 14 + rng.range(-4, 6) + danger * 4, 3, 20);
+      const Rr = ROCK_SIZES.reduce((a, b) => Math.abs(b - want) < Math.abs(a - want) ? b : a);
+      o = mk(OBJ.rocher, rng.range(L + 8, R - 8), y, Rr * 0.9, `rock_${Rr}_${rng.int(0, 1)}`);
+    } else o = mk(def, rng.range(L + 8, R - 8), y, def.r);
+    o.x = o.x0 = clamp(o.x, L + o.r + o.amp + 2, R - o.r - o.amp - 2);
+    place(o);
+  }
+  objs.sort((a, b) => a.y - b.y);
+  // événements surprise réguliers (sans mirage : il n'y a pas de terrier)
+  const evs = [], kinds = Object.keys(EVENTS).filter(k => k !== 'mirage');
+  for (let ey = 3200; ey < len - 1000; ey += rng.range(2600, 4200)) evs.push({ type: rng.pick(kinds), y: Math.round(ey), seed: rng.int(1, 1e6) });
+  return {
+    seed, weather, legend: LEGENDS[0], len, holeY: len + 5000, holeX: W / 2, Lx, Rx, objects: objs, counts: {},
+    windPh: [rng.range(0, 6.28), rng.range(0, 6.28)], events: evs,
+  };
 }
 
 // --- Commentateur sportif ------------------------------------------------------
@@ -1969,10 +2107,13 @@ class Game {
     this.skin = opts.skin; this.hat = opts.hat; this.specks = genSpecks(opts.skin);
     this.outfit = opts.outfit || null; this.trail = opts.trail && opts.trail.fx ? opts.trail : null; this.trailPts = [];
     this.setPalette(opts.theme, config.weather);
+    this.surv = config.mode === 'survival' ? { dist: 0, nextHalt: SURV.haltEvery, fx: {}, shields: 0, hunger: 1, speedPact: 1, allies: [], taken: [] } : null;
+    this.minArea = this.surv ? 0 : START_AREA;
     this.ghosts = (opts.ghosts || []).filter(g => g.ghost && g.ghost.x).slice(0, 3);
     for (const g of this.ghosts) g.passed = false;
     const startX = (this.course.Lx[60] + this.course.Rx[60]) / 2;
-    this.ball = { x: startX, y: 60, vx: 0, vy: 0, area: START_AREA, r: Math.sqrt(START_AREA), roll: 0, lastWall: -9, lastHurt: -9, stuck: [], scale: 1, anim: 0 };
+    const area0 = this.surv ? SURV.startArea : START_AREA;
+    this.ball = { x: startX, y: 60, vx: 0, vy: 0, area: area0, r: Math.sqrt(area0), roll: 0, lastWall: -9, lastHurt: -9, stuck: [], scale: 1, anim: 0 };
     this.input.targetX = null;
     this.run = { absorbed: 0, byType: {}, bumps: 0, pricks: 0, wallHits: 0, terrier: false, legend: false, finished: false, time: 0, sizeCm: 0, score: 0 };
     this.rec = { x: [], y: [], r: [] };
@@ -2001,7 +2142,7 @@ class Game {
     if (!this.paused) {
       this.acc += dt;
       let n = 0;
-      while (this.acc >= TICK && n < 6) { this.step(); this.acc -= TICK; n++; }
+      while (this.acc >= TICK && n < 6 && !this.paused) { this.step(); this.acc -= TICK; n++; }
       if (n === 6) this.acc = 0;
     }
     this.render();
@@ -2053,13 +2194,14 @@ class Game {
     const desired = clamp((target - b.x) * 7, -maxLat, maxLat);
     const acc = 900 / (1 + r * 0.09) * (wx.grip || 1);
     b.vx += clamp(desired - b.vx, -acc * TICK, acc * TICK);
-    const vyT = (46 + r * 2.3) * (wx.speed || 1);
+    const vyT = (46 + r * 2.3) * (wx.speed || 1) * (this.surv ? this.survSpeed() : 1);
     b.vy += clamp(vyT - b.vy, -150 * TICK, 45 * TICK);
     b.x += (b.vx + this.windAt(this.t)) * TICK;
     b.y += b.vy * TICK;
+    if (this.surv) this.stepSurvival(b);
     b.roll += b.vy * TICK / Math.max(2, r);
     b.anim += b.vy * TICK * 0.12;
-    if (wx.shrink) b.area = Math.max(START_AREA, b.area - wx.shrink * TICK * (1 + r * 0.06));
+    if (wx.shrink) b.area = Math.max(this.minArea, b.area - wx.shrink * TICK * (1 + r * 0.06));
     this.updateEvents(b);
     this.updateKevins(b);
     if (this.trail) {
@@ -2082,7 +2224,7 @@ class Game {
       const o = objs[i];
       if (o.dead || o.deco) continue;
       const ox = this.objX(o), dx = ox - b.x, dy = o.y - b.y, d = Math.hypot(dx, dy) || 0.01;
-      const canEat = o.def.legendary || o.r <= b.r * 0.8;
+      const canEat = edible(o, b);
       if (canEat) { if (d < b.r + o.r * 0.5) this.absorb(o, dx, dy, d); }
       else if (d < b.r + o.r * 0.85) this.bump(o, dx, dy, d);
     }
@@ -2128,10 +2270,13 @@ class Game {
 
   hudState() {
     const b = this.ball;
-    return {
+    const st = {
       sizeCm: radiusToCm(b.r), progress: clamp(b.y / this.course.holeY, 0, 1),
       time: this.run.time, legend: this.run.legend, wind: this.windAt(this.t),
     };
+    // survie : la barre devient la vie (10 cm = vide, 80 cm et plus = pleine)
+    if (this.surv) Object.assign(st, { dist: this.surv.dist, life: clamp((st.sizeCm - 10) / 70, 0, 1) });
+    return st;
   }
 
   wallHit(side) {
@@ -2140,7 +2285,7 @@ class Game {
     b.lastWall = this.t;
     this.run.wallHits++;
     this.say('wall', 0.25);
-    b.area = Math.max(START_AREA, b.area * 0.975);
+    b.area = Math.max(this.minArea, b.area * 0.975);
     b.vy *= 0.85;
     this.shake = 1.5;
     this.burst(b.x + side * b.r, b.y, 5, [this.theme.sandLight, this.theme.sand], 50);
@@ -2148,7 +2293,11 @@ class Game {
   }
 
   bump(o, dx, dy, d) {
-    const b = this.ball;
+    const b = this.ball, sv = this.surv;
+    if (sv && sv.fx.fantome) return;  // la boule fantôme traverse tout
+    if (sv && (sv.fx.feu || sv.fx.pacteFeu) && !o.def.hazard) {  // le feu brûle l'obstacle
+      o.dead = true; this.burst(o.x, o.y, 14, ['#ff4a2a', '#ff9a3a', '#ffe14a'], 70); Sound.play('pop', 3); return;
+    }
     // L'obstacle dévie la boule sur le côté et la freine, sans jamais la bloquer
     const over = b.r + o.r * 0.85 - d, nx = -dx / d, ny = -dy / d, side = dx > 0 ? -1 : 1;
     b.x += side * Math.min(over, 3);
@@ -2156,8 +2305,14 @@ class Game {
     if (this.t - o.hitT < 0.6 || this.t - b.lastHurt < 0.5) return;
     o.hitT = this.t; b.lastHurt = this.t;
     const speed = Math.hypot(b.vx, b.vy);
-    const loss = (o.def.prickly ? 0.12 : 0.06) * (0.5 + Math.min(1, speed / 100));
-    b.area = Math.max(START_AREA, b.area * (1 - loss));
+    let loss = (o.def.prickly ? 0.12 : 0.06) * (0.5 + Math.min(1, speed / 100));
+    if (sv) {
+      // en survie les obstacles font plus mal, sauf pansement ou boule rebondissante
+      loss *= o.def.hazard ? 2.2 : 1.6;
+      if (sv.shields > 0) { sv.shields--; loss = 0; this.floatText('PANSEMENT !', b.x, b.y - b.r - 10, '#8ae0ff'); }
+      else if (sv.fx.rebond) { loss = 0; b.vx += (dx > 0 ? -1 : 1) * 120; }
+    }
+    b.area = Math.max(this.minArea, b.area * (1 - loss));
     b.vy *= 0.35; b.vx += nx * 70;
     this.run.bumps++;
     this.say('bump', 0.4);
@@ -2174,6 +2329,7 @@ class Game {
   absorb(o, dx, dy, d) {
     const b = this.ball, run = this.run;
     o.dead = true;
+    if (o.def.pickup) { Sound.play('unlock'); this.burst(o.x, o.y, 16, ['#74f088', '#ffffff', '#dcffe0'], 70); this.applyBonus(BONUS.mystere, true); return; }
     // rendements décroissants : plus la boule est grosse, moins chaque objet compte
     const gain = o.def.legendary ? 10 : ((this.wx.absorb || 1) * 0.3 * o.r * o.r + 0.6) * 9 / (9 + b.r);
     b.area += gain;
@@ -2205,12 +2361,125 @@ class Game {
     const run = this.run;
     run.finished = true;
     run.score = Math.round(run.sizeCm * (run.terrier ? 1 : 0.5) * (run.legend ? 1.1 : 1) * 10) / 10;
+    if (this.surv) { run.mode = 'survival'; run.dist = Math.floor(this.surv.dist); run.taken = this.surv.taken; run.score = run.dist; }
     run.weather = this.wx.id;
     run.ghost = this.rec;
     if (this.hooks.onFinish) this.hooks.onFinish(run);
   }
 
   abort() { this.state = 'done'; this.resetEvents(); }
+
+  // --- La Grande Fuite ------------------------------------------------------------
+  survSpeed() {
+    const sv = this.surv;
+    let k = (1 + Math.min(0.8, sv.dist / 3500)) * sv.speedPact;  // accélère avec la distance
+    if (sv.fx.cafe) k *= 1.5;
+    if (sv.fx.matrix) k *= 0.55;
+    return k;
+  }
+
+  stepSurvival(b) {
+    const sv = this.surv, dy = b.vy * TICK;
+    sv.dist += dy / 10 * (sv.fx.raccourci ? 2 : 1);
+    for (const k in sv.fx) if ((sv.fx[k] -= TICK) <= 0) {
+      delete sv.fx[k];
+      if (k === 'pacteGeant' || k === 'mystereInv') this.mirror = false;
+    }
+    // la faim : la boule fond doucement, de plus en plus vite
+    const hunger = (0.9 + sv.dist / 1800) * sv.hunger * (sv.fx.pacteFeu ? 2 : 1);
+    b.area = Math.max(0, b.area - hunger * TICK * (1 + b.r * 0.04));
+    // aimant : ce qui se mange glisse vers la boule
+    if (sv.fx.aimant) for (let i = lowerBound(this.objs, b.y - 50); i < this.objs.length && this.objs[i].y < b.y + 60; i++) {
+      const o = this.objs[i];
+      if (o.dead || o.deco || !edible(o, b)) continue;
+      const ox = this.objX(o), d = Math.hypot(ox - b.x, o.y - b.y);
+      if (d < 55) { o.x0 += (b.x - ox) * 0.08; o.x = o.x0; if (o.y > b.y) o.y -= (o.y - b.y) * 0.05; }
+    }
+    // alliés (chameau, Kevin) : ils détruisent les obstacles sur leur passage
+    for (const a of sv.allies) {
+      a.t += TICK;
+      a.y = b.y + (a.kind === 'chameau' ? 70 : 45 + Math.sin(a.t * 2) * 20);
+      a.x = a.kind === 'chameau' ? lerp(a.x, b.x, 0.08) : b.x + Math.sin(a.t * 3.2) * 34;
+      for (let i = lowerBound(this.objs, a.y - 14); i < this.objs.length && this.objs[i].y < a.y + 14; i++) {
+        const o = this.objs[i];
+        if (o.dead || o.deco || edible(o, b) || o.def.pickup) continue;
+        if (Math.abs(this.objX(o) - a.x) < (a.kind === 'chameau' ? 18 : 12) + o.r) {
+          o.dead = true; this.burst(this.objX(o), o.y, 10, [this.theme.sandLight, '#ffffff'], 60);
+          if (Math.random() < 0.3) this.floatText(a.kind === 'chameau' ? 'MIAM' : 'YOUHOU', a.x, a.y - 10, '#ffffff');
+        }
+      }
+    }
+    sv.allies = sv.allies.filter(a => a.t < a.dur);
+    // halte tous les 250 m : on choisit un bonus
+    if (b.y >= sv.nextHalt) {
+      sv.nextHalt += SURV.haltEvery;
+      this.paused = true;
+      if (this.hooks.halt) this.hooks.halt(this.drawCards());
+    }
+    // plus de boule : perdu ; bout de la dune : gagné (!)
+    if (b.area < SURV.deathArea && this.phase === 'play') {
+      this.phase = 'miss'; this.phaseT = 0; this.alert = null; Sound.play('miss');
+      this.notice('PLUS DE BOULE !', '#ff9a8a', 2.5, 4);
+    } else if (b.y > this.course.len - 400 && this.phase === 'play') {
+      this.phase = 'miss'; this.phaseT = 0; this.notice('LE BOUT DU MONDE !', '#fff4a8', 2.5, 4);
+    }
+  }
+
+  // 3 cartes au hasard (une « pacte » de temps en temps à partir de la 2e halte)
+  drawCards() {
+    const pool = BONUSES.slice(), cards = [];
+    while (cards.length < 3) cards.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    if (this.surv.dist > 400 && Math.random() < 0.4) cards[2] = PACTS[Math.floor(Math.random() * PACTS.length)];
+    return cards;
+  }
+
+  applyBonus(bon, fromTube) {
+    const sv = this.surv, b = this.ball;
+    if (!sv) return;
+    if (bon.id === 'mystere') {
+      // 70 % un bonus au hasard, 30 % une mauvaise surprise
+      if (Math.random() < 0.7) return this.applyBonus(BONUSES[Math.floor(Math.random() * (BONUSES.length - 1))], fromTube);
+      if (Math.random() < 0.5) { b.area *= 0.75; this.notice('OUPS : BOULE RETRECIE', '#ff9a8a', 2, 3); }
+      else { sv.fx.mystereInv = 6; this.mirror = true; this.notice('OUPS : COMMANDES INVERSEES', '#ff9a8a', 2, 3); }
+      sv.taken.push('🧪');
+      return;
+    }
+    sv.taken.push(bon.icon);
+    if (bon.dur) sv.fx[bon.id] = (sv.fx[bon.id] || 0) + bon.dur;
+    switch (bon.id) {
+      case 'bouclier': sv.shields += 3; break;
+      case 'engrais': b.area *= 1.5; break;
+      case 'pacteGeant': b.area *= 2; this.mirror = true; break;
+      case 'pacteVitesse': sv.shields += 5; sv.speedPact *= 1.25; break;
+      case 'chameau': case 'kevin': sv.allies.push({ kind: bon.id, t: 0, dur: bon.dur, x: b.x, y: b.y + 60 }); break;
+    }
+    this.notice((fromTube ? 'TUBE : ' : '') + bon.name.toUpperCase() + ' !', bon.pact ? '#ff9ad8' : '#c8ff8a', 1.8, 3);
+  }
+
+  drawSurvival(camY) {
+    const ctx = this.ctx, sv = this.surv, b = this.ball;
+    // effets actifs (en haut à gauche) et pansements
+    let y = 48;
+    for (const [k, left] of Object.entries(sv.fx)) {
+      const bon = BONUS[k]; if (!bon) continue;
+      drawText(ctx, `${bon.name.toUpperCase().slice(0, 14)} ${Math.ceil(left)}`, 4, y, bon.pact ? '#ff9ad8' : '#c8ff8a', 1, '#1d1416');
+      y += 8;
+    }
+    if (sv.shields) drawText(ctx, `PANSEMENTS ${sv.shields}`, 4, y, '#8ae0ff', 1, '#1d1416');
+    if (sv.fx.matrix) { ctx.fillStyle = 'rgba(90,140,255,0.12)'; ctx.fillRect(0, 0, W, this.H); }
+    if (sv.fx.raccourci) drawText(ctx, 'X2', W - 14, 48, '#fff4a8', 1, '#1d1416');
+  }
+
+  drawSurvivalWorld() {
+    const ctx = this.ctx, sv = this.surv, b = this.ball;
+    for (const a of sv.allies) {
+      const sp = a.kind === 'chameau' ? SPR.chameau : SPR.kevin;
+      ctx.drawImage(sp, Math.round(a.x - sp.width / 2), Math.round(a.y - sp.height / 2));
+    }
+    if (sv.shields) { ctx.strokeStyle = 'rgba(138,224,255,0.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 3, 0, Math.PI * 2); ctx.stroke(); }
+    if ((sv.fx.feu || sv.fx.pacteFeu) && this.frame % 2 === 0)
+      this.particles.push({ x: b.x + (Math.random() - 0.5) * b.r * 2, y: b.y + (Math.random() - 0.5) * b.r * 2, vx: 0, vy: -30, g: 0, life: 0.35, col: ['#ff4a2a', '#ff9a3a', '#ffe14a'][this.frame % 3], s: 2 });
+  }
 
   // --- Événements surprise ---------------------------------------------------
   resetEvents() {
@@ -2410,7 +2679,10 @@ class Game {
     for (; i < objs.length && objs[i].y < Math.min(bot, by); i++) this.drawObj(objs[i]);
     if (this.state !== 'attract') {
       this.drawGhosts();
+      if (this.surv && this.surv.fx.fantome) ctx.globalAlpha = 0.45;
       this.drawPlayer();
+      ctx.globalAlpha = 1;
+      if (this.surv) this.drawSurvivalWorld();
       for (const k of this.kevins) {
         const sp = SPR[k.dir > 0 ? 'kevin' : 'kevinF'];
         ctx.drawImage(sp, Math.round(k.x - sp.width / 2), Math.round(k.y - sp.height / 2) - (Math.floor(k.t * 10) % 2));
@@ -2425,6 +2697,7 @@ class Game {
     for (const t of this.texts) drawText(ctx, t.text, t.x, t.y, t.col, 1, '#1d1416', 'center');
     ctx.restore();
     if (this.state === 'run') this.drawOverlayHud(camY);
+    if (this.state === 'run' && this.surv) this.drawSurvival(camY);
   }
 
   drawBackground(camY) {
@@ -2482,6 +2755,10 @@ class Game {
       const sw = Math.round(s.width * 0.8);
       ctx.fillRect(x + ((s.width - sw) >> 1), y + s.height - 1, sw, 2);
     }
+    if (this.state === 'run' && !o.deco && !o.def.pickup && o.y > this.ball.y - 15 && o.y < this.ball.y + 110 && !edible(o, this.ball)) {
+      const red = OUTLINE_CACHE[key] || (OUTLINE_CACHE[key] = silhouette(s, o.def.hazard ? '#ff2a2a' : '#ff5a4a'));
+      for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.drawImage(red, x + ox, y + oy);
+    }
     ctx.drawImage(s, x, y);
     if (o.def.legendary && this.frame % 12 === 0)
       this.particles.push({ x: this.objX(o) + (Math.random() - 0.5) * 14, y: o.y + (Math.random() - 0.5) * 10, vx: 0, vy: -12, g: 0, life: 0.6, col: Math.random() < 0.5 ? '#fff4a8' : '#ffffff', s: 1 });
@@ -2490,7 +2767,8 @@ class Game {
   drawBall(skin, specks, x, y, R, th, alpha) {
     const ctx = this.ctx;
     R = Math.max(1, Math.round(R));
-    if (alpha !== 1) ctx.globalAlpha = alpha;
+    const prevAlpha = ctx.globalAlpha;
+    if (alpha !== 1) ctx.globalAlpha = alpha * prevAlpha;
     ctx.drawImage(ballBase(skin, R), Math.round(x) - R, Math.round(y) - R);
     if (specks) {
       const c = Math.cos(th), sn = Math.sin(th), sz = R > 9 ? 2 : 1, rr = R - 1.2;
@@ -2503,7 +2781,7 @@ class Game {
         ctx.fillRect(Math.round(x + px * rr - (sz >> 1)), Math.round(y + y2 * rr - (sz >> 1)), s.big ? sz + (R > 14 ? 1 : 0) : sz, s.big ? sz : sz);
       }
     }
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = prevAlpha;
   }
 
   drawPlayer() {
@@ -2686,6 +2964,7 @@ class Game {
 }
 
 // Étiquette et couleur de chaque fantôme selon son rôle
+const OUTLINE_CACHE = {};
 const GHOST_ROLES = {
   leader: { col: '#ffd25a', label: n => '1ER ' + n.slice(0, 8) },
   rival: { col: '#ffb0d8', label: n => 'RIVAL ' + n.slice(0, 8) },
@@ -2743,6 +3022,7 @@ const App = {
     this.game = new Game(document.getElementById('screen'), {
       hud: s => this.onHud(s),
       onFinish: run => this.onFinish(run),
+      halt: cards => this.onHalt(cards),
     });
     this.lbTab = 'day'; this.shopTab = 'ball';
     this.fit();
@@ -2873,6 +3153,8 @@ const App = {
       go: () => this.show(v),
       play: () => this.startDaily(),
       practice: () => this.startPractice(),
+      survival: () => this.startSurvival(),
+      pickcard: () => this.pickCard(+v),
       lbtab: () => { this.lbTab = v; this.show('leaderboard'); },
       shoptab: () => { this.shopTab = v; this.shopSel = null; this.show('shop'); },
       shopitem: () => this.shopItem(v),
@@ -3041,6 +3323,27 @@ const App = {
     this.launch(this.cfg, ghosts, `ESSAI ${d.attempts}/3`);
   },
 
+  startSurvival() {
+    this.mode = 'survival';
+    this.survCfg = survivalConfig();
+    this.launch(this.survCfg, [], 'GRANDE FUITE');
+  },
+
+  // Halte : la course est en pause, on choisit 1 bonus parmi 3
+  onHalt(cards) {
+    this.cards = cards;
+    Sound.play('unlock');
+    this.show('cards');
+  },
+  pickCard(i) {
+    const c = this.cards && this.cards[i];
+    if (!c) return;
+    this.cards = null;
+    this.game.applyBonus(c);
+    this.game.paused = false; this.game.last = 0;
+    this.show('none');
+  },
+
   startPractice() {
     this.mode = 'practice';
     this.practiceCfg = practiceConfig();
@@ -3057,19 +3360,28 @@ const App = {
     this.hud.wx.textContent = cfg.weather.icon;
     this.hud.tryEl.textContent = label;
     this.hud.root.classList.remove('hidden');
-    this.onHud({ sizeCm: radiusToCm(Math.sqrt(START_AREA)), progress: 0 });
+    this.hud.root.classList.toggle('surv', cfg.mode === 'survival');
+    this.hud.bar.style.background = '';
+    this.onHud(this.game.hudState());
     this.show('none');
   },
 
   onHud(s) {
-    this.hud.size.textContent = fmtSize(s.sizeCm);
     this.hud.time.textContent = fmtTime(s.time || 0);
+    if (s.dist != null) {
+      // survie : distance + taille, et la barre devient la vie
+      this.hud.size.textContent = `${Math.floor(s.dist)} m · ${fmtSize(s.sizeCm)}`;
+      this.hud.bar.style.width = (s.life * 100).toFixed(1) + '%';
+      this.hud.bar.style.background = s.life > 0.5 ? '#9be27a' : s.life > 0.2 ? '#ffb04a' : '#ff5a4a';
+      return;
+    }
+    this.hud.size.textContent = fmtSize(s.sizeCm);
     this.hud.bar.style.width = (s.progress * 100).toFixed(1) + '%';
     this.hud.beetle.style.left = (s.progress * 100).toFixed(1) + '%';
   },
 
   pause() {
-    if (this.game.state !== 'run' || this.game.paused) return;
+    if (this.game.state !== 'run' || this.game.paused || this.cards) return;
     this.game.paused = true;
     this.show('pause');
   },
@@ -3146,6 +3458,17 @@ const App = {
       res.attemptsLeft = 3 - d.attempts;
       Store.save();
       Online.submitPlayer(p);
+    }
+    if (this.mode === 'survival') {
+      const sv = p.survival;
+      res.dist = run.dist; res.prevBest = sv.best; res.newRecord = run.dist > sv.best;
+      sv.runs++;
+      if (res.newRecord) sv.best = run.dist;
+      res.coins = Math.floor(run.dist / 25);
+      p.coins += res.coins;
+      Store.save();
+      if (res.newRecord) await Online.submitSurvival(p);
+      res.top = await Online.survivalTop();
     }
     res.unlocked = Store.checkUnlocks(p);
     Store.save();
@@ -3339,7 +3662,7 @@ const App = {
       {
         title: 'Grossis !',
         pics: `<span class="good">${spriteImg('crottin', 4)}<small>✅ miam</small></span><span class="bad">${spriteImg('rock_12_0', 2)}<small>❌ aïe</small></span>`,
-        text: 'Avale ce qui est <b>plus petit que ta boule</b> pour grossir.<br>Ce qui est plus gros te freine et te fait maigrir. Attention aux cactus !',
+        text: 'Avale ce qui est <b>plus petit que ta boule</b> pour grossir.<br>Ce qui est plus gros te freine et te fait maigrir. Attention aux cactus !<br><b>Entouré de rouge = encore trop gros pour toi.</b> Tout finit par se manger !',
       },
       {
         title: 'Vise le terrier',
@@ -3419,6 +3742,7 @@ const App = {
         ${playBtn}
         ${d.best > 0 ? `<div class="tiny center">Ton record du jour : <b>${fmtSize(d.best)}</b>${rank ? ` · ${rank}${rank === 1 ? 'er' : 'e'} / ${lb.length}` : ''}</div>` : ''}
         <button class="btn ghost" data-a="practice">🏜️ Entraînement libre</button>
+        ${SURVIVAL_ON ? `<button class="btn" data-a="survival">🏃 La Grande Fuite <small>record ${p.survival.best} m</small></button>` : ''}
       </div>
       <nav class="nav">
         <button data-a="go" data-v="leaderboard"><span>🏆</span>Classement</button>
@@ -3426,6 +3750,42 @@ const App = {
         <button data-a="go" data-v="shop"><span>🎨</span>Style</button>
         <button data-a="go" data-v="badges"><span>🎖️</span>Badges</button>
       </nav>
+    </div>`;
+  },
+
+  scr_survResults() {
+    const r = this.lastRes, run = r.run, me = this.p.name;
+    const top = (r.top || []).slice(0, 10);
+    return `<div class="screen">
+      <div class="result-head ${r.newRecord ? 'win' : 'lose'}">
+        <div class="title small">LA GRANDE FUITE</div>
+        <div class="score">${run.dist} m</div>
+        ${r.newRecord ? '<div class="badge-new">Nouveau record !</div>' : `<div class="tiny">Ton record : <b>${this.p.survival.best} m</b></div>`}
+      </div>
+      <div class="panel"><table class="stats">
+        <tr><td>Temps</td><td>${fmtTime(run.time)}</td></tr>
+        <tr><td>Objets avalés</td><td>${run.absorbed}</td></tr>
+        <tr><td>Chocs</td><td>${run.bumps}</td></tr>
+        <tr><td>Bonus pris</td><td>${(run.taken || []).join(' ') || '—'}</td></tr>
+      </table></div>
+      <div class="panel"><div class="label">Récompenses</div><div class="gold big-num">+${r.coins} 🟡</div>
+        <div class="tiny">1 🟡 tous les 25 m. Objets à gagner : Bandana du survivant (1 000 m), Tempête du survivant (2 000 m).</div></div>
+      ${(r.unlocked || []).length ? `<div class="panel banner">${r.unlocked.map(u => `🎁 Débloqué : <b>${esc(u.item.name)}</b>`).join('<br>')}</div>` : ''}
+      ${top.length ? `<div class="panel"><div class="label">Classement Survie</div><table class="lb">${top.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.name)}</td><td class="r">${e.best} m</td></tr>`).join('')}</table></div>` : ''}
+      <div class="col">
+        <button class="btn big" data-a="survival">Rejouer</button>
+        <button class="btn ghost" data-a="go" data-v="home">Accueil</button>
+      </div>
+    </div>`;
+  },
+
+  scr_cards() {
+    const sv = this.game.surv;
+    return `<div class="screen center dim">
+      <div class="title small">HALTE !</div>
+      <div class="tiny">${Math.floor(sv.dist)} m parcourus · choisis un bonus</div>
+      <div class="cards">${(this.cards || []).map((c, i) => `<button class="card ${c.pact ? 'pact' : ''}" data-a="pickcard" data-v="${i}">
+        <span class="ico">${c.icon}</span><span><b>${esc(c.name)}</b><span class="tiny">${esc(c.desc)}</span></span></button>`).join('')}</div>
     </div>`;
   },
 
@@ -3440,6 +3800,7 @@ const App = {
   },
 
   scr_results() {
+    if (this.lastRes.mode === 'survival') return this.scr_survResults();
     const r = this.lastRes, run = r.run, daily = r.mode === 'daily';
     const d = daily ? Store.dayPeek(this.p, this.today) : null;
     const lines = [
@@ -3502,11 +3863,16 @@ const App = {
       body = lb.length ? lb.map((e, i) => `<tr class="${nameKey(e.team) === mine ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.team)}</td><td class="tiny">${e.players} j.</td><td class="r">${fmtSize(e.avg)}</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Aucune équipe cette semaine.</td></tr>';
       extra = `<div class="tiny center">Moyenne par joueur sur la semaine. ${this.p.team ? '' : 'Rejoins une équipe depuis ton profil 👤.'}</div>`;
+    } else if (tab === 'surv') {
+      const lb = (await Online.survivalTop()) || [];
+      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td></td><td class="r">${e.best} m</td></tr>`).join('')
+        : '<tr><td colspan="4" class="center tiny">Personne n\'a encore tenté La Grande Fuite.</td></tr>';
+      extra = '<div class="tiny center">La Grande Fuite : le plus long parcours de chacun.</div>';
     } else {
       const lb = await Leaderboard.records();
       body = lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">🔥${e.bestStreak} ✨${e.legends}</td><td class="r">${fmtSize(e.best)}</td></tr>`).join('');
     }
-    const tabs = [['day', 'Jour'], ['week', 'Semaine'], ['teams', 'Équipes'], ['all', 'Records']]
+    const tabs = [['day', 'Jour'], ['week', 'Semaine'], ['teams', 'Équipes'], ['all', 'Records'], ...(SURVIVAL_ON ? [['surv', 'Survie']] : [])]
       .map(([k, l]) => `<button class="tab ${tab === k ? 'on' : ''}" data-a="lbtab" data-v="${k}">${l}</button>`).join('');
     return `<div class="screen">
       ${this.back('Classement')}
@@ -3567,7 +3933,7 @@ const App = {
   scr_shop() {
     const p = this.p, type = this.shopTab;
     // les secrets n'apparaissent qu'une fois obtenus
-    const items = COSMETICS[type].filter(it => !it.secret || Store.owns(p, type, it));
+    const items = COSMETICS[type].filter(it => (!it.secret || Store.owns(p, type, it)) && (!it.survival || SURVIVAL_ON));
     const eq = t => findCos(t, p.equip[t]);
     const prev = this.shopSel ? findCos(type, this.shopSel) : null;
     const look = t => type === t && prev ? prev : eq(t);
