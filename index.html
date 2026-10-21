@@ -1105,6 +1105,10 @@ const ONLINE_ENV = location.pathname.includes('/dev/') ? 'dev' : 'prod';
 // Lien partagé avec les résultats : toujours la version officielle
 const GAME_URL = 'https://zodiacfbo.github.io/bousier/';
 const VENDOR_VERSION = 5;
+// La version de test (/dev/) est réservée à l'organisateur (compte Florent) :
+// verrouillée ici et, surtout, dans les règles Firestore (okEnv / openEnv).
+const DEV_LOCKED = ONLINE_ENV === 'dev';
+const ADMIN_UID = 'iYDurji9CuUbdV04FBIM1d2nLiH2';
 // Clé de site reCAPTCHA v3 pour App Check (Firebase vérifie que les demandes
 // viennent bien du jeu et pas d'un script). null = App Check désactivé.
 const APPCHECK_SITE_KEY = null;
@@ -1621,6 +1625,7 @@ const Online = {
       if (!c) return { error: 'Pas de connexion.' };
       const cred = await withTimeout(c.fb.signInWithEmailAndPassword(c.auth, accountEmail(name), password), 10000);
       const uid = cred.user.uid;
+      if (DEV_LOCKED && uid !== ADMIN_UID) return { error: 'Version de test réservée à l\'organisateur.' };
       const owner = await c.fb.getDoc(this.nameRef(c, name));
       const realName = owner.exists() ? owner.data().name : name.trim();
       if (!owner.exists()) await c.fb.setDoc(this.nameRef(c, name), { uid, name: realName, at: Date.now() });
@@ -2734,13 +2739,17 @@ const App = {
     document.addEventListener('visibilitychange', () => { if (document.hidden) this.pause(); });
     this.ui.addEventListener('click', e => this.onClick(e));
     setInterval(() => this.tick(), 1000);
-    if (!Store.profile()) this.show('name'); else this.show('home');
+    if (!Store.profile() || this.devRefused(Store.profile())) this.show('name'); else this.show('home');
     this.syncOnStart();
   },
 
   // Récupère la progression jouée sur un autre appareil
+  // Version de test : seul le compte de l'organisateur peut y entrer
+  devRefused(p) { return DEV_LOCKED && (!p || p.uid !== ADMIN_UID); },
+
   async syncOnStart() {
     const p = this.p;
+    if (this.devRefused(p)) return;
     if (p && await Online.pullProfile(p)) { this.loadDay(); if (this.screen === 'home') this.show('home'); }
     const g = p && await Online.claimGifts(p);
     if (g) {
@@ -2915,6 +2924,10 @@ const App = {
     this.formError('Connexion…');
     const r = await Online.login(name, pw);
     if (r.error) return this.formError(r.error);
+    if (this.devRefused(this.p)) {
+      delete Store.data.profiles[this.p.name]; Store.data.current = null; Store.save();
+      return this.formError('Version de test réservée à l\'organisateur.');
+    }
     this.loadDay();
     this.toast(`Content de te revoir, ${r.name} !`);
     this.show('home');
@@ -3224,8 +3237,9 @@ const App = {
       ${back}
       <div class="title">BOUSIER</div>
       <div class="mascot">${pix(mascotUrl(SKINS[0], HATS[0], 12), 80, 84)}</div>
-      <button class="btn big" data-a="go" data-v="create">Créer mon profil</button>
-      <button class="btn ghost" data-a="go" data-v="login">J'ai déjà un profil : me connecter</button>
+      ${DEV_LOCKED ? `<div class="banner">🔒 Version de test réservée à l'organisateur.<br><span class="tiny">Le jeu, c'est par ici : ${GAME_URL}</span></div>
+      <button class="btn big" data-a="go" data-v="login">Me connecter</button>` : `<button class="btn big" data-a="go" data-v="create">Créer mon profil</button>
+      <button class="btn ghost" data-a="go" data-v="login">J'ai déjà un profil : me connecter</button>`}
       ${COPYRIGHT}
     </div>`;
   },
@@ -3247,6 +3261,7 @@ const App = {
     </div>`;
   },
   scr_create() {
+    if (DEV_LOCKED) return this.scr_name();
     return this.authForm('Nouveau profil', 'create', 'Créer et jouer !', true, '', 'Retiens bien ton mot de passe : il te permet de retrouver ta progression sur n\'importe quel téléphone.');
   },
   scr_login(prefill = '') {
