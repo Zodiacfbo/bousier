@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.7 — Classement de la semaine (21 octobre 2026)
+- 🏆 La semaine compte la somme des 3 meilleurs jours de chacun (au lieu de tous les jours joués).
+  S'applique aussi à la couronne du champion et au classement Équipes.
+
 ## v1.6.1 — Mises à jour immédiates (21 octobre 2026)
 - Le jeu vérifie à chaque ouverture s'il existe une version plus récente : les nouveautés arrivent
   dès la première réouverture, sans attendre (hors connexion, rien ne change).
