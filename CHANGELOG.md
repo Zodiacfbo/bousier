@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.8 — Bouton Nouveautés (21 octobre 2026)
+- 📰 Bouton Nouveautés en haut de l'accueil, avec une pastille indiquant les mises à jour non lues
+  (remplace le grand panneau « Quoi de neuf ? »).
+- Pastille sur 💡 quand l'organisateur change l'état d'une idée envoyée.
+
 ## v1.7 — Classement de la semaine (21 octobre 2026)
 - 🏆 La semaine compte la somme des 3 meilleurs jours de chacun (au lieu de tous les jours joués).
   S'applique aussi à la couronne du champion et au classement Équipes.
