@@ -7,6 +7,18 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10 — Halloween et nouveaux événements (préparés le 21 octobre 2026)
+Tout est en place dès maintenant mais ne s'active qu'aux dates prévues (les dunes d'avant ne changent pas) :
+- 🎃 Semaine Halloween du 26 octobre au 1er novembre : citrouilles et chauves-souris dans la dune,
+  nuits plus fréquentes, bandeau sur l'accueil, événement surprise « Fantômes » (une fois par dune).
+  Boule citrouille pour qui joue une dune de la semaine. Samedi 31 : nuit obligatoire, trésor
+  « Crâne en sucre », Chapeau de sorcière en rentrant dans le terrier. Ces objets restent en souvenir
+  et ne comptent pas pour compléter la Bousipédia.
+- ⚡ À partir du 2 novembre : 6 nouveaux événements surprise (coupure de courant, photocopieuse,
+  pause café, alarme incendie, scorpion, aimant).
+- 📰 Les news peuvent être préparées à l'avance : elles apparaissent à leur date (26 oct. et 2 nov.).
+- Page admin : calendrier des dunes avec Halloween ; boule citrouille et chapeau de sorcière offrables.
+
 ## v1.9 — Champion de la semaine (21 octobre 2026)
 - 👑 Champion de la semaine : badge avec le nombre de titres (×1, ×2…), podium récompensé
   200 / 100 / 50 🟡, annonce sur l'accueil de tous chaque lundi.
