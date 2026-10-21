@@ -225,7 +225,9 @@ async function refresh() {
   players = names.map(n => ({ key: n.id, name: n.name, uid: n.uid, rec: recBy[n.id] || null }))
     .sort((a, b) => ((b.rec && b.rec.at) || 0) - ((a.rec && a.rec.at) || 0));
   const activeWeek = new Set([...scores, ...week.flat()].map(s => nameKey(s.name)));
-  const runs = recs.reduce((n, r) => n + (r.runs || 0), 0);
+  // parties jouées : d'après la progression complète de chaque joueur (lisible par l'organisateur)
+  const profs = await all(envCol('profiles'));
+  const runs = profs.reduce((n, d) => { try { return n + ((JSON.parse(d.data).stats || {}).runs || 0); } catch (e) { return n; } }, 0);
   $('stats').innerHTML = [
     ['Comptes (communs aux 2 versions)', names.length], ['Joueurs de cette version', recs.length], ['Actifs aujourd\'hui', scores.length], ['Actifs sur 7 jours', activeWeek.size],
     ['Parties jouées', runs || '—'],

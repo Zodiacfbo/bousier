@@ -964,7 +964,7 @@ const HATS = [
   { id: 'bob', name: 'Bob de touriste', price: 150, sprite: 'bob' },
   { id: 'fez', name: 'Fez', price: 200, sprite: 'fez' },
   { id: 'sombrero', name: 'Sombrero', price: 260, sprite: 'sombrero' },
-  { id: 'couronne', name: 'Couronne', badge: 'geant', sprite: 'couronneHat' },
+  { id: 'couronne', name: 'Couronne de géant', badge: 'geant', sprite: 'couronneHat' },
   { id: 'nemes', name: 'Némès du pharaon', badge: 'legende', sprite: 'nemes' },
   { id: 'parapluie', name: 'Parapluie', sprite: 'parapluie', dy: -3 },
   { id: 'lunettes', name: 'Lunettes de protection', sprite: 'lunettes' },
@@ -1078,9 +1078,9 @@ function unreadNews() { return CHANGELOG.filter(c => c.v > (Store.data.settings.
 // --- Badges ----------------------------------------------------------------
 const BADGES = [
   { id: 'premier', icon: '🪲', name: 'Premier roulé', desc: 'Termine ta première course du jour.' },
-  { id: 'terrier', icon: '🕳️', name: 'Dans le mille', desc: 'Rentre ta boule dans le terrier.' },
+  { id: 'terrier', icon: '🕳️', name: 'Premier terrier', desc: 'Rentre ta boule dans le terrier.' },
   { id: 'metre', icon: '📏', name: 'Mètre étalon', desc: 'Termine avec une boule d\'au moins 1 m.' },
-  { id: 'geant', icon: '🏔️', name: 'Boule de géant', desc: 'Termine avec une boule d\'au moins 2 m.', reward: 'Couronne' },
+  { id: 'geant', icon: '🏔️', name: 'Boule de géant', desc: 'Termine avec une boule d\'au moins 2 m.', reward: 'Couronne de géant' },
   { id: 'titan', icon: '🌋', name: 'Titan des sables', desc: 'Termine avec une boule d\'au moins 3 m.' },
   { id: 'legende', icon: '✨', name: 'Chasseur de trésor', desc: 'Trouve un objet légendaire.', reward: 'Némès du pharaon' },
   { id: 'archeo', icon: '🏺', name: 'Archéologue', desc: 'Trouve 4 objets légendaires différents.', reward: 'Boule d\'or' },
@@ -1093,14 +1093,14 @@ const BADGES = [
   { id: 'nuit', icon: '🌙', name: 'Nyctalope', desc: 'Rentre dans le terrier de nuit.' },
   { id: 'chameaux', icon: '🐪', name: 'Dompteur', desc: 'Avale 10 chameaux au total.' },
   { id: 'collection', icon: '📖', name: 'Encyclopédiste', desc: 'Découvre 26 objets de la Bousipédia.', reward: 'Oasis' },
-  { id: 'parfait', icon: '🎯', name: 'Journée parfaite', desc: 'Réussis les 3 quêtes du jour.' },
-  { id: 'roi', icon: '👑', name: 'Roi Bousier', desc: 'Finis 1er du classement du jour (2 joueurs min.).' },
+  { id: 'parfait', icon: '🌟', name: 'Journée parfaite', desc: 'Réussis les 3 quêtes du jour.' },
+  { id: 'roi', icon: '🥇', name: 'Roi Bousier', desc: 'Termine une journée 1er du classement (2 joueurs min.).' },
 ];
 
 // --- Quêtes du jour --------------------------------------------------------
 // Chaque générateur reçoit (rng, course) et renvoie { id, text, check(run) }
 const QUEST_GEN = [
-  (rng) => { const s = rng.pick([80, 90, 100]); return { id: 'fast' + s, text: `Finis en moins de ${s} s`, check: r => r.finished && r.time < s }; },
+  (rng) => { const s = rng.pick([80, 90, 100]); return { id: 'fast' + s, text: `Rentre dans le terrier en moins de ${s} s`, check: r => r.terrier && r.time < s }; },
   (rng) => { const n = rng.pick([50, 70, 90]); return { id: 'eat' + n, text: `Avale ${n} objets`, check: r => r.absorbed >= n }; },
   (rng, course) => {
     const big = ['cactus', 'tente', 'chameau', 'palmier', 'amphore', 'valise', 'crane'].filter(id => (course.counts[id] || 0) >= 2);
@@ -3115,14 +3115,19 @@ const App = {
       if (!lb) return;  // hors ligne : on réessaiera
       const ct = p.counters, inc = k => { ct[k] = (ct[k] || 0) + 1; };
       for (const t of dayTitles(lb)) if (t.name === p.name) inc('t_' + t.key);
-      if (lb.length >= 2 && lb[0].name === p.name) inc('firsts');
+      let roi = false;
+      if (lb.length >= 2 && lb[0].name === p.name) {
+        inc('firsts');
+        // badge Roi Bousier : 1er du classement final de la veille
+        if (!p.badges.roi) { p.badges.roi = this.today; roi = true; }
+      }
       if (await Leaderboard.champion(this.today) === p.name) ct.champion = 1;
       p.awardsDay = this.today;
       const fresh = Store.checkUnlocks(p);
       Store.save();
-      if (fresh.length) {
+      if (fresh.length || roi) {
         Sound.play('unlock');
-        this.toast(`🎁 Débloqué : ${fresh.map(f => f.item.name).join(', ')} !`);
+        this.toast([roi ? '🥇 Badge : Roi Bousier !' : '', fresh.length ? `🎁 Débloqué : ${fresh.map(f => f.item.name).join(', ')} !` : ''].filter(Boolean).join(' '));
         if (this.screen === 'home') this.show('home');
       }
     } finally { this.awarding = false; }
@@ -3192,7 +3197,6 @@ const App = {
       shopitem: () => this.shopItem(v),
       buy: () => this.buy(),
       colsel: () => { this.colSel = v; this.show('collection'); },
-      share: () => this.share(),
       resume: () => this.resume(),
       abandon: () => this.abandon(),
       sound: () => { Sound.on = !Sound.on; Store.data.settings.sound = Sound.on; Store.save(); this.show('profile'); },
@@ -3474,7 +3478,7 @@ const App = {
       const lb = await Leaderboard.day(this.today);
       res.rank = lb.findIndex(e => e.name === p.name) + 1;
       res.players = lb.length;
-      res.online = Online.live;
+      res.online = lb.online;
       const cond = {
         premier: true, terrier: run.terrier, metre: run.sizeCm >= 100, geant: run.sizeCm >= 200, titan: run.sizeCm >= 300,
         legende: Object.keys(p.legends).length >= 1, archeo: Object.keys(p.legends).length >= 4,
@@ -3483,7 +3487,7 @@ const App = {
         meteo: Object.keys(p.weathers).length >= WEATHERS.length,
         tempete: run.terrier && run.weather === 'tempete', nuit: run.terrier && run.weather === 'nuit',
         chameaux: st.camels >= 10, collection: Store.discovered(p) >= 26,
-        parfait: cfg.quests.every(q => d.quests[q.id]), roi: res.rank === 1 && lb.length >= 2,
+        parfait: cfg.quests.every(q => d.quests[q.id]),
       };
       for (const b of BADGES) if (!p.badges[b.id] && cond[b.id]) { p.badges[b.id] = this.today; res.badges.push(b); }
       res.attemptsLeft = 3 - d.attempts;
@@ -3505,31 +3509,6 @@ const App = {
     Store.save();
     this.lastRes = res;
     setTimeout(() => this.show('results'), 200);
-  },
-
-  // --- Partage ----------------------------------------------------------------
-  shareText() {
-    const p = this.p, d = Store.dayPeek(p, this.today), cfg = this.cfg;
-    const squares = d.runs.map(r => r.terrier ? '🟩' : '🟥').join('') + '⬛'.repeat(Math.max(0, 3 - d.runs.length));
-    // Rang calculé en fin de partie (pas d'attente réseau ici : sur iPhone le
-    // partage doit s'ouvrir tout de suite après le clic), seulement s'il vient
-    // du classement en ligne et qu'il y a du monde
-    const r = this.lastRes, rank = r && r.online ? r.rank : 0;
-    const rankTxt = rank && r.players >= 2 ? `🏆 ${rank}${rank === 1 ? 'er' : 'e'} sur ${r.players} · ` : '';
-    return `🪲 BOUSIER #${cfg.num} ${cfg.weather.icon}\nMa meilleure boule : ${fmtSize(d.best)}\nEssais : ${squares}${d.legend ? ' ✨' : ''}\n${rankTxt}Série : 🔥${Store.streakOf(p, this.today)}\n${GAME_URL}`;
-  },
-  async share() {
-    const text = this.shareText(), copied = 'Résultat copié ! Colle-le à tes collègues 📋';
-    try {
-      if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) { await navigator.share({ text }); return; }
-      await navigator.clipboard.writeText(text);
-      this.toast(copied);
-    } catch (e) {
-      if (e && e.name === 'AbortError') return;
-      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); this.toast(copied); } catch (e2) { this.toast('Copie impossible'); }
-      ta.remove();
-    }
   },
 
   // --- Boutique ---------------------------------------------------------------
@@ -3772,7 +3751,7 @@ const App = {
       <div class="play-zone">
         <div class="dots">${dots}</div>
         ${playBtn}
-        ${d.best > 0 ? `<div class="tiny center">Ton record du jour : <b>${fmtSize(d.best)}</b>${rank ? ` · ${rank}${rank === 1 ? 'er' : 'e'} / ${lb.length}` : ''}</div>` : ''}
+        ${d.best > 0 ? `<div class="tiny center">Ton record du jour : <b>${fmtSize(d.best)}</b>${rank ? ` · ${rank}${rank === 1 ? 'er' : 'e'} / ${lb.length}${lb.online ? '' : ' (hors ligne)'}` : ''}</div>` : ''}
         <button class="btn ghost" data-a="practice">🏜️ Entraînement libre</button>
         ${SURVIVAL_ON ? `<button class="btn" data-a="survival">🏃 La Grande Fuite <small>record ${p.survival.best} m</small></button>` : ''}
       </div>
@@ -3847,7 +3826,7 @@ const App = {
         <div class="title small">${run.terrier ? 'DANS LE TERRIER !' : 'RATÉ LE TERRIER…'}</div>
         <div class="score">${fmtSize(run.score)}</div>
         ${daily && r.newBest && d.best === run.score ? '<div class="badge-new">Meilleur score du jour !</div>' : ''}
-        ${daily && r.rank ? `<div class="tiny">Classement du jour : <b>${r.rank}${r.rank === 1 ? 'er' : 'e'}</b> sur ${r.players}</div>` : ''}
+        ${daily && r.rank ? `<div class="tiny">Classement du jour : <b>${r.rank}${r.rank === 1 ? 'er' : 'e'}</b> sur ${r.players}${r.online ? '' : ' (hors ligne)'}</div>` : ''}
         ${!daily ? '<div class="tiny">Entraînement — ne compte pas au classement</div>' : ''}
       </div>
       <div class="panel"><table class="stats">${lines.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('')}</table></div>
@@ -3860,7 +3839,6 @@ const App = {
       </div>` : ''}
       ${(r.unlocked || []).length ? `<div class="panel banner">${r.unlocked.map(u => `🎁 Débloqué : <b>${esc(u.item.name)}</b>${u.item.secret ? ' 🤫 (secret !)' : ''}`).join('<br>')}<div class="tiny">À équiper dans 🎨 Style</div></div>` : ''}
       <div class="col">
-        ${daily ? `<button class="btn" data-a="share">📋 Partager mon résultat</button>` : ''}
         ${daily && r.attemptsLeft > 0 ? `<button class="btn big" data-a="play">Réessayer (${3 - r.attemptsLeft + 1}/3)</button>` : ''}
         ${!daily ? `<button class="btn big" data-a="practice">Nouvelle dune d'entraînement</button>` : ''}
         <button class="btn ghost" data-a="go" data-v="home">Accueil</button>
@@ -3902,6 +3880,7 @@ const App = {
       extra = '<div class="tiny center">La Grande Fuite : le plus long parcours de chacun.</div>';
     } else {
       const lb = await Leaderboard.records();
+      extra = '<div class="tiny center">Records = ta meilleure boule de tous les temps · 🔥 ta plus longue série · ✨ trésors trouvés.</div>';
       body = lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">🔥${e.bestStreak} ✨${e.legends}</td><td class="r">${fmtSize(e.best)}</td></tr>`).join('');
     }
     const tabs = [['day', 'Jour'], ['week', 'Semaine'], ['teams', 'Équipes'], ['all', 'Records'], ...(SURVIVAL_ON ? [['surv', 'Survie']] : [])]

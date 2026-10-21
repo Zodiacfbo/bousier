@@ -7,6 +7,16 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.8.2 — Corrections (21 octobre 2026)
+- Noms et icônes sans doublons : badge « Premier terrier », chapeau « Couronne de géant »,
+  badge 🥇 Roi Bousier (👑 reste au champion de la semaine), badge 🌟 Journée parfaite.
+- Badge Roi Bousier attribué le lendemain, d'après le classement final de la veille.
+- Quête de vitesse : il faut rentrer dans le terrier dans le temps imparti.
+- « (hors ligne) » affiché à côté du rang quand le classement en ligne n'est pas joignable.
+- Phrase d'explication sous l'onglet Records.
+- Suppression du bouton « Partager mon résultat ».
+- Page admin : le nombre de parties jouées est calculé correctement.
+
 ## v1.8.1 — Classement de la semaine plus lisible (21 octobre 2026)
 - La colonne des jours affiche « 2/3 », « 3/3 »… (scores qui comptent sur 3), en vert une fois les 3 atteints.
 
