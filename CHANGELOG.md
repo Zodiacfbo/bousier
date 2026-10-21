@@ -7,6 +7,13 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.1 — Décor d'Halloween (préparé le 21 octobre 2026)
+Actif du 26 octobre au 1er novembre seulement :
+- 🎃 Dune aux couleurs d'Halloween (sable orangé, bords violets, brume), citrouilles allumées sur les bords.
+- Menus en orange et violet, titre « BOUSIER 🎃 » ; sur l'accueil : toiles d'araignée, chauves-souris,
+  araignée qui descend au bout de son fil (le 31 : le Crâne en sucre, qui fait un clin d'œil).
+- 🎉 Bousipédia : section « Objets de saison » à part ; le compteur et la complétion ne comptent que les objets classiques.
+
 ## v1.10 — Halloween et nouveaux événements (préparés le 21 octobre 2026)
 Tout est en place dès maintenant mais ne s'active qu'aux dates prévues (les dunes d'avant ne changent pas) :
 - 🎃 Semaine Halloween du 26 octobre au 1er novembre : citrouilles et chauves-souris dans la dune,
