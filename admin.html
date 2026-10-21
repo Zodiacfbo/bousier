@@ -167,8 +167,8 @@ const FIREBASE_CONFIG = {
 const ADMIN_UIDS = ['iYDurji9CuUbdV04FBIM1d2nLiH2'];
 // Objets qu'on peut offrir (identiques à ceux du jeu)
 const GIFTABLE = {
-  ball: { sable: 'Boule de sable', neige: 'Boule de neige', pasteque: 'Pastèque', lave: 'Boule de lave', planete: 'Petite planète', disco: 'Boule disco', saturne: 'Saturne', atome: 'Atome', uranium: 'Uranium', or: 'Boule d\'or' },
-  hat: { casquette: 'Casquette', chantier: 'Casque de chantier', bob: 'Bob de touriste', fez: 'Fez', sombrero: 'Sombrero', couronne: 'Couronne', nemes: 'Némès du pharaon', parapluie: 'Parapluie', lunettes: 'Lunettes de protection', charlotte: 'Charlotte de labo', casqueKevin: 'Casque de Kevin', coquille: 'Coquille d\'escargot', pansement: 'Pansement', aimant: 'Aimant', fleurCactus: 'Fleur de cactus', aureole: 'Auréole' },
+  ball: { sable: 'Boule de sable', neige: 'Boule de neige', pasteque: 'Pastèque', lave: 'Boule de lave', planete: 'Petite planète', disco: 'Boule disco', saturne: 'Saturne', atome: 'Atome', uranium: 'Uranium', or: 'Boule d\'or', citrouille: 'Boule citrouille' },
+  hat: { casquette: 'Casquette', chantier: 'Casque de chantier', bob: 'Bob de touriste', fez: 'Fez', sombrero: 'Sombrero', couronne: 'Couronne', nemes: 'Némès du pharaon', parapluie: 'Parapluie', lunettes: 'Lunettes de protection', charlotte: 'Charlotte de labo', casqueKevin: 'Casque de Kevin', coquille: 'Coquille d\'escargot', pansement: 'Pansement', aimant: 'Aimant', fleurCactus: 'Fleur de cactus', aureole: 'Auréole', sorciere: 'Chapeau de sorcière' },
   outfit: { blouse: 'Blouse de labo', hazmat: 'Combinaison anti-contamination', cape: 'Cape de super-héros', smoking: 'Smoking' },
   trail: { arcenciel: 'Arc-en-ciel', etincelles: 'Étincelles', bulles: 'Bulles', flammes: 'Flammes', fumee: 'Expérience ratée', notes: 'Notes de musique', binaire: 'Code binaire' },
 };
@@ -296,18 +296,33 @@ function rerollWeather(day, prev) {
   const wi = baseWeatherIdx(day);
   return wi !== prev ? wi : (wi + 1 + Math.floor(rnd(day + '|m2') * (WEATHERS.length - 1))) % WEATHERS.length;
 }
+// semaine Halloween : nuits fréquentes, nuit et trésor spécial le 31
+const HALLOWEEN = { from: '2026-10-26', to: '2026-11-01', night: '2026-10-31' }, NIGHT_IDX = 2;
+const isHalloween = day => day >= HALLOWEEN.from && day <= HALLOWEEN.to;
+function dayWeather(day, prev) {
+  const wi = rerollWeather(day, prev);
+  if (!isHalloween(day)) return wi;
+  if (day === HALLOWEEN.night) return NIGHT_IDX;
+  if (addDays(day, 1) === HALLOWEEN.night || prev === NIGHT_IDX) {
+    if (wi !== NIGHT_IDX) return wi;
+    const others = WEATHERS.map((_, i) => i).filter(i => i !== NIGHT_IDX && i !== prev);
+    return others[Math.floor(rnd(day + '|hw2') * others.length)];
+  }
+  return rnd(day + '|hw') < 0.75 ? NIGHT_IDX : wi;
+}
 function weatherIdx(day) {
   let d = LAUNCH_DAY, prev = rerollWeather(d, baseWeatherIdx(addDays(d, -1)));
-  while (d < day) { d = addDays(d, 1); prev = rerollWeather(d, prev); }
+  while (d < day) { d = addDays(d, 1); prev = dayWeather(d, prev); }
   return prev;
 }
+const legendOf = day => day === HALLOWEEN.night ? 'Crâne en sucre 🎃' : LEGENDS[Math.floor(rnd(day + '|legend') * LEGENDS.length)];
 const dayNumber = k => Math.round((new Date(k + 'T12:00') - new Date(LAUNCH_DAY + 'T12:00')) / 86400000) + 1;
 function renderMeteo() {
   const today = dayKey(), rows = [];
   for (let i = 0; i <= 30; i++) {
     const day = addDays(today, i), [icon, name] = WEATHERS[weatherIdx(day)];
     const date = new Date(day + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
-    rows.push(`<tr${i === 0 ? ' style="font-weight:700"' : ''}><td>${date}${i === 0 ? ' (aujourd\'hui)' : ''}</td><td class="r">#${dayNumber(day)}</td><td>${icon} ${name}</td><td class="muted">${esc(LEGENDS[Math.floor(rnd(day + '|legend') * LEGENDS.length)])}</td></tr>`);
+    rows.push(`<tr${i === 0 ? ' style="font-weight:700"' : ''}><td>${date}${i === 0 ? ' (aujourd\'hui)' : ''}</td><td class="r">#${dayNumber(day)}</td><td>${icon} ${name}</td><td class="muted">${esc(legendOf(day))}${isHalloween(day) ? ' · 🎃' : ''}</td></tr>`);
   }
   $('mtable').innerHTML = '<tr><th>Jour</th><th class="r">Dune</th><th>Météo</th><th>Trésor</th></tr>' + rows.join('');
 }

@@ -551,6 +551,11 @@ const ROWS = {
   scarabeeor: ['k.......k', '.k.kkk.k.', '..kyyyk..', 'kkyYyYykk', '..kyyyk..', 'kkyYyYykk', '..kyyyk..', '.k.kkk.k.', 'k.......k'],
   telephone: ['.kkkkk.', 'kGGGGGk', 'kcwccck', 'kccccck', 'kcccwck', 'kccccck', 'kccccck', 'kGGGGGk', 'kGGhGGk', '.kkkkk.'],
   lampe: ['.....kk....', '....kyyk...', '..kkyyyykkk', 'kkyyyyyyyk.', '.kYYYYYYk..', '..kkkkkk...'],
+  // Halloween
+  citrouille: ['...kek...', '.kkkekkk.', 'kooOoOook', 'koyoOoyok', 'kooOoOook', 'koyyyyyok', 'kooOoOook', '.kkkkkkk.'],
+  chauvesouris: ['k.k...k.k', 'kQkkkkkQk', 'kQQrkrQQk', '.kQQQQQk.', '..k...k..'],
+  cranesucre: ['..kkkkk..', '.kwwwwwk.', 'kwwpwpwwk', 'kwvvwvvwk', 'kwvvwvvwk', 'kwwwkwwwk', '.kwpwpwk.', '..kwkwk..', '..kkkkk..'],
+  sorciere: ['....kk...', '...kvk...', '..kvvk...', '..kvvvk..', '.kyyyyyk.', 'kvvvvvvvk', '.kkkkkkk.'],
   cafe: ['.w.w.', 'kkkkk.', 'kwwwkk', 'kbbbk.k', 'kwwwkk', '.kkk..'],
   tasse: ['.kkkkk..', 'knbbbnkk', 'kwwwwwk.k', 'kwrwwwk.k', 'kwwwwwkk.', '.kwwwk...', '..kkk....'],
   ankh: ['..kkk..', '.kyyyk.', '.ky.yk.', '.kyyyk.', 'kkkykkk', 'kyyyyyk', 'kkkykkk', '..kyk..', '..kyk..', '..kkk..'],
@@ -926,7 +931,15 @@ const OBJECTS = [
   { id: 'parasol', name: 'Parasol', sprite: 'parasol', r: 7, w: 0.7, tp: 0.55, s: 0.4, weather: 'canicule', desc: 'Planté là pendant la canicule. Très convoité.' },
   { id: 'plume', name: 'Plume', sprite: 'plume', r: 3.5, w: 0.9, tp: 0.35, s: 0.4, weather: 'ventarriere', desc: 'Portée par le vent arrière. Légère comme tout.' },
 ];
-const OBJ = Object.fromEntries(OBJECTS.map(o => [o.id, o]));
+// Semaine Halloween : objets et trésor qui n'existent que ces jours-là
+const HALLOWEEN = { from: '2026-10-26', to: '2026-11-01', night: '2026-10-31' };
+const isHalloween = day => day >= HALLOWEEN.from && day <= HALLOWEEN.to;
+const SEASON_OBJECTS = [
+  { id: 'citrouille', name: 'Citrouille', sprite: 'citrouille', r: 4.5, w: 0.9, tp: 0.4, s: 0.35, glow: true, season: 'halloween', desc: 'Semaine Halloween 2026. Elle brille encore un peu.' },
+  { id: 'chauvesouris', name: 'Chauve-souris', sprite: 'chauvesouris', r: 3.5, w: 0.9, tp: 0.45, s: 0.35, move: 'side', season: 'halloween', desc: 'Semaine Halloween 2026. Elle voletait au ras du sable.' },
+];
+const SUGAR_SKULL = { id: 'cranesucre', name: 'Crâne en sucre', sprite: 'cranesucre', season: 'halloween', desc: 'Trésor de la nuit d\'Halloween, le 31 octobre 2026.' };
+const OBJ = Object.fromEntries(OBJECTS.concat(SEASON_OBJECTS).map(o => [o.id, o]));
 
 const WEATHERS = [
   { id: 'calme', name: 'Grand calme', icon: '☀️', desc: 'Pas un souffle. Conditions idéales pour un record.' },
@@ -946,7 +959,7 @@ const LEGENDS = [
   { id: 'tasse', name: 'Le mug du bureau', sprite: 'tasse', desc: 'Celui que tout le monde cherche depuis lundi.' },
   { id: 'ankh', name: 'Ankh sacré', sprite: 'ankh', desc: 'La clé de la vie. Ou d\'un très vieux placard.' },
 ];
-const LEGEND = Object.fromEntries(LEGENDS.map(l => [l.id, l]));
+const LEGEND = Object.fromEntries(LEGENDS.concat(SUGAR_SKULL).map(l => [l.id, l]));
 
 // --- Cosmétiques -----------------------------------------------------------
 const SKINS = [
@@ -960,6 +973,7 @@ const SKINS = [
   { id: 'saturne', name: 'Saturne', base: '#d9b27a', light: '#ecd3a0', hi: '#fff0c8', dark: '#a87a48', out: '#3a2410', specks: ['#b8864a', '#f5e0b0'], pattern: 'bands', fx: 'ring', ring: ['#f0e2b8', '#9a8458'] },
   { id: 'atome', name: 'Atome', base: '#7ab8f0', light: '#a8d4ff', hi: '#e8f6ff', dark: '#4a80c8', out: '#14305a', specks: ['#ffffff', '#c8e8ff'], count: 30, fx: 'orbits' },
   { id: 'uranium', name: 'Uranium', base: '#3ccf5a', light: '#74f088', hi: '#dcffe0', dark: '#1f8a3a', out: '#0a3a1a', specks: ['#c8ffd0', '#ffffff'], count: 40, fx: 'glow' },
+  { id: 'citrouille', name: 'Boule citrouille', season: 'halloween', base: '#e8833a', light: '#f5a35a', hi: '#ffd08a', dark: '#b5562a', out: '#4a1e08', specks: ['#b5562a'], pattern: 'stripes' },
   { id: 'or', name: 'Boule d\'or', badge: 'archeo', base: '#d9a92a', light: '#f2cf4a', hi: '#fff4a8', dark: '#9a6e14', out: '#3a2808', specks: ['#fff4a8', '#b8860b'] },
 ];
 const HATS = [
@@ -980,6 +994,7 @@ const HATS = [
   { id: 'aimant', name: 'Aimant', sprite: 'aimant' },
   { id: 'fleurCactus', name: 'Fleur de cactus', sprite: 'fleurCactus' },
   { id: 'aureole', name: 'Auréole', sprite: 'aureole', dy: -5 },
+  { id: 'sorciere', name: 'Chapeau de sorcière', sprite: 'sorciere', dy: -3, season: 'halloween' },
   { id: 'bandana', name: 'Bandana du survivant', sprite: 'bandana', survival: true },
 ];
 // Tenues : recolorent la carapace du bousier (q, Q, u) + quelques pixels
@@ -1036,6 +1051,8 @@ const UNLOCKS = {
   'outfit:smoking': { mystery: 'Les meilleurs s\'habillent chic…', prog: p => [counter(p, 'firsts'), 3] },
   'trail:arcenciel': { text: 'Sois champion de la semaine 👑', prog: p => [counter(p, 'champion'), 1] },
   'trail:etincelles': { price: 250 },
+  'ball:citrouille': { text: 'Joue une dune du jour pendant la semaine Halloween 🎃', prog: p => [counter(p, 'halloween'), 1] },
+  'hat:sorciere': { text: 'Rentre dans le terrier sur la dune d\'Halloween, le samedi 31 octobre 🎃', prog: p => [counter(p, 'sorciere'), 1] },
   'trail:bulles': { price: 300 },
   'trail:flammes': { text: 'Rentre 5 fois dans le terrier sous la canicule', prog: p => [counter(p, 'heat'), 5] },
   'trail:fumee': { secret: true, flag: 'ratee' },
@@ -1056,6 +1073,14 @@ const SECRET_COUNT = Object.values(UNLOCKS).filter(u => u.secret).length;
 // La première entrée est la plus récente : elle s'affiche une fois sur l'accueil
 // des joueurs qui ne l'ont pas encore vue.
 const CHANGELOG = [
+  { v: 10, date: '2026-11-02', items: ['⚡ 6 nouveaux événements surprise dans la dune : 🔌 coupure de courant, 🖨️ photocopieuse, ☕ pause café, 🧯 alarme incendie, 🦂 scorpion et 🧲 aimant !'] },
+  {
+    v: 9, date: '2026-10-26', items: [
+      '🎃 Semaine Halloween jusqu\'au 1er novembre : citrouilles et chauves-souris dans la dune, et des nuits plus fréquentes',
+      '🎃 Joue une dune du jour cette semaine pour gagner la Boule citrouille',
+      '🧙 Samedi 31 : dune spéciale de nuit avec le trésor « Crâne en sucre ». Rentre dans le terrier pour gagner le Chapeau de sorcière !',
+    ],
+  },
   {
     v: 8, date: '2026-10-21', items: [
       '👑 Champion de la semaine : nouveau badge (×1, ×2…) et podium récompensé 200 / 100 / 50 🟡, annoncé chaque lundi',
@@ -1088,7 +1113,9 @@ function ideasChanged(mine) {
 }
 
 // Nombre de mises à jour pas encore lues (pastille du bouton 📰)
-function unreadNews() { return CHANGELOG.filter(c => c.v > (Store.data.settings.seenVersion || 0)).length; }
+// Une nouveauté préparée à l'avance n'apparaît qu'à partir de sa date
+function visibleNews() { const today = dayKey(); return CHANGELOG.filter(c => c.date <= today); }
+function unreadNews() { return visibleNews().filter(c => c.v > (Store.data.settings.seenVersion || 0)).length; }
 
 // --- Badges ----------------------------------------------------------------
 const BADGES = [
@@ -1280,7 +1307,7 @@ const Store = {
   },
 
   discovered(p) {
-    return Object.keys(p.collection).length + Object.keys(p.legends).length;
+    return OBJECTS.filter(o => p.collection[o.id]).length + LEGENDS.filter(l => p.legends[l.id]).length;
   },
 };
 
@@ -1860,6 +1887,19 @@ function rerollWeather(day, prev) {
   const wi = baseWeatherIdx(day);
   return wi !== prev ? wi : (wi + 1 + Math.floor(makeRng(hashStr(day + '|m2')).next() * (WEATHERS.length - 1))) % WEATHERS.length;
 }
+// Semaine Halloween : environ une nuit sur deux (jamais deux de suite), nuit le 31
+const NIGHT_IDX = WEATHERS.findIndex(w => w.id === 'nuit');
+function dayWeather(day, prev) {
+  const wi = rerollWeather(day, prev);
+  if (!isHalloween(day)) return wi;
+  if (day === HALLOWEEN.night) return NIGHT_IDX;
+  if (addDays(day, 1) === HALLOWEEN.night || prev === NIGHT_IDX) {
+    if (wi !== NIGHT_IDX) return wi;
+    const others = WEATHERS.map((_, i) => i).filter(i => i !== NIGHT_IDX && i !== prev);
+    return others[Math.floor(makeRng(hashStr(day + '|hw2')).next() * others.length)];
+  }
+  return makeRng(hashStr(day + '|hw')).next() < 0.75 ? NIGHT_IDX : wi;
+}
 function weatherIdx(day) {
   // jusqu'au lancement : l'ancienne règle, pour ne pas changer une dune déjà jouée
   if (day <= LAUNCH_DAY) return rerollWeather(day, baseWeatherIdx(addDays(day, -1)));
@@ -1867,7 +1907,7 @@ function weatherIdx(day) {
     let d = LAUNCH_DAY, prev = weatherIdx(d);
     while (d < day) {
       d = addDays(d, 1);
-      if (WX_CACHE[d] == null) WX_CACHE[d] = rerollWeather(d, prev);
+      if (WX_CACHE[d] == null) WX_CACHE[d] = dayWeather(d, prev);
       prev = WX_CACHE[d];
     }
   }
@@ -1876,7 +1916,7 @@ function weatherIdx(day) {
 
 function dailyConfig(day) {
   const wi = weatherIdx(day);
-  const legend = LEGENDS[Math.floor(makeRng(hashStr(day + '|legend')).next() * LEGENDS.length)];
+  const legend = day === HALLOWEEN.night ? SUGAR_SKULL : LEGENDS[Math.floor(makeRng(hashStr(day + '|legend')).next() * LEGENDS.length)];
   const seed = hashStr('bousier|' + day);
   const weather = WEATHERS[wi];
   const course = generateCourse(seed, weather, legend, day);
@@ -1912,7 +1952,7 @@ function generateCourse(seed, weather, legend, day = dayKey()) {
     Lx[y] = lerp(Lx[y], holeX - 30, k); Rx[y] = lerp(Rx[y], holeX + 30, k);
   }
 
-  const types = OBJECTS.filter(o => !o.weather || o.weather === weather.id);
+  const types = OBJECTS.filter(o => !o.weather || o.weather === weather.id).concat(isHalloween(day) ? SEASON_OBJECTS : []);
   const objs = [], recent = [];
   const mk = (def, x, y, r, sprite) => {
     const o = { def, x, x0: x, y, r, sprite: sprite || def.sprite, dead: false, hitT: -9, phase: rng.range(0, 6.28), amp: 0, w: 0 };
@@ -3371,6 +3411,7 @@ const App = {
       login: () => this.doLogin(),
       ideatype: () => { this.ideaType = v; for (const b of this.ui.querySelectorAll('[data-a="ideatype"]')) b.classList.toggle('on', b.dataset.v === v); },
       sendidea: () => this.sendIdea(),
+      hwok: () => { safeStorageSet('bousier_hw_' + ONLINE_ENV, this.today); this.show('home'); },
       podok: () => { safeStorageSet('bousier_pod_' + ONLINE_ENV, v); if (this.p.weekMsg) { delete this.p.weekMsg; Store.save(); } this.show('home'); },
       annok: () => { safeStorageSet('bousier_ann_' + ONLINE_ENV, v); this.show('home'); },
       eye: () => { for (const i of this.ui.querySelectorAll('input.pw')) i.type = i.type === 'password' ? 'text' : 'password'; },
@@ -3408,7 +3449,7 @@ const App = {
     this.formError('Un instant…');
     const r = await Online.create(name, pw);
     if (r.error) return this.formError(r.error);
-    Store.data.settings.seenVersion = CHANGELOG[0].v;
+    Store.data.settings.seenVersion = visibleNews()[0].v;
     this.loadDay();
     Online.submitPlayer(this.p);
     if (!Store.data.settings.tutoDone) return this.show('tuto', 0);
@@ -3632,6 +3673,8 @@ const App = {
         p.legends[cfg.legend.id] = (p.legends[cfg.legend.id] || 0) + 1;
       }
       p.weathers[run.weather] = (p.weathers[run.weather] || 0) + 1;
+      if (isHalloween(this.today)) inc('halloween');
+      if (this.today === HALLOWEEN.night && run.terrier) inc('sorciere');
       const st = p.stats;
       st.runs++; st.absorbed += run.absorbed; st.best = Math.max(st.best, run.score);
       if (run.terrier) st.terriers++;
@@ -3846,10 +3889,10 @@ const App = {
 
   scr_changelog() {
     const seen = Store.data.settings.seenVersion || 0;
-    Store.data.settings.seenVersion = CHANGELOG[0].v; Store.save();
+    Store.data.settings.seenVersion = visibleNews()[0].v; Store.save();
     return `<div class="screen">
       ${this.back('Nouveautés')}
-      ${CHANGELOG.map(c => `<div class="panel ${c.v > seen ? 'unread' : ''}"><div class="label">${esc(fmtDayLong(c.date))}${c.v > seen ? '<span class="new-tag">NOUVEAU</span>' : ''}</div><ul class="quests">${c.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
+      ${visibleNews().map(c => `<div class="panel ${c.v > seen ? 'unread' : ''}"><div class="label">${esc(fmtDayLong(c.date))}${c.v > seen ? '<span class="new-tag">NOUVEAU</span>' : ''}</div><ul class="quests">${c.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
     </div>`;
   },
 
@@ -3934,6 +3977,7 @@ const App = {
         <div class="sub">Dune #${cfg.num} · ${esc(fmtDayLong(this.today))}</div>
         <div class="mascot bob">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
       </div>
+      ${isHalloween(this.today) && safeStorageGet('bousier_hw_' + ONLINE_ENV) !== this.today ? `<div class="banner">🎃 <b>Semaine Halloween !</b> Citrouilles et chauves-souris dans la dune.<div class="tiny">${this.today === HALLOWEEN.night ? 'Ce soir, dune spéciale de nuit : rentre dans le terrier pour gagner le 🧙 Chapeau de sorcière !' : `Joue une dune pour gagner la 🎃 Boule citrouille. ${this.today < HALLOWEEN.night ? 'Samedi 31 : dune spéciale de nuit !' : ''}`}</div> <button class="btn ghost small" data-a="hwok">OK</button></div>` : ''}
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
       ${podShow || mine ? `<div class="banner">${podShow ? `👑 Champion de la semaine dernière : <b>${esc(pod.top[0].name)}</b> (${fmtSize(pod.top[0].total)}) !${pod.top.slice(1).map((e, i) => ` ${medal(i + 1)} ${esc(e.name)}`).join('')}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
@@ -4141,18 +4185,19 @@ const App = {
 
   scr_collection() {
     const p = this.p;
-    const list = OBJECTS.map(o => ({ id: o.id, name: o.name, sprite: o.rock ? 'rock_6_0' : o.sprite, desc: o.desc, n: p.collection[o.id] || 0, wx: o.weather }));
-    const legs = LEGENDS.map(l => ({ id: l.id, name: l.name, sprite: l.sprite, desc: l.desc, n: p.legends[l.id] || 0, legend: true }));
+    const season = o => !o.season || isHalloween(this.today) || p.collection[o.id] || p.legends[o.id];
+    const list = OBJECTS.concat(SEASON_OBJECTS).filter(season).map(o => ({ id: o.id, name: o.name, sprite: o.rock ? 'rock_6_0' : o.sprite, desc: o.desc, n: p.collection[o.id] || 0, wx: o.weather, season: o.season }));
+    const legs = LEGENDS.concat(SUGAR_SKULL).filter(season).map(l => ({ id: l.id, name: l.name, sprite: l.sprite, desc: l.desc, n: p.legends[l.id] || 0, legend: true, season: l.season }));
     const all = list.concat(legs);
     const sel = all.find(e => e.id === this.colSel && e.n > 0);
     const tile = e => `<button class="tile ${e.n ? '' : 'locked'} ${e.legend ? 'leg' : ''} ${this.colSel === e.id ? 'sel' : ''}" data-a="colsel" data-v="${e.id}">
         ${spriteImg(e.sprite, SPR[e.sprite].width > 20 ? 1 : 2, !e.n)}
         <span>${e.n ? esc(e.name) : '???'}</span></button>`;
-    const hint = e => e.wx ? `Seulement par météo ${WEATHER[e.wx].icon}` : e.legend ? 'Trésor du jour' : '';
+    const hint = e => e.season ? '🎃 Semaine Halloween' : e.wx ? `Seulement par météo ${WEATHER[e.wx].icon}` : e.legend ? 'Trésor du jour' : '';
     const selEntry = all.find(e => e.id === this.colSel);
     return `<div class="screen">
       ${this.back('Bousipédia')}
-      <div class="tiny center">${Store.discovered(p)} / ${all.length} découverts</div>
+      <div class="tiny center">${all.filter(e => e.n).length} / ${all.length} découverts</div>
       ${selEntry ? `<div class="panel detail">
         <div>${spriteImg(selEntry.sprite, 3, !sel)}</div>
         <div><b>${sel ? esc(sel.name) : '???'}</b><div class="tiny">${sel ? esc(sel.desc) : 'Pas encore découvert.'}</div>
@@ -4168,7 +4213,8 @@ const App = {
   scr_shop() {
     const p = this.p, type = this.shopTab;
     // les secrets n'apparaissent qu'une fois obtenus
-    const items = COSMETICS[type].filter(it => (!it.secret || Store.owns(p, type, it)) && (!it.survival || SURVIVAL_ON));
+    const items = COSMETICS[type].filter(it => (!it.secret || Store.owns(p, type, it)) && (!it.survival || SURVIVAL_ON)
+      && (!it.season || isHalloween(this.today) || Store.owns(p, type, it)));
     const eq = t => findCos(t, p.equip[t]);
     const prev = this.shopSel ? findCos(type, this.shopSel) : null;
     const look = t => type === t && prev ? prev : eq(t);
