@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.8 — Hors connexion (22 octobre 2026)
+- 📴 Bandeau sur l'accueil et pastille sur tous les écrans quand il n'y a pas internet (ou que Firebase ne répond pas) ;
+  message « De nouveau en ligne » au retour, avec synchronisation de la progression.
+
 ## v1.10.7 — Synchronisation complète entre appareils (22 octobre 2026)
 - Pièces : chaque appareil tient son propre compte (gagné / dépensé) ; le solde est la somme de tous les
   appareils. Plus de pièces perdues (parties, cadeaux de l'admin, podium) ni d'achats non débités.
