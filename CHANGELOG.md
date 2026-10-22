@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.6 — Correctif de synchronisation (22 octobre 2026)
+- Un appareil avec une ancienne progression (ordi, autre téléphone) ne peut plus écraser la progression en ligne
+  au démarrage : le jeu regarde d'abord la version en ligne.
+- Les deux versions sont fusionnées : objets achetés, badges, Bousipédia, essais joués, meilleurs scores et
+  quêtes réussies ne se perdent plus ; les pièces sont celles de la version la plus récente.
+
 ## v1.10.5 — Admin regroupé (22 octobre 2026)
 - 8 onglets au lieu de 10 : « 📈 Tableau de bord » (chiffres du jour, activité jour par jour, décrochage,
   scores suspects, consommation Firebase) et « ⚖️ Dunes & équilibrage » (calendrier, météo, quêtes).
