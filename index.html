@@ -66,7 +66,9 @@ img.pix, canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; 
   background: linear-gradient(rgba(18,10,22,.35), rgba(18,10,22,.65));
   touch-action: pan-y; scrollbar-width: none;
 }
+.screen { padding-top: calc(var(--u) * 5 + var(--st, 0px)); padding-bottom: calc(var(--u) * 5 + var(--sb, 0px)); }
 .screen::-webkit-scrollbar { display: none; }
+#safe-probe { position: fixed; top: 0; left: 0; width: 0; height: 0; visibility: hidden; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 .screen.center { justify-content: center; align-items: stretch; text-align: center; }
 .screen.dim { background: rgba(10, 6, 14, 0.75); }
 
@@ -218,7 +220,7 @@ table { width: 100%; border-collapse: collapse; }
 .pill { font-size: .8em; background: #1a1020; border: var(--u) solid var(--line); padding: var(--u) calc(var(--u) * 2); display: inline-flex; gap: var(--u); align-items: center; }
 
 /* HUD en jeu */
-#hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(var(--u) * 3); pointer-events: none; font-size: calc(var(--u) * 7); }
+#hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(var(--u) * 3); padding-top: calc(var(--u) * 3 + var(--st, 0px)); pointer-events: none; font-size: calc(var(--u) * 7); }
 #hud.hidden { display: none; }
 .hud-top { display: flex; justify-content: space-between; align-items: center; }
 #hud-size { font-weight: 700; font-size: 1.4em; color: #fff; text-shadow: var(--u) 0 0 #120a16, calc(var(--u)*-1) 0 0 #120a16, 0 var(--u) 0 #120a16, 0 calc(var(--u)*-1) 0 #120a16, calc(var(--u)*2) calc(var(--u)*2) 0 #120a16; }
@@ -237,7 +239,7 @@ table { width: 100%; border-collapse: collapse; }
 .hud-hole { position: absolute; right: calc(var(--u) * -4); top: 50%; transform: translateY(-50%); font-size: .8em; }
 
 #toast {
-  position: absolute; left: 50%; bottom: calc(var(--u) * 10); transform: translate(-50%, calc(var(--u) * 30));
+  position: absolute; left: 50%; bottom: calc(var(--u) * 10 + var(--sb, 0px)); transform: translate(-50%, calc(var(--u) * 30));
   background: var(--gold); color: #2a1408; font-weight: 700; padding: calc(var(--u) * 3) calc(var(--u) * 5);
   border: var(--u) solid var(--line); font-size: calc(var(--u) * 6); transition: transform .2s steps(4); width: max-content; max-width: 90%; text-align: center; pointer-events: none;
 }
@@ -246,6 +248,7 @@ table { width: 100%; border-collapse: collapse; }
 </style>
 </head>
 <body>
+<div id="safe-probe"></div>
 <div id="app">
   <canvas id="screen"></canvas>
   <div id="hud" class="hidden">
@@ -2732,7 +2735,7 @@ class Game {
   drawSurvival(camY) {
     const ctx = this.ctx, sv = this.surv, b = this.ball;
     // effets actifs (en haut à gauche) et pansements
-    let y = 48;
+    let y = 48 + (this.st || 0);
     for (const [k, left] of Object.entries(sv.fx)) {
       const bon = BONUS[k]; if (!bon) continue;
       drawText(ctx, `${bon.name.toUpperCase().slice(0, 14)} ${Math.ceil(left)}`, 4, y, bon.pact ? '#ff9ad8' : '#c8ff8a', 1, '#1d1416');
@@ -2740,7 +2743,7 @@ class Game {
     }
     if (sv.shields) drawText(ctx, `PANSEMENTS ${sv.shields}`, 4, y, '#8ae0ff', 1, '#1d1416');
     if (sv.fx.matrix) { ctx.fillStyle = 'rgba(90,140,255,0.12)'; ctx.fillRect(0, 0, W, this.H); }
-    if (sv.fx.raccourci) drawText(ctx, 'X2', W - 14, 48, '#fff4a8', 1, '#1d1416');
+    if (sv.fx.raccourci) drawText(ctx, 'X2', W - 14, 48 + (this.st || 0), '#fff4a8', 1, '#1d1416');
   }
 
   drawSurvivalWorld() {
@@ -3308,7 +3311,7 @@ class Game {
 
   // Grande alerte d'événement : bandeau, triangle qui clignote, texte en gros
   drawAlert(a) {
-    const ctx = this.ctx, y = 32, blink = Math.floor(a.t * 6) % 2 === 0;
+    const ctx = this.ctx, y = 32 + (this.st || 0), blink = Math.floor(a.t * 6) % 2 === 0;
     ctx.fillStyle = 'rgba(29,20,22,0.82)'; ctx.fillRect(0, y, W, 30);
     ctx.fillStyle = '#ffb04a'; ctx.fillRect(0, y, W, 1); ctx.fillRect(0, y + 29, W, 1);
     if (blink || a.on) for (const x of [10, W - 21]) {
@@ -3364,7 +3367,7 @@ class Game {
     if (this.alert) this.drawAlert(this.alert);
     else if (this.msg) {
       const n = this.msg;
-      if (n.t > 0.15 || this.frame % 4 < 2) drawText(ctx, n.text, W / 2, 34, n.col, 1, '#1d1416', 'center');
+      if (n.t > 0.15 || this.frame % 4 < 2) drawText(ctx, n.text, W / 2, 34 + (this.st || 0), n.col, 1, '#1d1416', 'center');
     }
     // temps restant des événements qui durent
     let yy = this.alert ? 78 : 46;
@@ -3510,6 +3513,12 @@ const App = {
     this.appEl.style.width = W * s + 'px'; this.appEl.style.height = H * s + 'px';
     document.documentElement.style.setProperty('--u', s + 'px');
     if (H !== this.game.H) this.game.resize(H);
+    // iPhone avec encoche / Dynamic Island : le décor va jusqu'au bord, mais le score et
+    // les boutons restent sous la caméra et au-dessus de la barre d'accueil
+    const probe = getComputedStyle(document.getElementById('safe-probe')), gap = (vh - H * s) / 2;
+    const st = Math.max(0, (parseFloat(probe.paddingTop) || 0) - gap), sb = Math.max(0, (parseFloat(probe.paddingBottom) || 0) - gap);
+    this.appEl.style.setProperty('--st', st + 'px'); this.appEl.style.setProperty('--sb', sb + 'px');
+    this.game.st = Math.ceil(st / s);
   },
 
   loadDay() {
