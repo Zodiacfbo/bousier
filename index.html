@@ -3521,6 +3521,7 @@ const App = {
     if (r && r.local) { this.loadDay(); if (this.screen === 'home') this.show('home'); }
     if ((r && r.cloud) || Store.dirty) { Store.dirty = false; Store.save(); }
     this.dailyAwards();  // titres et récompenses de la semaine : seulement une fois la progression à jour
+    if (p.account && p.stats.runs) Online.submitPlayer(p);  // record et apparence à jour pour les autres
     const g = p && await Online.claimGifts(p);
     if (g) {
       Store.save(); Sound.play('unlock');
@@ -4070,6 +4071,7 @@ const App = {
     if (Store.owns(p, type, item)) {
       p.equip[type] = id; Store.save();
       if (type === 'theme') this.game.showAttract(this.cfg, item);
+      else { clearTimeout(this.lookT); this.lookT = setTimeout(() => Online.submitPlayer(this.p), 4000); }  // apparence visible sur le podium
       this.shopSel = null;
     } else this.shopSel = id;
     this.show('shop');
@@ -4078,6 +4080,7 @@ const App = {
     const p = this.p, type = this.shopTab, item = findCos(type, this.shopSel);
     if (!item.price || p.coins < item.price || Store.owns(p, type, item)) return;
     p.coins -= item.price; p.owned[type].push(item.id); p.equip[type] = item.id;
+    if (type !== 'theme') { clearTimeout(this.lookT); this.lookT = setTimeout(() => Online.submitPlayer(this.p), 4000); }
     Store.save(); Sound.play('unlock');
     if (type === 'theme') this.game.showAttract(this.cfg, item);
     this.toast(`${item.name} débloqué !`);

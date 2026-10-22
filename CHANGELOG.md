@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.10 — Podium illustré (22 octobre 2026)
+- 🏆 Le podium de la semaine montre les 3 bousiers avec leur équipement (boule, chapeau, tenue, traînée),
+  dans l'annonce du lundi sur l'accueil et en permanence dans Classement → Semaine.
+- Le jeu publie l'équipement porté avec le record (à l'ouverture, en fin de partie et à chaque changement).
+
 ## v1.10.9 — iPhone avec encoche (22 octobre 2026)
 - Sur les iPhone avec encoche ou Dynamic Island (appli installée), le score, le chrono, les alertes et les boutons
   du haut ne sont plus cachés sous la caméra ; marge aussi au-dessus de la barre d'accueil. Aucun changement ailleurs.
