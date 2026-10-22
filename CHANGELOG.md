@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.14 — Défi du labo d'Halloween (préparé le 22 octobre 2026)
+- 🎃 Du 26 octobre au 1er novembre : avaler 666 citrouilles à tous ; si c'est réussi, +150 🟡 le 2 novembre pour
+  chaque joueur ayant joué une dune de la semaine. Barre de progression sur l'accueil, contribution en fin de partie.
+- En coulisses : 5 nouvelles météos en aperçu (orage, brouillard, neige, sables mouvants, éclipse), pas encore dans les dunes.
+
 ## v1.10.13 — Météo mieux répartie (22 octobre 2026)
 - À partir du 2 novembre, la météo suit un roulement : chaque météo passe une fois tous les 6 jours, dans le désordre,
   jamais deux jours de suite (au plus ~10 jours sans une météo, contre 19 avant). La semaine Halloween ne change pas.
