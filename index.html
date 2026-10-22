@@ -2119,21 +2119,32 @@ function weatherBlock(b) {
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng.next() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
+// rang du jour dans le roulement des météos classiques (les jours de météo spéciale ne comptent pas)
+const CLASSIC_N = {};
+function classicCount(day) {
+  if (CLASSIC_N[day] != null) return CLASSIC_N[day];
+  let n = 0;
+  for (let d = WX_ROTATION_FROM; d < day; d = addDays(d, 1)) if (weeklyWeather(d) < 0) n++;
+  return (CLASSIC_N[day] = n);
+}
 function rotatedWeather(day) {
-  const n = Math.round((dayFromKey(day) - dayFromKey(WX_ROTATION_FROM)) / 86400000), b = Math.floor(n / WEATHERS.length);
+  const n = classicCount(day), b = Math.floor(n / WEATHERS.length);
   const bag = weatherBlock(b), before = b > 0 ? weatherBlock(b - 1)[WEATHERS.length - 1] : weatherIdx(addDays(WX_ROTATION_FROM, -1));
   if (bag[0] === before) [bag[0], bag[1]] = [bag[1], bag[0]];
   return bag[n % WEATHERS.length];
 }
-// À partir du 2 novembre 2026 : chaque semaine, un jour (du mardi au vendredi) prend une
-// des nouvelles météos, à tour de rôle. La neige est réservée à l'événement de Noël.
+// À partir du 2 novembre 2026 : chaque semaine, deux jours (un en début, un en fin de semaine,
+// jamais côte à côte) prennent deux des nouvelles météos, à tour de rôle. La neige est réservée à Noël.
 const WEEKLY_WEATHERS = ['orage', 'brouillard', 'sablesmouvants', 'eclipse'];
 const ALL_WEATHERS = WEATHERS.concat(NEW_WEATHERS);
 function weeklyWeather(day) {
   if (day < WX_ROTATION_FROM) return -1;
   const wk = weekKey(day), n = Math.round((dayFromKey(wk) - dayFromKey(WX_ROTATION_FROM)) / (7 * 86400000));
-  const dow = 1 + Math.floor(makeRng(hashStr('wxweek|' + n)).next() * 4);  // 1 = mardi … 4 = vendredi
-  return addDays(wk, dow) === day ? ALL_WEATHERS.findIndex(w => w.id === WEEKLY_WEATHERS[n % WEEKLY_WEATHERS.length]) : -1;
+  const rng = makeRng(hashStr('wxweek2|' + n)), a = Math.floor(rng.next() * 3);  // 0 = lundi … 2 = mercredi
+  let b = 3 + Math.floor(rng.next() * 3);  // 3 = jeudi … 5 = samedi
+  if (b === a + 1) b++;
+  const i = addDays(wk, a) === day ? 0 : addDays(wk, b) === day ? 1 : -1;
+  return i < 0 ? -1 : ALL_WEATHERS.findIndex(w => w.id === WEEKLY_WEATHERS[(2 * n + i) % WEEKLY_WEATHERS.length]);
 }
 function dayWeather(day, prev) {
   const special = weeklyWeather(day);

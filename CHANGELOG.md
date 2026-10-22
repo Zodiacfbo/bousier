@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.17 — Deux météos spéciales par semaine (22 octobre 2026)
+- À partir du 2 novembre : deux jours par semaine (un en début, un en fin de semaine) prennent une météo spéciale,
+  à tour de rôle ; chacune revient toutes les deux semaines. Le roulement des 6 météos classiques saute ces jours-là
+  (aucune classique n'est oubliée).
+
 ## v1.10.16 — Objets des météos spéciales à part (22 octobre 2026)
 - Les 4 objets des météos spéciales ont leur propre section dans la Bousipédia (visible à partir du 2 novembre) et
   ne comptent pas pour la compléter ni pour la boule Saturne.
