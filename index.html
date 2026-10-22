@@ -1720,8 +1720,11 @@ const Online = {
   submitPlayer(p) {
     return this.run(async c => {
       if (!await this.ready(c, p)) return false;
-      await c.fb.setDoc(this.ref(c, 'players', this.id(c, p.name)), {
-        name: p.name, best: p.stats.best, bestStreak: p.bestStreak, team: p.team || '',
+      // un record ne redescend jamais (même envoyé par un appareil en retard)
+      const ref = this.ref(c, 'players', this.id(c, p.name)), old = await c.fb.getDoc(ref), prev = old.exists() ? old.data() : {};
+      const best = Math.max(p.stats.best || 0, prev.best || 0), bestStreak = Math.max(p.bestStreak || 0, prev.bestStreak || 0);
+      await c.fb.setDoc(ref, {
+        name: p.name, best, bestStreak, team: p.team || '',
         legends: Object.keys(p.legends).length, badges: Object.keys(p.badges).length, at: Date.now(),
         account: !!p.account, runs: p.stats.runs || 0,
         look: { ball: p.equip.ball, hat: p.equip.hat, outfit: p.equip.outfit || 'aucune', trail: p.equip.trail || 'aucune' },
@@ -1821,6 +1824,16 @@ const Online = {
     }, 8000);
   },
   // Récupère la progression en ligne si elle est plus récente (joué sur un autre appareil)
+  // Meilleur score du jour de ce joueur, tous jours confondus (ces scores ne baissent jamais)
+  ownBest(p) {
+    return this.run(async c => {
+      if (!await this.ready(c, p)) return null;
+      const days = [];
+      for (let k = dayKey(); k >= LAUNCH_DAY && days.length < 60; k = addDays(k, -1)) days.push(k);
+      const snaps = await Promise.all(days.map(k => c.fb.getDoc(this.ref(c, 'days', k, 'scores', this.id(c, p.name)))));
+      return Math.max(0, ...snaps.filter(sn => sn.exists()).map(sn => sn.data().score || 0));
+    }, 15000);
+  },
   // Renvoie { local, cloud } : ce qui a changé de chaque côté après la fusion
   pullProfile(p) {
     return this.run(async c => {
@@ -3504,6 +3517,18 @@ const App = {
     this.loadDay();
     if (['home', 'shop', 'collection', 'badges', 'profile'].includes(this.screen)) this.show(this.screen);
   },
+  // Meilleure boule de tous les temps : au moins le meilleur jour gardé, et (une fois)
+  // le meilleur score enregistré en ligne, si une ancienne progression l'avait perdu
+  async repairBest(p) {
+    const st = p.stats, before = st.best || 0;
+    let changed = false;
+    st.best = Math.max(before, ...Object.values(p.days || {}).map(d => d.best || 0));
+    if (!st.bestChecked && p.account) {
+      const b = await Online.ownBest(p);
+      if (b != null) { st.bestChecked = true; st.best = Math.max(st.best, b); changed = true; }
+    }
+    if (changed || st.best !== before) Store.save();
+  },
   // Retour sur le jeu : on revoit la version en ligne (un autre appareil a pu jouer)
   async resync() {
     const p = this.p;
@@ -3521,6 +3546,7 @@ const App = {
     if (r && r.local) { this.loadDay(); if (this.screen === 'home') this.show('home'); }
     if ((r && r.cloud) || Store.dirty) { Store.dirty = false; Store.save(); }
     this.dailyAwards();  // titres et récompenses de la semaine : seulement une fois la progression à jour
+    await this.repairBest(p);
     if (p.account && p.stats.runs) Online.submitPlayer(p);  // record et apparence à jour pour les autres
     const g = p && await Online.claimGifts(p);
     if (g) {

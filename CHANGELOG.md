@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.11 — Records protégés (22 octobre 2026)
+- Le record (onglet Records) ne peut plus redescendre, même envoyé par un appareil en retard.
+- Réparation automatique : à l'ouverture, la meilleure boule de tous les temps reprend au moins le meilleur
+  score du jour enregistré en ligne (une fois par joueur), pour ceux touchés par le bug de synchronisation.
+
 ## v1.10.10 — Podium illustré (22 octobre 2026)
 - 🏆 Le podium de la semaine montre les 3 bousiers avec leur équipement (boule, chapeau, tenue, traînée),
   dans l'annonce du lundi sur l'accueil et en permanence dans Classement → Semaine.
