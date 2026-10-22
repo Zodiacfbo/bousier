@@ -3393,6 +3393,17 @@ const App = {
     const p = Store.profile();
     this.game.showAttract(this.cfg, dayTheme(p ? p.equip.theme : 'doree'));
     this.dailyAwards();
+    if (p) setTimeout(() => this.backfillQuests(p), 3000);
+  },
+  // Quêtes proposées les jours déjà joués (avant qu'on les garde) : recalculées une fois
+  backfillQuests(p) {
+    let n = 0;
+    for (const k in p.days) {
+      const d = p.days[k];
+      if (d.qs || !d.attempts || k >= this.today || n++ >= 31) continue;
+      try { d.qs = dailyConfig(k).quests.map(q => q.id); } catch (e) { }
+    }
+    if (n) Store.save();
   },
 
   // Une fois par jour : titres et 1re place d'hier, champion de la semaine passée
@@ -3702,6 +3713,7 @@ const App = {
       p.stats.days = (p.stats.days || 0) + 1;  // jours joués (statistique pour l'organisateur)
     }
     d.attempts++;  // l'essai est consommé dès le départ (pas de triche en rechargeant)
+    d.qs = this.cfg.quests.map(q => q.id);  // quêtes proposées (statistiques pour l'organisateur)
     Store.save();
     const ghosts = await Leaderboard.ghosts(this.today, p);
     this.mode = 'daily';
@@ -4107,7 +4119,8 @@ const App = {
     // rappel du dimanche : jours joués cette semaine (d'après cet appareil)
     const nowDays = weekDays(weekKey(this.today)).filter(k => p.days[k] && p.days[k].best > 0).length;
     const sunday = dayFromKey(this.today).getDay() === 0 && left > 0 && !(d.best > 0) && nowDays < WEEK_BEST;
-    const annText = ann && ann.text && safeStorageGet('bousier_ann_' + ONLINE_ENV) !== String(ann.at) ? ann.text : '';
+    const annOn = ann && ann.text && (!ann.from || this.today >= ann.from) && (!ann.to || this.today <= ann.to);
+    const annText = annOn && safeStorageGet('bousier_ann_' + ONLINE_ENV) !== String(ann.at) ? ann.text : '';
     const leg = cfg.legend;
     const quests = cfg.quests.map(q => `<li class="${d.quests[q.id] ? 'done' : ''}">${d.quests[q.id] ? '✅' : '⬜'} ${esc(q.text)}</li>`).join('');
     const dots = [...Array(tries).keys()].map(i => `<span class="dot ${i < d.attempts ? 'used' : ''}"></span>`).join('');

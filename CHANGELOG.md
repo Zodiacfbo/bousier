@@ -7,6 +7,14 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.4 — Admin : suivi, fiche joueur, équilibrage (22 octobre 2026)
+- 👀 Onglet Suivi : courbe d'activité jour par jour, joueurs qui décrochent (3 jours ou plus sans jouer),
+  scores suspects (avec suppression), estimation de la consommation Firebase.
+- ⚖️ Onglet Équilibrage : difficulté par météo (taille et score moyens, terriers) et taux de réussite de chaque quête.
+- 👤 Fiche joueur : un clic sur un pseudo affiche son historique jour par jour, ses semaines, badges et objets.
+- 🎁 Cadeau à tout le monde en un clic ; 📣 annonce programmée (date de début et de fin).
+- Le jeu garde les quêtes proposées chaque jour (rattrapées pour les jours déjà joués).
+
 ## v1.10.3 — Statistiques détaillées dans l'admin (22 octobre 2026)
 - Page admin, onglet Stats : total de tous les joueurs, records (avec le pseudo et la date),
   tableau par joueur enrichi (taille cumulée et moyenne, temps à rouler, terriers ratés et réussite,
