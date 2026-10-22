@@ -69,22 +69,34 @@ svg text { fill: var(--muted); font-size: 10px; }
 
   <div id="app" class="hidden">
     <div class="tabs" id="tabs">
-      <button data-tab="activity" class="on">📈 Activité</button>
+      <button data-tab="dash" class="on">📈 Tableau de bord</button>
       <button data-tab="players">👥 Joueurs</button>
       <button data-tab="pstats">📊 Stats</button>
-      <button data-tab="follow">👀 Suivi</button>
-      <button data-tab="balance">⚖️ Équilibrage</button>
-      <button data-tab="meteo">🌦️ Météo</button>
+      <button data-tab="dunes">⚖️ Dunes & équilibrage</button>
       <button data-tab="ideas">💡 Suggestions <span id="inew"></span></button>
       <button data-tab="scores">🧹 Scores du jour</button>
       <button data-tab="announce">📣 Annonce</button>
       <button data-tab="password">🔑 Mot de passe oublié</button>
     </div>
 
-    <section id="tab-activity" class="panel">
-      <h2>Activité</h2>
+    <section id="tab-dash" class="panel">
+      <h2>📊 Aujourd'hui</h2>
       <div class="stats" id="stats"></div>
       <p class="muted">Comptes = pseudos réservés, communs à la version officielle et à la version de test. Les autres chiffres concernent la version choisie en haut.</p>
+      <h2>📈 Activité jour par jour</h2>
+      <div id="chart"></div>
+      <details><summary class="muted">Voir le tableau jour par jour</summary><div class="scroll"><table id="atable"></table></div></details>
+      <h2>😴 Joueurs qui décrochent</h2>
+      <p class="muted">Pas de dune du jour depuis 3 jours ou plus (d'après leur progression).</p>
+      <div class="scroll"><table id="dtable"></table></div>
+      <h2>🚨 Scores suspects</h2>
+      <p class="muted">Score plus de 2 fois au-dessus des autres jours du joueur, terrier en moins de 40 s, ou grosse boule avec très peu d'objets avalés. À vérifier avant de supprimer.</p>
+      <div class="scroll"><table id="xtable"></table></div>
+      <h2>🔥 Consommation Firebase (estimation)</h2>
+      <div class="stats" id="quota"></div>
+      <p class="muted">Estimation d'après l'activité du jour ; les vrais chiffres sont dans la
+        <a href="https://console.firebase.google.com/project/bousier-9f615/firestore/usage" target="_blank" rel="noopener">console Firebase (Utilisation)</a>.
+        Au-delà de la limite gratuite, le classement en ligne s'arrête jusqu'au lendemain (aucun frais en offre Spark).</p>
     </section>
 
     <section id="tab-players" class="panel hidden">
@@ -114,39 +126,18 @@ svg text { fill: var(--muted); font-size: 10px; }
       <h2>👤 Par joueur</h2>
       <div class="row"><button class="main" id="csv">⬇️ Télécharger en tableur (CSV)</button></div>
       <div class="scroll"><table id="pstable"></table></div>
-      <h2>📅 Activité jour par jour</h2>
-      <div class="scroll"><table id="atable"></table></div>
     </section>
 
-    <section id="tab-follow" class="panel hidden">
-      <h2>📈 Activité jour par jour</h2>
-      <div id="chart"></div>
-      <h2>😴 Joueurs qui décrochent</h2>
-      <p class="muted">Pas de dune du jour depuis 3 jours ou plus (d'après leur progression).</p>
-      <div class="scroll"><table id="dtable"></table></div>
-      <h2>🚨 Scores suspects</h2>
-      <p class="muted">Score plus de 2 fois au-dessus des autres jours du joueur, terrier en moins de 40 s, ou grosse boule avec très peu d'objets avalés. À vérifier avant de supprimer.</p>
-      <div class="scroll"><table id="xtable"></table></div>
-      <h2>🔥 Consommation Firebase (estimation)</h2>
-      <div class="stats" id="quota"></div>
-      <p class="muted">Estimation d'après l'activité du jour ; les vrais chiffres sont dans la
-        <a href="https://console.firebase.google.com/project/bousier-9f615/firestore/usage" target="_blank" rel="noopener">console Firebase (Utilisation)</a>.
-        Au-delà de la limite gratuite, le classement en ligne s'arrête jusqu'au lendemain (aucun frais en offre Spark).</p>
-    </section>
-
-    <section id="tab-balance" class="panel hidden">
-      <h2>🌦️ Difficulté par météo</h2>
+    <section id="tab-dunes" class="panel hidden">
+      <h2>🌦️ Calendrier des dunes</h2>
+      <p class="muted">Météo et trésor de chaque dune, aujourd'hui et les 30 prochains jours (identiques pour tous les joueurs).</p>
+      <div class="scroll"><table id="mtable"></table></div>
+      <h2>⚖️ Difficulté par météo</h2>
       <div class="scroll"><table id="wtable"></table></div>
       <h2>📜 Réussite des quêtes</h2>
       <p class="muted">Part des joueurs qui ont réussi la quête les jours où elle était proposée (au moins une partie jouée ce jour-là).</p>
       <div class="scroll"><table id="qtable"></table></div>
       <p class="muted">D'après les parties gardées par chaque joueur (30 derniers jours).</p>
-    </section>
-
-    <section id="tab-meteo" class="panel hidden">
-      <h2>Calendrier des dunes</h2>
-      <p class="muted">Météo et trésor de chaque dune, aujourd'hui et les 30 prochains jours (identiques pour tous les joueurs).</p>
-      <div class="scroll"><table id="mtable"></table></div>
     </section>
 
     <section id="tab-ideas" class="panel hidden">

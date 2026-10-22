@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.5 — Admin regroupé (22 octobre 2026)
+- 8 onglets au lieu de 10 : « 📈 Tableau de bord » (chiffres du jour, activité jour par jour, décrochage,
+  scores suspects, consommation Firebase) et « ⚖️ Dunes & équilibrage » (calendrier, météo, quêtes).
+
 ## v1.10.4 — Admin : suivi, fiche joueur, équilibrage (22 octobre 2026)
 - 👀 Onglet Suivi : courbe d'activité jour par jour, joueurs qui décrochent (3 jours ou plus sans jouer),
   scores suspects (avec suppression), estimation de la consommation Firebase.
