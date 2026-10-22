@@ -216,6 +216,32 @@ table { width: 100%; border-collapse: collapse; }
 .tile.sel2 { box-shadow: inset 0 0 0 var(--u) #fff; }
 .tile.shop .tiny { font-size: 1em; }
 .locked-soft img { filter: brightness(.7); }
+.tile { position: relative; min-width: 0; }
+.tile img { max-width: 100%; object-fit: contain; }
+.tile.prestige { box-shadow: inset 0 0 0 var(--u) #7ac0e0, 0 0 calc(var(--u) * 3) #7ac0e0; background: #1e2a44; }
+.tile.prestige.sel { box-shadow: inset 0 0 0 var(--u) var(--gold), 0 0 calc(var(--u) * 3) #7ac0e0; }
+.tile .tag { position: absolute; top: var(--u); right: var(--u); font-size: .85em; padding: 0 var(--u); }
+.tile .tag.rare { background: #c87aff; color: #fff; }
+.wkshop { box-shadow: inset 0 0 0 var(--u) var(--gold); }
+.pills .pill { font: inherit; font-size: .62em; color: var(--ink); background: var(--panel); border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) var(--panel2); padding: calc(var(--u) * 1.5) calc(var(--u) * 2); cursor: pointer; }
+.pill.on { box-shadow: inset 0 0 0 var(--u) var(--gold); }
+.pill.sel2 { box-shadow: inset 0 0 0 var(--u) #fff; }
+.pill.lock { opacity: .6; }
+.sw { display: inline-block; width: calc(var(--u) * 5); height: calc(var(--u) * 5); border: var(--u) solid var(--line); vertical-align: middle; }
+.lb tr.fr td { border-top: var(--u) solid var(--frc); border-bottom: var(--u) solid var(--frc); background: var(--frb); }
+.lb tr.fr td:first-child { border-left: var(--u) solid var(--frc); }
+.lb tr.fr td:last-child { border-right: var(--u) solid var(--frc); }
+.fr-bois { --frc: #a8693a; --frb: rgba(168,105,58,.15); }
+.fr-argent { --frc: #d8dce4; --frb: rgba(216,220,228,.12); }
+.fr-or { --frc: #ffd25a; --frb: rgba(255,210,90,.16); }
+.fr-podium { --frc: #c87aff; --frb: rgba(200,122,255,.15); }
+.fr-flammes { --frc: #ff7a2a; --frb: rgba(255,122,42,.18); }
+.lb tr.fr-flammes td { animation: frfeu .5s steps(1) infinite; }
+@keyframes frfeu { 50% { border-color: #ffd05a; } }
+.ttl { display: block; font-size: .72em; color: var(--muted); font-style: italic; }
+.rainbow, .rainbow-bg { background: linear-gradient(90deg, #ff5a5a, #ffb85a, #ffe05a, #6aff8a, #5ad8ff, #c87aff, #ff5a5a); background-size: 200% 100%; animation: arcenciel 3s linear infinite; }
+.rainbow { -webkit-background-clip: text; background-clip: text; color: transparent !important; }
+@keyframes arcenciel { to { background-position: 200% 0; } }
 .detail { display: flex; gap: calc(var(--u) * 4); align-items: center; }
 
 .badges { display: flex; flex-direction: column; gap: calc(var(--u) * 2); }
@@ -630,6 +656,12 @@ const ROWS = {
   baril: ['.kkkkk.', 'kyyyyyk', 'kyykyyk', 'kykkkyk', 'kyykyyk', 'kYYYYYk', '.kkkkk.'],
   tube: ['.w.', 'kWk', 'kWk', 'klk', 'klk', 'kek', '.k.'],
   bandana: ['.rrrrr.', 'rwrrwrr', 'rrrrrrr', '.r...r.'],
+  // boutique de la semaine et prestige (vus de dessus)
+  beret: ['..rrr..', '.rrrrr.', 'rrrkrrr', 'rrrrrrr', '.RRRRR.'],
+  bonnet: ['.ccccc.', 'cCwwwCc', 'cwwwwwc', 'cCwwwCc', '.CCCCC.'],
+  toque: ['.wwwww.', 'wWwWwWw', 'wwWwWww', 'wWwWwWw', '.hhhhh.'],
+  hautdeforme: ['..YYYYY..', '.YrrrrrY.', 'YryyyyyrY', 'YrywyyyrY', 'YryyyyyrY', '.YrrrrrY.', '..YYYYY..'],
+  trCoeur: ['.r.r.', 'rprrr', 'rrrrr', '.rrr.', '..r..'],
   // particules de traînées
   trBulle: ['.cc.', 'cw.c', 'c..c', '.cc.'],
   trNote: ['..vv', '..v.', '..v.', 'vvv.', 'vv..'],
@@ -797,6 +829,17 @@ function drawBallFx(ctx, skin, x, y, R, t, layer) {
       ctx.fillStyle = '#fff27a';
       ctx.fillRect(Math.round(x + ex * c - ey * sn) - 1, Math.round(y + ex * sn + ey * c) - 1, 2, 2);
     }
+  } else if (skin.fx === 'liquid' && layer === 'front') {
+    // tube à essai : le liquide reste à plat et clapote pendant que la boule roule
+    const r = R - 1;
+    for (let i = -r; i <= r; i++) {
+      const h = Math.floor(Math.sqrt(r * r - i * i)), lvl = Math.round(R * 0.1 + Math.sin(t * 5 + i * 0.5) * Math.max(1, R * 0.12));
+      if (lvl >= h) continue;
+      ctx.fillStyle = skin.liq[0]; ctx.fillRect(x + i, y + lvl, 1, h - lvl);
+      ctx.fillStyle = skin.liq[1]; ctx.fillRect(x + i, y + lvl, 1, 1);
+    }
+    ctx.fillStyle = skin.liq[1];
+    for (let k = 0; k < 2; k++) ctx.fillRect(x - 2 + k * 4, Math.round(y + R - 2 - (t * 10 + k * 5) % Math.max(1, R * 0.8)), 1, 1);
   } else if (skin.fx === 'glow' && layer === 'back') {
     const g = Math.round(R + 3 + Math.sin(t * 4));
     ctx.fillStyle = 'rgba(120,255,140,0.22)';
@@ -818,10 +861,10 @@ function beetleSprite(outfit, frame) {
   return BEETLE_CACHE[key];
 }
 // Cape qui flotte derrière le bousier (vers le haut de l'écran)
-function drawCape(ctx, bx, btop, t) {
+function drawCape(ctx, bx, btop, t, cols = ['#ffd25a', '#a8202a', '#d8463a']) {
   for (let j = 0; j < 9; j++) {
     const w = 3 + Math.floor(j / 3), off = Math.round(Math.sin(t * 6 + j * 0.7) * (j / 5));
-    ctx.fillStyle = j === 0 ? '#ffd25a' : (j + Math.floor(t * 4)) % 4 === 0 ? '#a8202a' : '#d8463a';
+    ctx.fillStyle = j === 0 ? cols[0] : (j + Math.floor(t * 4)) % 4 === 0 ? cols[1] : cols[2];
     ctx.fillRect(bx - w + off, btop + 3 - j, w * 2 + 1, 1);
   }
 }
@@ -838,6 +881,12 @@ function emitTrail(game, trail, b) {
     case 'notes': if (f % 10 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 16, vy: -22, g: 0, life: 1.2, spr: 'trNote' }); break;
     case 'dust': if (f % 2 === 0) P.push({ x, y: y + 6, vx: (Math.random() - 0.5) * 40, vy: -20 - Math.random() * 20, g: 30, life: 0.6, col: f % 4 ? '#ffd25a' : '#fff4a8', s: 2 }); break;
     case 'swirl': if (f % 2 === 0) { const a = f * 0.5; P.push({ x: x + Math.cos(a) * 6, y: y + 4, vx: -Math.sin(a) * 30, vy: -18, g: 0, life: 0.7, col: f % 4 ? '#d9a860' : '#f2d08c', s: 2 }); } break;
+    case 'hearts': if (f % 7 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 14, vy: -20, g: 0, life: 1.1, spr: 'trCoeur' }); break;
+    case 'confetti': if (f % 2 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 50, vy: -25 - Math.random() * 15, g: 40, life: 0.9, col: RAINBOW[Math.floor(Math.random() * RAINBOW.length)], s: 2 }); break;
+    case 'comet':
+      P.push({ x: b.x + (Math.random() - 0.5) * b.r * 0.6, y: y + 3, vx: (Math.random() - 0.5) * 6, vy: -8, g: 0, life: 0.55, col: ['#ffffff', '#bfe8ff', '#7ac0e0', '#fff4a8'][f % 4], s: 2 });
+      if (f % 9 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 20, vy: -14, g: 0, life: 0.8, spr: 'trEtoile' });
+      break;
     case 'binary': if (f % 5 === 0) P.push({ x, y, vx: 0, vy: -18, g: 0, life: 1.1, txt: Math.random() < 0.5 ? '0' : '1', col: '#5aff7a' }); break;
   }
 }
@@ -870,6 +919,9 @@ function drawTrailStatic(ctx, trail, x, yTop, yBot, r) {
     else if (trail.fx === 'smoke') { ctx.fillStyle = 'rgba(90,210,100,0.6)'; ctx.fillRect(px - 1, py, 3, 3); }
     else if (trail.fx === 'swirl') { ctx.fillStyle = k % 2 ? '#d9a860' : '#f2d08c'; ctx.fillRect(Math.round(x + Math.cos(k * 1.3) * r * 0.6), py, 2, 2); }
     else if (trail.fx === 'dust') { ctx.fillStyle = k % 2 ? '#ffd25a' : '#fff4a8'; ctx.fillRect(px - 1, py, 2, 2); }
+    else if (trail.fx === 'hearts' && k % 2 === 0) ctx.drawImage(SPR.trCoeur, px - 2, py);
+    else if (trail.fx === 'confetti') { ctx.fillStyle = RAINBOW[k % RAINBOW.length]; ctx.fillRect(px, py, 2, 2); }
+    else if (trail.fx === 'comet') { if (k % 2) ctx.drawImage(SPR.trEtoile, Math.round(x + (k - 4) * 0.6) - 1, py); else { ctx.fillStyle = k > 3 ? '#ffffff' : '#7ac0e0'; ctx.fillRect(Math.round(x + (k - 4) * 0.6), py, 2, 2); } }
     else if (trail.fx === 'binary' && k % 2 === 0) drawText(ctx, rng.chance(0.5) ? '0' : '1', px, py, '#5aff7a', 1, null);
   }
 }
@@ -893,6 +945,7 @@ function lightMask(LR) {
 
 function buildSprites() {
   for (const k in ROWS) SPR[k] = spriteFromRows(ROWS[k]);
+  SPR.chantierFluo = spriteFromRows(ROWS.chantier, { ...PAL, y: '#e6ff3a', Y: '#a8c020' });
   SPR.lezardF = flipCanvas(SPR.lezard);
   SPR.kevinF = flipCanvas(SPR.kevin);
   SPR.scorpionF = flipCanvas(SPR.scorpion);
@@ -914,7 +967,7 @@ function renderMascot(skin, hat, R = 9, scale = 1, outfit = null, trail = null) 
   // ombre
   x.fillStyle = 'rgba(60,30,10,0.3)';
   x.fillRect(bx - R + 2, by + R - 1, R * 2 - 2, 2);
-  if (outfit && outfit.cape) drawCape(x, bx, by - R - 12, 0);
+  if (outfit && outfit.cape) drawCape(x, bx, by - R - 12, 0, outfit.capeCol);
   x.drawImage(beetleSprite(outfit, 0), bx - 5, by - R - 12);
   drawHat(x, hat, bx, by - R - 12);
   drawBallFx(x, skin, bx, by, R, 1, 'back');
@@ -1091,7 +1144,75 @@ const THEMES = [
   { id: 'sel', name: 'Désert de sel', badge: 'serie7', sand: '#eef0f0', sandDark: '#cdd6db', sandLight: '#ffffff', wall: '#d7e0e4', wallDark: '#a9b8c2', wallLight: '#ffffff' },
   { id: 'oasis', name: 'Oasis', badge: 'collection', sand: '#e2c98a', sandDark: '#c4a868', sandLight: '#f2e0aa', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
 ];
-const COSMETICS = { ball: SKINS, hat: HATS, outfit: OUTFITS, trail: TRAILS, theme: THEMES };
+// Prestige et personnalisation du classement : à partir du 2 novembre ; boutique de la semaine : à partir du 30 novembre
+const SHOP_FROM = '2026-11-02', WEEK_SHOP_FROM = '2026-11-30';
+SKINS.push(
+  { id: 'diamant', name: 'Boule diamant', price: 2500, prestige: true, from: SHOP_FROM, base: '#9ad8f0', light: '#c8f0ff', hi: '#ffffff', dark: '#5aa0c8', out: '#14385a', specks: ['#ffffff', '#e8faff', '#7ac0e0'], count: 120, bigSpecks: true },
+  { id: 'menthe', name: 'Boule menthe', price: 200, week: true, from: WEEK_SHOP_FROM, base: '#5ac8a0', light: '#8ae6c0', hi: '#d8fff0', dark: '#2f8a6a', out: '#0e3a2a', specks: ['#ffffff', '#2f8a6a'] },
+  { id: 'cookie', name: 'Boule cookie', price: 200, week: true, from: WEEK_SHOP_FROM, base: '#c8904a', light: '#e0ac64', hi: '#f2cc8a', dark: '#946430', out: '#3a2410', specks: ['#3a2010', '#4a2a14'], count: 28, bigSpecks: true },
+  { id: 'bowling', name: 'Boule de bowling', price: 200, week: true, from: WEEK_SHOP_FROM, base: '#2a2e5a', light: '#3e4480', hi: '#7a82c8', dark: '#1a1c3a', out: '#0a0a18', specks: ['#5a62a8', '#14142a'], count: 40 },
+  { id: 'tube', name: 'Boule tube à essai', price: 300, week: true, rare: true, from: WEEK_SHOP_FROM, base: '#cfe8f0', light: '#e8f6fa', hi: '#ffffff', dark: '#9cc0cc', out: '#2a4a5a', specks: ['#ffffff'], count: 10, fx: 'liquid', liq: ['#3fcf62', '#b8ffc8'] });
+HATS.push(
+  { id: 'hautdeforme', name: 'Haut-de-forme en or', price: 3000, prestige: true, from: SHOP_FROM, sprite: 'hautdeforme' },
+  { id: 'beret', name: 'Béret', price: 200, week: true, from: WEEK_SHOP_FROM, sprite: 'beret' },
+  { id: 'bonnet', name: 'Bonnet de laine', price: 200, week: true, from: WEEK_SHOP_FROM, sprite: 'bonnet' },
+  { id: 'chantierFluo', name: 'Casque de chantier fluo', price: 200, week: true, from: WEEK_SHOP_FROM, sprite: 'chantierFluo' },
+  { id: 'toque', name: 'Toque de chef cuisinier', price: 300, week: true, rare: true, from: WEEK_SHOP_FROM, sprite: 'toque' });
+OUTFITS.push(
+  { id: 'capeor', name: 'Cape dorée', price: 2000, prestige: true, from: SHOP_FROM, pal: { q: '#b8860b', Q: '#e8b830', u: '#fff4a8' }, cape: true, capeCol: ['#ffffff', '#8a6a10', '#d4a017'] },
+  { id: 'jogging', name: 'Tenue de sport', price: 200, week: true, from: WEEK_SHOP_FROM, pal: { q: '#2d6aa8', Q: '#4a90d0', u: '#ffffff' }, pixels: [[3, 2, '#ffffff'], [7, 2, '#ffffff'], [3, 4, '#ffffff'], [7, 4, '#ffffff']] });
+TRAILS.push(
+  { id: 'comete', name: 'Traînée comète', price: 1500, prestige: true, from: SHOP_FROM, fx: 'comet' },
+  { id: 'coeurs', name: 'Petits cœurs', price: 200, week: true, from: WEEK_SHOP_FROM, fx: 'hearts' },
+  { id: 'confettis', name: 'Confettis', price: 300, week: true, rare: true, from: WEEK_SHOP_FROM, fx: 'confetti' });
+THEMES.push(
+  { id: 'bleue', name: 'Dune bleue', price: 300, week: true, rare: true, from: WEEK_SHOP_FROM, sand: '#8ab4d8', sandDark: '#6a92b8', sandLight: '#b0d0ec', wall: '#4a78a8', wallDark: '#2d5480', wallLight: '#6a98c8' });
+// Personnalisation de sa ligne au classement (cadre, couleur du pseudo, titre)
+const FRAMES = [
+  { id: 'aucun', name: 'Aucun', price: 0 },
+  { id: 'bois', name: 'Bois', price: 300, col: '#a8693a', from: SHOP_FROM },
+  { id: 'argent', name: 'Argent', price: 600, col: '#d8dce4', from: SHOP_FROM },
+  { id: 'or', name: 'Or', price: 1000, col: '#ffd25a', from: SHOP_FROM },
+  { id: 'flammes', name: '🔥 Flammes', price: 1500, col: '#ff7a2a', prestige: true, from: SHOP_FROM },
+  { id: 'podium', name: 'Cadre du podium', col: '#c87aff', from: SHOP_FROM },
+];
+const NAME_COLORS = [
+  { id: 'blanc', name: 'Blanc', price: 0, col: '#ffffff' },
+  { id: 'rouge', name: 'Rouge', price: 250, col: '#ff6a5a', from: SHOP_FROM },
+  { id: 'bleu', name: 'Bleu', price: 250, col: '#5ad8ff', from: SHOP_FROM },
+  { id: 'vert', name: 'Vert', price: 250, col: '#6ad86a', from: SHOP_FROM },
+  { id: 'violet', name: 'Violet', price: 250, col: '#c87aff', from: SHOP_FROM },
+  { id: 'arcenciel', name: 'Arc-en-ciel', price: 1500, rainbow: true, prestige: true, from: SHOP_FROM },
+];
+const TITLES = [
+  { id: 'aucun', name: 'Aucun', price: 0 },
+  { id: 'roi', name: 'Roi du sable', price: 200, from: SHOP_FROM },
+  { id: 'crottin', name: 'Amateur de crottin', price: 200, from: SHOP_FROM },
+  { id: 'retard', name: 'Toujours en retard', price: 200, from: SHOP_FROM },
+  { id: 'cafe', name: 'En pause café', price: 200, from: SHOP_FROM },
+  { id: 'stagiaire', name: 'Stagiaire éternel', price: 250, from: SHOP_FROM },
+  { id: 'pousseur', name: 'Pousseur pro', price: 300, from: SHOP_FROM },
+  { id: 'terrier', name: 'Pro du terrier', price: 400, from: SHOP_FROM },
+  { id: 'legende', name: 'Légende de la dune', price: 500, from: SHOP_FROM },
+  { id: 'exchamp', name: '👑 Ex-champion', from: SHOP_FROM },
+  { id: 'encyclo', name: 'Encyclopédiste', from: SHOP_FROM },
+  { id: 'fidele', name: 'Fidèle au poste', from: SHOP_FROM },
+  { id: 'chasseur', name: 'Chasseur de trésors', from: SHOP_FROM },
+  { id: 'kevin', name: 'Ami de Kevin', from: SHOP_FROM },
+  { id: 'citrouille', name: 'Citrouille d\'or 🎃', from: SHOP_FROM },
+];
+const RANK_TYPES = ['frame', 'color', 'title'];
+const COSMETICS = { ball: SKINS, hat: HATS, outfit: OUTFITS, trail: TRAILS, theme: THEMES, frame: FRAMES, color: NAME_COLORS, title: TITLES };
+// Boutique de la semaine : 2 objets + 1 rare, renouvelés chaque lundi. Chaque objet revient toutes les 4 semaines,
+// mais jamais deux semaines de suite, et les associations changent à chaque tour (même boutique au plus tôt 16 semaines après)
+function weekShop(day) {
+  if (day < WEEK_SHOP_FROM) return null;
+  const all = Object.entries(COSMETICS).flatMap(([type, list]) => list.filter(it => it.week).map(item => ({ type, item })));
+  const n = Math.round((dayFromKey(weekKey(day)) - dayFromKey(WEEK_SHOP_FROM)) / (7 * 86400000));
+  const rng = makeRng(hashStr('wkshop')), mix = list => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng.next() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const nn = mix(all.filter(e => !e.item.rare)), rr = mix(all.filter(e => e.item.rare)), k = n % 4, c = Math.floor(n / 4);
+  return [nn[2 * k], nn[(2 * k + 1 + 2 * c) % nn.length], rr[(k + c) % rr.length]];
+}
 // Décor imposé pendant la semaine Halloween (sable orangé, bords violets, citrouilles sur les bords)
 const HALLOWEEN_THEME = { id: 'halloween', name: 'Dune d\'Halloween', sand: '#d98c4a', sandDark: '#b0643a', sandLight: '#eca866', wall: '#3e2648', wallDark: '#26162e', wallLight: '#5c3a68', wallDeco: 'citrouille', mist: 'rgba(90,30,120,0.10)' };
 function dayTheme(id) { return isHalloween(dayKey()) ? HALLOWEEN_THEME : findCos('theme', id); }
@@ -1132,11 +1253,19 @@ const UNLOCKS = {
   'trail:fumee': { secret: true, flag: 'ratee' },
   'trail:notes': { secret: true, flag: 'silence' },
   'trail:binaire': { secret: true, flag: 'leet' },
+  'frame:podium': { text: 'Finis sur le podium d\'une semaine', prog: p => [Object.values(p.weeks || {}).filter(v => v >= 1 && v <= 3).length, 1] },
+  'title:exchamp': { text: 'Sois champion de la semaine 👑', prog: p => [counter(p, 'champion'), 1] },
+  'title:encyclo': { text: 'Complète la Bousipédia', prog: p => [Store.discovered(p), OBJECTS.filter(o => !o.bonus).length + LEGENDS.length] },
+  'title:fidele': { text: 'Fais une série de 30 jours', prog: p => [p.bestStreak, 30] },
+  'title:chasseur': { text: 'Trouve 20 trésors légendaires', prog: p => [Object.values(p.legends).reduce((a, b) => a + b, 0), 20] },
+  'title:kevin': { text: 'Retrouve ce que Kevin a perdu…', prog: p => [counter(p, 'kevin'), 1] },
+  'title:citrouille': { text: 'Avoir joué pendant la semaine Halloween 2026 🎃', prog: p => [counter(p, 'halloween'), 1] },
   'hat:bandana': { text: 'Parcours 1 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 1000] },
   'trail:survivant': { text: 'Parcours 2 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 2000] },
 };
 for (const key in UNLOCKS) { const [type, id] = key.split(':'); Object.assign(COSMETICS[type].find(c => c.id === id), UNLOCKS[key]); }
 function unlockReached(p, item) {
+  if (item.from && dayKey() < item.from) return false;
   if (item.flag) return counter(p, item.flag) > 0;
   if (item.prog) { const [a, b] = item.prog(p); return a >= b; }
   return false;
@@ -1147,7 +1276,9 @@ const SECRET_COUNT = Object.values(UNLOCKS).filter(u => u.secret).length;
 // La première entrée est la plus récente : elle s'affiche une fois sur l'accueil
 // des joueurs qui ne l'ont pas encore vue.
 const CHANGELOG = [
-  { v: 10, date: '2026-11-02', items: ['⚡ Du nouveau dans la dune : de nouveaux événements surprise, et chaque semaine une météo spéciale à découvrir… Ouvre l\'œil !'] },
+  { v: 11, date: '2026-11-30', items: ['⭐ Nouveau dans 🎨 Style : la boutique de la semaine ! Chaque lundi, 3 objets introuvables ailleurs, dont un rare. Ils reviendront… un jour. Peut-être.'] },
+  { v: 10, date: '2026-11-02', items: ['⚡ Du nouveau dans la dune : de nouveaux événements surprise, et chaque semaine une météo spéciale à découvrir… Ouvre l\'œil !',
+    '💎 Dans 🎨 Style : des objets de prestige pour les grosses économies, et un onglet Classement pour décorer ta ligne (cadre, couleur du pseudo, titre). Certains titres ne s\'achètent pas : ils se méritent…'] },
   {
     v: 9, date: '2026-10-26', items: [
       '🎃 Semaine Halloween jusqu\'au 1er novembre : citrouilles et chauves-souris dans la dune, et des nuits plus fréquentes',
@@ -1407,8 +1538,8 @@ const Store = {
   // Complète un profil créé avec une ancienne version (nouveaux emplacements, compteurs)
   normalize(p) {
     if (!p) return p;
-    p.owned = { ball: [], hat: [], outfit: [], trail: [], theme: [], ...p.owned };
-    p.equip = { outfit: 'aucune', trail: 'aucune', ...p.equip };
+    p.owned = { ball: [], hat: [], outfit: [], trail: [], theme: [], frame: [], color: [], title: [], ...p.owned };
+    p.equip = { outfit: 'aucune', trail: 'aucune', frame: 'aucun', color: 'blanc', title: 'aucun', ...p.equip };
     p.counters = p.counters || {};
     p.survival = p.survival || { best: 0, runs: 0 };
     p.weeks = p.weeks || {};  // { semaine: place (0 = hors podium) }
@@ -1476,6 +1607,12 @@ function fmtWeek(wk) {
   return `du ${f(wk)} au ${f(addDays(wk, 6))}`;
 }
 // Podium illustré : les 3 bousiers avec leur équipement, sur leurs marches
+// Pseudo personnalisé (couleur, titre) et cadre de la ligne, d'après l'apparence publiée
+function nameHtml(name, look, suffix = '') {
+  const col = findCos('color', look && look.color), title = findCos('title', look && look.title);
+  return `<span class="${col.rainbow ? 'rainbow' : ''}" ${col.id !== 'blanc' && col.col ? `style="color:${col.col}"` : ''}>${esc(name)}</span>${suffix}${title.id !== 'aucun' ? `<span class="ttl">« ${esc(title.name)} »</span>` : ''}`;
+}
+function frameCls(look) { const f = findCos('frame', look && look.frame); return f.id === 'aucun' ? '' : `fr fr-${f.id}`; }
 function podiumHtml(top, opts = {}) {
   const look = l => [findCos('ball', l && l.ball), findCos('hat', l && l.hat), findCos('outfit', (l && l.outfit) || 'aucune'), findCos('trail', (l && l.trail) || 'aucune')];
   const order = [1, 0, 2].filter(i => top[i]);
@@ -1484,7 +1621,7 @@ function podiumHtml(top, opts = {}) {
     return `<div class="pod p${i + 1}">
       <div class="pod-crown">${i === 0 ? '👑' : ''}</div>
       ${pix(mascotUrl(ball || SKINS[0], hat || HATS[0], R, outfit || OUTFITS[0], trail || TRAILS[0]), w * 1.4, h * 1.4)}
-      <div class="pod-step"><span class="pod-medal">${medal(i)}</span><b>${esc(e.name)}</b><span class="tiny">${fmtSize(e.total)}${opts.coins ? ` · +${PODIUM_COINS[i]} 🟡` : ''}</span></div>
+      <div class="pod-step"><span class="pod-medal">${medal(i)}</span><b>${nameHtml(e.name, { color: e.look && e.look.color })}</b><span class="tiny">${fmtSize(e.total)}${opts.coins ? ` · +${PODIUM_COINS[i]} 🟡` : ''}</span></div>
     </div>`;
   }).join('')}</div>`;
 }
@@ -1764,7 +1901,7 @@ const Online = {
         name: p.name, best, bestStreak, team: p.team || '',
         legends: Object.keys(p.legends).length, badges: Object.keys(p.badges).length, at: Date.now(),
         account: !!p.account, runs: p.stats.runs || 0,
-        look: { ball: p.equip.ball, hat: p.equip.hat, outfit: p.equip.outfit || 'aucune', trail: p.equip.trail || 'aucune' },
+        look: { ball: p.equip.ball, hat: p.equip.hat, outfit: p.equip.outfit || 'aucune', trail: p.equip.trail || 'aucune', frame: p.equip.frame || 'aucun', color: p.equip.color || 'blanc', title: p.equip.title || 'aucun' },
       });
       return true;
     }, 8000);
@@ -3401,7 +3538,7 @@ class Game {
     const btop = Math.round(by - b.r - 11 + hop + (this.phase === 'hole' ? this.phaseT * 14 : 0));
     if (this.trail && this.trail.fx === 'rainbow' && this.phase === 'play') drawRainbow(ctx, this.trailPts, b.r, this.t);
     if (this.phase !== 'hole' || this.phaseT < 1.1) {
-      if (this.outfit && this.outfit.cape) drawCape(ctx, bx, btop, this.t);
+      if (this.outfit && this.outfit.cape) drawCape(ctx, bx, btop, this.t, this.outfit.capeCol);
       ctx.drawImage(beetle, bx - 5, btop);
       drawHat(ctx, this.hat, bx, btop);
     }
@@ -3960,6 +4097,8 @@ const App = {
       lbtab: () => { this.lbTab = v; this.show('leaderboard'); },
       shoptab: () => { this.shopTab = v; this.shopSel = null; this.show('shop'); },
       shopitem: () => this.shopItem(v),
+      rankitem: () => { const [t, id] = v.split(':'); if (this.rankType !== t) this.shopSel = null; this.rankType = t; this.shopItem(id); },
+      wkitem: () => { const [t, id] = v.split(':'); if (this.shopTab !== t) this.shopSel = null; this.shopTab = t; this.shopItem(id); },
       buy: () => this.buy(),
       colsel: () => { this.colSel = v; this.show('collection'); },
       resume: () => this.resume(),
@@ -4319,8 +4458,10 @@ const App = {
   },
 
   // --- Boutique ---------------------------------------------------------------
+  // onglet Classement : le type est celui du groupe touché (cadre, couleur, titre)
+  shopType() { return this.shopTab === 'rank' ? this.rankType || 'frame' : this.shopTab; },
   shopItem(id) {
-    const p = this.p, type = this.shopTab, item = findCos(type, id);
+    const p = this.p, type = this.shopType(), item = findCos(type, id);
     if (Store.owns(p, type, item)) {
       p.equip[type] = id; Store.save();
       if (type === 'theme') this.game.showAttract(this.cfg, item);
@@ -4330,8 +4471,9 @@ const App = {
     this.show('shop');
   },
   buy() {
-    const p = this.p, type = this.shopTab, item = findCos(type, this.shopSel);
+    const p = this.p, type = this.shopType(), item = findCos(type, this.shopSel);
     if (!item.price || p.coins < item.price || Store.owns(p, type, item)) return;
+    if ((item.from && this.today < item.from) || (item.week && !(weekShop(this.today) || []).some(e => e.item === item))) return;
     p.coins -= item.price; p.owned[type].push(item.id); p.equip[type] = item.id;
     if (type !== 'theme') { clearTimeout(this.lookT); this.lookT = setTimeout(() => Online.submitPlayer(this.p), 4000); }
     Store.save(); Sound.play('unlock');
@@ -4373,7 +4515,7 @@ const App = {
       }
       Game.prototype.drawParticles.call(st);
       const bx = Math.round(b.x), btop = Math.round(b.y - R - 11);
-      if (outfit.cape) drawCape(ctx, bx, btop, st.t);
+      if (outfit.cape) drawCape(ctx, bx, btop, st.t, outfit.capeCol);
       ctx.drawImage(beetleSprite(outfit, Math.floor(st.t * 6) % 2), bx - 5, btop);
       drawHat(ctx, hat, bx, btop);
       ctx.fillStyle = 'rgba(70,35,10,0.3)'; ctx.fillRect(bx - R + 2, b.y + R - 1, R * 2 - 1, 2);
@@ -4692,9 +4834,21 @@ const App = {
     </div>`;
   },
 
+  // Apparence de chacun (cadre, couleur, titre) : en ligne d'après les records, sinon les profils de l'appareil
+  async looks() {
+    const m = {};
+    if (this.today >= SHOP_FROM) {
+      const recs = Online.live ? await Online.records() : null;
+      if (recs) for (const r of recs) m[r.name] = r.look;
+      else for (const q of Object.values(Store.data.profiles)) m[q.name] = q.equip;
+    }
+    if (this.p) m[this.p.name] = this.p.equip;
+    return m;
+  },
   async scr_leaderboard() {
-    const tab = this.lbTab, me = this.p.name, champ = await Leaderboard.champion(this.today);
-    const who = name => `${esc(name)}${name === champ ? ' 👑' : ''}`;
+    const tab = this.lbTab, me = this.p.name, champ = await Leaderboard.champion(this.today), looks = await this.looks();
+    const crown = name => name === champ ? ' 👑' : '';
+    const who = (name, extra = '') => nameHtml(name, looks[name], crown(name) + extra), fr = name => frameCls(looks[name]);
     let body = '', extra = '';
     if (tab === 'day') {
       const lb = await Leaderboard.day(this.today);
@@ -4702,16 +4856,16 @@ const App = {
       const rxTxt = id => { const c = rx && rx.counts[id]; return c ? `<span class="rx">${REACTIONS.filter(e => c[e]).map(e => e + c[e]).join(' ')}</span>` : ''; };
       body = lb.length ? lb.map((e, i) => {
         const pick = rx && e.name !== me;
-        let row = `<tr class="${e.name === me ? 'me' : ''} ${pick ? 'pick' : ''}" ${pick ? `data-a="reactsel" data-v="${esc(e.id)}"` : ''}><td>${medal(i)}</td><td>${who(e.name)}${rxTxt(e.id)}${pick && !rx.mine[e.id] ? '<span class="rx-add">+👏</span>' : ''}</td><td>${e.run && e.run.terrier ? '🕳️' : ''}${e.run && e.run.legend ? '✨' : ''}</td><td class="r">${fmtSize(e.score)}</td></tr>`;
+        let row = `<tr class="${e.name === me ? 'me' : ''} ${pick ? 'pick' : ''} ${fr(e.name)}" ${pick ? `data-a="reactsel" data-v="${esc(e.id)}"` : ''}><td>${medal(i)}</td><td>${who(e.name, rxTxt(e.id) + (pick && !rx.mine[e.id] ? '<span class="rx-add">+👏</span>' : ''))}</td><td>${e.run && e.run.terrier ? '🕳️' : ''}${e.run && e.run.legend ? '✨' : ''}</td><td class="r">${fmtSize(e.score)}</td></tr>`;
         if (pick && this.reactSel === e.id) row += `<tr><td colspan="4"><div class="reacts">${REACTIONS.map(r => `<button class="${rx.mine[e.id] === r ? 'on' : ''}" data-a="react" data-v="${r}">${r}</button>`).join('')}</div></td></tr>`;
         return row;
       }).join('') : '<tr><td colspan="4" class="center tiny">Personne n\'a encore joué aujourd\'hui.</td></tr>';
       const titles = dayTitles(lb);
-      if (titles.length) extra = `<div class="panel"><div class="label">Titres du jour</div><table class="lb titles">${titles.map(t => `<tr><td>${t.icon}</td><td>${esc(t.label)}</td><td>${who(t.name)}</td><td class="r tiny">${esc(t.value)}</td></tr>`).join('')}</table></div>`;
+      if (titles.length) extra = `<div class="panel"><div class="label">Titres du jour</div><table class="lb titles">${titles.map(t => `<tr><td>${t.icon}</td><td>${esc(t.label)}</td><td>${esc(t.name)}${crown(t.name)}</td><td class="r tiny">${esc(t.value)}</td></tr>`).join('')}</table></div>`;
       if (rx && lb.some(e => e.name !== me)) extra += '<div class="tiny center">Touche la ligne d\'un collègue pour lui envoyer une réaction 👏 😂 💩 🔥</div>';
     } else if (tab === 'week') {
       const lb = await Leaderboard.week(weekKey(this.today));
-      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny ${e.played >= WEEK_BEST ? 'good' : ''}">${Math.min(e.played, WEEK_BEST)}/${WEEK_BEST}</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
+      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''} ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny ${e.played >= WEEK_BEST ? 'good' : ''}">${Math.min(e.played, WEEK_BEST)}/${WEEK_BEST}</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Rien cette semaine.</td></tr>';
       extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés. Le vainqueur porte la 👑 toute la semaine suivante ; le podium gagne ${PODIUM_COINS.join(' / ')} 🟡.</div>`;
       const pod = await Leaderboard.podium(addDays(weekKey(this.today), -7));
@@ -4725,13 +4879,13 @@ const App = {
       extra = `<div class="tiny center">Moyenne par joueur sur la semaine. ${this.p.team ? '' : 'Rejoins une équipe depuis ton profil 👤.'}</div>`;
     } else if (tab === 'surv') {
       const lb = (await Online.survivalTop()) || [];
-      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td></td><td class="r">${e.best} m</td></tr>`).join('')
+      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''} ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}</td><td></td><td class="r">${e.best} m</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Personne n\'a encore tenté La Grande Fuite.</td></tr>';
       extra = '<div class="tiny center">La Grande Fuite : le plus long parcours de chacun.</div>';
     } else {
       const lb = await Leaderboard.records();
       extra = '<div class="tiny center">Records = ta meilleure boule de tous les temps · 🔥 ta plus longue série · ✨ trésors trouvés.</div>';
-      body = lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">🔥${e.bestStreak} ✨${e.legends}</td><td class="r">${fmtSize(e.best)}</td></tr>`).join('');
+      body = lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''} ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">🔥${e.bestStreak} ✨${e.legends}</td><td class="r">${fmtSize(e.best)}</td></tr>`).join('');
     }
     const tabs = [['day', 'Jour'], ['week', 'Semaine'], ...(TEAMS_ON ? [['teams', 'Équipes']] : []), ['all', 'Records'], ...(SURVIVAL_ON ? [['surv', 'Survie']] : [])]
       .map(([k, l]) => `<button class="tab ${tab === k ? 'on' : ''}" data-a="lbtab" data-v="${k}">${l}</button>`).join('');
@@ -4813,32 +4967,33 @@ const App = {
   },
 
   scr_shop() {
-    const p = this.p, type = this.shopTab;
-    // les secrets n'apparaissent qu'une fois obtenus
-    const items = COSMETICS[type].filter(it => (!it.secret || Store.owns(p, type, it)) && (!it.survival || SURVIVAL_ON)
-      && (!it.season || isHalloween(this.today) || Store.owns(p, type, it)));
+    const p = this.p, open = this.today >= SHOP_FROM;
+    if (this.shopTab === 'rank' && !open) this.shopTab = 'ball';
+    const tab = this.shopTab, type = this.shopType(), rank = tab === 'rank';
+    const shown = (t, it) => { const own = Store.owns(p, t, it); return (!it.secret || own) && (!it.survival || SURVIVAL_ON)
+      && (!it.season || isHalloween(this.today) || own) && (!it.from || this.today >= it.from || own) && (!it.week || own); };
+    const items = rank ? [] : COSMETICS[tab].filter(it => shown(tab, it));
     const eq = t => findCos(t, p.equip[t]);
     const prev = this.shopSel ? findCos(type, this.shopSel) : null;
-    const look = t => type === t && prev ? prev : eq(t);
     const mascot = (skin, hat, outfit, trail, R, scale) => {
       const w = R * 2 + 16, h = R * 2 + 18 + (trail.fx ? 14 : 0);
       return pix(mascotUrl(skin, hat, R, outfit, trail), w * scale, h * scale);
     };
     const swatch = (t, k) => pix(imgUrl('th_' + t.id, () => themeSwatch(t)), 36 * k, 22 * k);
-    const tileImg = it => type === 'theme' ? swatch(it, 1.5)
-      : mascot(type === 'ball' ? it : eq('ball'), type === 'hat' ? it : HATS[0], type === 'outfit' ? it : OUTFITS[0], type === 'trail' ? it : TRAILS[0], 8, 1.2);
-    const status = it => {
-      if (p.equip[type] === it.id) return '<span class="good">Équipé</span>';
-      if (Store.owns(p, type, it)) return 'Possédé';
+    const tileImg = (it, t) => t === 'theme' ? swatch(it, 1.5)
+      : mascot(t === 'ball' ? it : eq('ball'), t === 'hat' ? it : HATS[0], t === 'outfit' ? it : OUTFITS[0], t === 'trail' ? it : TRAILS[0], 8, 1.2);
+    const status = (it, t) => {
+      if (p.equip[t] === it.id) return '<span class="good">Équipé</span>';
+      if (Store.owns(p, t, it)) return 'Possédé';
       if (it.badge) return `🔒 ${BADGES.find(b => b.id === it.badge).icon}`;
-      if (it.price) return `🟡 ${it.price}`;
+      if (it.price) return `${it.prestige ? '💎 ' : ''}🟡 ${it.price}`;
       if (it.mystery) return '❓ Mystère';
       if (it.prog) { const [a, b] = it.prog(p); return `🔒 ${Math.min(a, b)}/${b}`; }
       return '🔒';
     };
-    const tile = it => {
-      const owned = Store.owns(p, type, it);
-      return `<button class="tile shop ${p.equip[type] === it.id ? 'sel' : ''} ${owned ? '' : 'locked-soft'} ${this.shopSel === it.id ? 'sel2' : ''}" data-a="shopitem" data-v="${it.id}">${tileImg(it)}<span>${esc(it.name)}</span><span class="tiny">${status(it)}</span></button>`;
+    const tile = (it, t = tab, act = 'shopitem', v = it.id) => {
+      const owned = Store.owns(p, t, it), sel = this.shopSel === it.id && type === t;
+      return `<button class="tile shop ${it.prestige ? 'prestige' : ''} ${p.equip[t] === it.id ? 'sel' : ''} ${owned ? '' : 'locked-soft'} ${sel ? 'sel2' : ''}" data-a="${act}" data-v="${v}">${it.rare ? '<span class="tag rare">RARE</span>' : ''}${tileImg(it, t)}<span>${esc(it.name)}</span><span class="tiny">${status(it, t)}</span></button>`;
     };
     let bar = '';
     if (prev) {
@@ -4847,18 +5002,45 @@ const App = {
       else if (prev.mystery) bar = `<div class="panel tiny">❓ <b>${esc(prev.name)}</b> : comment l'obtenir ? Mystère… Un indice : <i>${esc(prev.mystery)}</i></div>`;
       else if (prev.prog) { const [a, b] = prev.prog(p); bar = `<div class="panel tiny">🔒 <b>${esc(prev.name)}</b> : ${esc(prev.text)} (${Math.min(a, b)}/${b})</div>`; }
     }
-    const tabs = [['ball', 'Boules'], ['hat', 'Chapeaux'], ['outfit', 'Tenues'], ['trail', 'Traînées'], ['theme', 'Décors']]
-      .map(([k, l]) => `<button class="tab ${type === k ? 'on' : ''}" data-a="shoptab" data-v="${k}">${l}</button>`).join('');
+    // boutique de la semaine : visible sur tous les onglets
+    const wk = weekShop(this.today);
+    let wkHtml = '';
+    if (wk) {
+      const left = 7 - Math.round((dayFromKey(this.today) - dayFromKey(weekKey(this.today))) / 86400000);
+      wkHtml = `<div class="panel wkshop"><div class="label">⭐ Boutique de la semaine <span class="tiny">· change lundi (${left === 1 ? 'demain' : `dans ${left} j`})</span></div>
+        <div class="grid three">${wk.map(e => tile(e.item, e.type, 'wkitem', `${e.type}:${e.item.id}`)).join('')}</div>
+        <div class="tiny center">Ces objets reviendront… un jour. Peut-être.</div></div>`;
+    }
+    const tabs = [['ball', 'Boules'], ['hat', 'Chapeaux'], ['outfit', 'Tenues'], ['trail', 'Traînées'], ['theme', 'Décors'], ...(open ? [['rank', 'Classement']] : [])]
+      .map(([k, l]) => `<button class="tab ${tab === k ? 'on' : ''}" data-a="shoptab" data-v="${k}">${l}</button>`).join('');
     const found = Object.keys(COSMETICS).reduce((n, t) => n + COSMETICS[t].filter(it => it.secret && Store.owns(p, t, it)).length, 0);
+    let top, body;
+    if (rank) {
+      // aperçu de sa ligne avec l'objet touché
+      const look = {}; for (const t of RANK_TYPES) look[t] = (type === t && prev ? prev : eq(t)).id;
+      top = `<div class="panel"><div class="tiny center">Aperçu de ta ligne au classement</div>
+        <table class="lb"><tr class="${frameCls(look)}"><td>🥇</td><td>${nameHtml(p.name, look)}</td><td class="r">${fmtSize(p.stats.best || 0)}</td></tr></table></div>`;
+      const pill = (t, it) => `<button class="pill ${p.equip[t] === it.id ? 'on' : ''} ${this.shopSel === it.id && type === t ? 'sel2' : ''} ${Store.owns(p, t, it) ? '' : 'lock'}" data-a="rankitem" data-v="${t}:${it.id}">${t === 'color' ? `<span class="sw ${it.rainbow ? 'rainbow-bg' : ''}" style="${it.col ? 'background:' + it.col : ''}"></span> ` : t === 'frame' && it.col ? `<span class="sw" style="background:${it.col}"></span> ` : ''}${t === 'title' && it.id !== 'aucun' ? `« ${esc(it.name)} »` : esc(it.name)}<br><span class="tiny">${status(it, t)}</span></button>`;
+      const group = (t, earned) => COSMETICS[t].filter(it => shown(t, it) && !!it.prog === earned).map(it => pill(t, it)).join('');
+      body = `<div class="label">🖼️ Cadre</div><div class="pills">${group('frame', false)}</div>
+        <div class="label">🎨 Couleur du pseudo</div><div class="pills">${group('color', false)}</div>
+        <div class="label">🏷️ Titre sous le pseudo</div><div class="pills">${group('title', false)}</div>
+        <div class="label">🏅 À gagner <span class="tiny">(ne s'achètent pas)</span></div><div class="pills">${group('frame', true)}${group('title', true)}</div>
+        <div class="tiny center">Visible par tout le monde dans les classements.</div>`;
+    } else {
+      top = `<div class="mascot">${tab === 'theme' ? swatch(prev || eq('theme'), 3) : '<canvas id="preview" width="64" height="84" class="pix" style="width:calc(var(--u)*96);height:calc(var(--u)*126)"></canvas>'}</div>`;
+      body = `<div class="grid three">${items.map(it => tile(it)).join('')}</div>
+        <div class="tiny center">Gagne des 🟡 en jouant, en finissant les quêtes et en trouvant les trésors. Certains objets se méritent autrement…</div>
+        <div class="tiny center">🤫 Secrets trouvés : ${found} / ${SECRET_COUNT}</div>`;
+    }
     return `<div class="screen">
       ${this.back('Style')}
       <div class="topbar end"><span class="chip gold">🟡 ${p.coins}</span></div>
-      <div class="mascot">${type === 'theme' ? swatch(prev || eq('theme'), 3) : '<canvas id="preview" width="64" height="84" class="pix" style="width:calc(var(--u)*96);height:calc(var(--u)*126)"></canvas>'}</div>
+      ${top}
       ${bar}
+      ${wkHtml}
       <div class="tabs">${tabs}</div>
-      <div class="grid three">${items.map(tile).join('')}</div>
-      <div class="tiny center">Gagne des 🟡 en jouant, en finissant les quêtes et en trouvant les trésors. Certains objets se méritent autrement…</div>
-      <div class="tiny center">🤫 Secrets trouvés : ${found} / ${SECRET_COUNT}</div>
+      ${body}
     </div>`;
   },
 

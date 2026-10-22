@@ -7,6 +7,20 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.11.0 — Boutique : prestige, classement personnalisé, boutique de la semaine (préparé le 22 octobre 2026)
+- À partir du 2 novembre, dans 🎨 Style :
+  - 4 objets de prestige 💎 (contour bleu glacé) : Boule diamant 2 500, Haut-de-forme en or 3 000, Cape dorée 2 000,
+    Traînée comète 1 500 🟡.
+  - Nouvel onglet **Classement** : cadre de la ligne (bois 300, argent 600, or 1 000, flammes 1 500), couleur du pseudo
+    (250, arc-en-ciel 1 500), titre sous le pseudo (200 à 500). À gagner sans pouvoir l'acheter : cadre du podium,
+    « 👑 Ex-champion », « Encyclopédiste », « Fidèle au poste », « Chasseur de trésors », « Ami de Kevin »,
+    « Citrouille d'or 🎃 » (débloqués automatiquement pour ceux qui remplissent déjà les conditions).
+  - Cadre, couleur et titre s'affichent dans les classements du jour, de la semaine, des records et sur le podium.
+- À partir du lundi 30 novembre : **boutique de la semaine** (2 objets à 200 🟡 + 1 rare à 300 🟡, changés chaque lundi),
+  12 objets exclusifs ; chacun revient toutes les 4 semaines, jamais deux semaines de suite.
+- Admin : tous les nouveaux objets, cadres, couleurs et titres peuvent être offerts.
+- News prévues le 2 novembre (prestige + classement) et le 30 novembre (boutique de la semaine).
+
 ## v1.10.17 — Deux météos spéciales par semaine (22 octobre 2026)
 - À partir du 2 novembre : deux jours par semaine (un en début, un en fin de semaine) prennent une météo spéciale,
   à tour de rôle ; chacune revient toutes les deux semaines. Le roulement des 6 météos classiques saute ces jours-là
