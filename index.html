@@ -1266,10 +1266,24 @@ const Store = {
   // Avant, on sauvegarde sur l'appareil sans la dater ni l'envoyer : une vieille
   // progression ne doit jamais passer pour la plus récente.
   checked: false, dirty: false,
+  // Pièces : chaque appareil note ce qu'il a gagné (e) et dépensé (s) ; le solde est la
+  // somme de tous les appareils. Deux appareils ne peuvent ni perdre ni doubler des pièces.
+  device() {
+    const st = this.data.settings;
+    if (!st.device) st.device = 'd' + Math.random().toString(36).slice(2, 10);
+    return st.device;
+  },
+  walletTotal(w) { const sum = o => Object.values(o || {}).reduce((n, v) => n + v, 0); return sum(w.e) - sum(w.s); },
+  tally(p) {
+    if (!p.wallet) { if (this.checked) p.wallet = { e: { base: p.coins }, s: {} }; return; }
+    const d = p.coins - this.walletTotal(p.wallet), dev = this.device();
+    if (d > 0) p.wallet.e[dev] = (p.wallet.e[dev] || 0) + d;
+    if (d < 0) p.wallet.s[dev] = (p.wallet.s[dev] || 0) - d;
+  },
   save() {
     const p = this.profile();
     if (p && !this.checked) { this.dirty = true; safeStorageSet(SAVE_KEY, JSON.stringify(this.data)); return; }
-    if (p) p.savedAt = Date.now();
+    if (p) { this.tally(p); p.savedAt = Date.now(); }
     safeStorageSet(SAVE_KEY, JSON.stringify(this.data));
     if (p) Online.queueSync(p);
   },
@@ -1314,6 +1328,14 @@ const Store = {
     m.weeks = { ...(older.weeks || {}), ...(m.weeks || {}) };
     if (older.survival) m.survival = { best: Math.max((m.survival || {}).best || 0, older.survival.best || 0), runs: Math.max((m.survival || {}).runs || 0, older.survival.runs || 0) };
     if ((older.awardsDay || '') > (m.awardsDay || '')) m.awardsDay = older.awardsDay;
+    m.boosts = Math.max(m.boosts || 0, older.boosts || 0);
+    if ((older.boostWeek || '') > (m.boostWeek || '')) m.boostWeek = older.boostWeek;
+    // pièces : on additionne les comptes de chaque appareil (le plus avancé de chacun)
+    if (newer.wallet && older.wallet) {
+      const w = { e: { ...newer.wallet.e }, s: { ...newer.wallet.s } };
+      for (const k of ['e', 's']) for (const dev in older.wallet[k] || {}) w[k][dev] = Math.max(w[k][dev] || 0, older.wallet[k][dev]);
+      m.wallet = w; m.coins = this.walletTotal(w);
+    } else if (!newer.wallet) m.wallet = null;  // version d'avant ce correctif : son solde fait foi
     return m;
   },
 
@@ -1754,7 +1776,15 @@ const Online = {
   syncProfile(p) {
     return this.run(async c => {
       if (!await this.ready(c, p)) return false;
-      await c.fb.setDoc(this.ref(c, 'profiles', this.id(c, p.name)), { name: p.name, at: p.savedAt || Date.now(), data: this.packProfile(p) });
+      // un autre appareil a pu envoyer entre-temps : on fusionne avant d'écrire
+      const ref = this.ref(c, 'profiles', this.id(c, p.name)), snap = await c.fb.getDoc(ref);
+      if (snap.exists() && snap.data().at !== this.pushedAt) {
+        const r = this.mergeInto(p, JSON.parse(snap.data().data), snap.data().at);
+        p.savedAt = Date.now();
+        if (r.local && window.App) App.onMerged();
+      }
+      this.pushedAt = p.savedAt || Date.now();
+      await c.fb.setDoc(ref, { name: p.name, at: this.pushedAt, data: this.packProfile(p) });
       return true;
     }, 8000);
   },
@@ -1765,14 +1795,17 @@ const Online = {
       if (!await this.ready(c, p)) return null;
       const snap = await c.fb.getDoc(this.ref(c, 'profiles', this.id(c, p.name)));
       if (!snap.exists()) return { local: false, cloud: true };
-      const cloud = JSON.parse(snap.data().data), at = snap.data().at;
-      const sig = x => this.packProfile({ ...x, savedAt: 0, uid: 0, nameOk: 0, account: 0 });
-      const before = sig(p), merged = Store.merge(p, cloud, at);
-      Object.assign(p, merged, { name: p.name, uid: p.uid, account: p.account, nameOk: p.nameOk, nameTaken: p.nameTaken, savedAt: Math.max(at || 0, p.savedAt || 0) });
-      Store.normalize(p);
-      safeStorageSet(SAVE_KEY, JSON.stringify(Store.data));
-      return { local: sig(p) !== before, cloud: sig(p) !== sig(cloud) };
+      return this.mergeInto(p, JSON.parse(snap.data().data), snap.data().at);
     }, 8000);
+  },
+  mergeInto(p, cloud, at) {
+    const sig = x => this.packProfile({ ...x, savedAt: 0, uid: 0, nameOk: 0, account: 0 });
+    if (p.wallet) Store.tally(p);  // pièces gagnées ici avant la fusion
+    const before = sig(p), merged = Store.merge(p, cloud, at);
+    Object.assign(p, merged, { name: p.name, uid: p.uid, account: p.account, nameOk: p.nameOk, nameTaken: p.nameTaken, savedAt: Math.max(at || 0, p.savedAt || 0) });
+    Store.normalize(p);
+    safeStorageSet(SAVE_KEY, JSON.stringify(Store.data));
+    return { local: sig(p) !== before, cloud: sig(p) !== sig(cloud) };
   },
 
   // --- Comptes ---
@@ -3407,7 +3440,7 @@ const App = {
     this.bindInput();
     this.loadDay();
     document.getElementById('hud-pause').addEventListener('click', e => { e.stopPropagation(); this.pause(); });
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.pause(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) this.pause(); else this.resync(); });
     this.ui.addEventListener('click', e => this.onClick(e));
     setInterval(() => this.tick(), 1000);
     if (!Store.profile() || this.devRefused(Store.profile())) this.show('name'); else this.show('home');
@@ -3418,6 +3451,21 @@ const App = {
   // Version de test : seul le compte de l'organisateur peut y entrer
   devRefused(p) { return DEV_LOCKED && (!p || p.uid !== ADMIN_UID); },
 
+  // Progression modifiée par la fusion avec un autre appareil : on rafraîchit l'écran
+  onMerged() {
+    if (this.game.state === 'run') return;
+    this.loadDay();
+    if (['home', 'shop', 'collection', 'badges', 'profile'].includes(this.screen)) this.show(this.screen);
+  },
+  // Retour sur le jeu : on revoit la version en ligne (un autre appareil a pu jouer)
+  async resync() {
+    const p = this.p;
+    if (!p || !Store.checked || !FIREBASE_CONFIG || this.game.state === 'run') return;
+    const r = await Online.pullProfile(p);
+    if (r && r.local) this.onMerged();
+    if (r && r.cloud) Store.save();
+  },
+
   async syncOnStart() {
     const p = this.p;
     if (!p || this.devRefused(p) || !FIREBASE_CONFIG) { Store.checked = true; return; }
@@ -3425,6 +3473,7 @@ const App = {
     Store.checked = true;
     if (r && r.local) { this.loadDay(); if (this.screen === 'home') this.show('home'); }
     if ((r && r.cloud) || Store.dirty) { Store.dirty = false; Store.save(); }
+    this.dailyAwards();  // titres et récompenses de la semaine : seulement une fois la progression à jour
     const g = p && await Online.claimGifts(p);
     if (g) {
       Store.save(); Sound.play('unlock');
@@ -3467,9 +3516,11 @@ const App = {
   // Une fois par jour : titres et 1re place d'hier, champion de la semaine passée
   async dailyAwards() {
     const p = this.p;
-    if (!p || p.awardsDay === this.today || this.awarding) return;
+    if (!p || !Store.checked || p.awardsDay === this.today || this.awarding) return;
     this.awarding = true;
     try {
+      // un autre appareil a peut-être déjà distribué les récompenses d'aujourd'hui
+      if (FIREBASE_CONFIG) { const r = await Online.pullProfile(p); if (r && r.cloud) Store.save(); if (p.awardsDay === this.today) return; }
       const lb = await Online.day(addDays(this.today, -1));
       if (!lb) return;  // hors ligne : on réessaiera
       const ct = p.counters, inc = k => { ct[k] = (ct[k] || 0) + 1; };
@@ -3763,8 +3814,11 @@ const App = {
 
   // --- Lancer une partie -------------------------------------------------------
   async startDaily() {
-    const p = this.p, d = Store.dayData(p, this.today);
-    if (d.attempts >= maxAttempts(p, this.today)) return;
+    const p = this.p;
+    // essais déjà joués sur un autre appareil ?
+    if (FIREBASE_CONFIG && Store.checked) { const r = await withTimeout(Online.pullProfile(p), 3000).catch(() => null); if (r && r.local) this.loadDay(); }
+    const d = Store.dayData(p, this.today);
+    if (d.attempts >= maxAttempts(p, this.today)) { if (this.screen === 'home') this.show('home'); return; }
     // la série se met à jour au premier essai du jour
     if (p.lastDay !== this.today) {
       p.streak = p.lastDay === addDays(this.today, -1) ? p.streak + 1 : 1;

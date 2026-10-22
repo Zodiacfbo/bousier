@@ -7,6 +7,14 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.7 — Synchronisation complète entre appareils (22 octobre 2026)
+- Pièces : chaque appareil tient son propre compte (gagné / dépensé) ; le solde est la somme de tous les
+  appareils. Plus de pièces perdues (parties, cadeaux de l'admin, podium) ni d'achats non débités.
+- Deux appareils ouverts en même temps : la progression est fusionnée à chaque envoi, au retour sur le jeu
+  et juste avant chaque essai (impossible de jouer plus d'essais que permis).
+- Coup de pouce inclus dans la fusion ; titres et récompenses de la semaine distribués seulement une fois
+  la progression à jour (pas de double récompense).
+
 ## v1.10.6 — Correctif de synchronisation (22 octobre 2026)
 - Un appareil avec une ancienne progression (ordi, autre téléphone) ne peut plus écraser la progression en ligne
   au démarrage : le jeu regarde d'abord la version en ligne.
