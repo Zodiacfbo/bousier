@@ -87,6 +87,16 @@ img.pix, canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; 
 button.banner { font: inherit; width: 100%; cursor: pointer; }
 .banner.off, .chip.off { box-shadow: inset 0 0 0 var(--u) #8a8aa0; color: #d8d8ea; }
 .head .chip.off { margin-left: auto; }
+.podium { display: flex; align-items: flex-end; justify-content: center; gap: calc(var(--u) * 2); margin: calc(var(--u) * 2) 0; }
+.pod { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 34%; }
+.pod-crown { height: 1.2em; font-size: 1.1em; }
+.pod-step { width: 100%; display: flex; flex-direction: column; align-items: center; background: var(--panel2); border: var(--u) solid var(--line); padding: calc(var(--u) * 2) var(--u); color: var(--ink); }
+.pod-step b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pod-step { justify-content: flex-start; }
+.pod.p1 .pod-step { height: calc(var(--u) * 46); background: #6a4a1a; box-shadow: inset 0 0 0 var(--u) var(--gold); }
+.pod.p2 .pod-step { height: calc(var(--u) * 37); }
+.pod.p3 .pod-step { height: calc(var(--u) * 30); }
+.pod-medal { font-size: 1.2em; }
 .banner { background: #1a1020; border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) var(--gold); color: var(--gold); padding: calc(var(--u) * 3); text-align: center; }
 .lb tr.pick td { cursor: pointer; }
 .lb .rx { font-size: .75em; color: var(--muted); margin-left: var(--u); }
@@ -1428,6 +1438,19 @@ function fmtWeek(wk) {
   const f = k => dayFromKey(k).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   return `du ${f(wk)} au ${f(addDays(wk, 6))}`;
 }
+// Podium illustré : les 3 bousiers avec leur équipement, sur leurs marches
+function podiumHtml(top, opts = {}) {
+  const look = l => [findCos('ball', l && l.ball), findCos('hat', l && l.hat), findCos('outfit', (l && l.outfit) || 'aucune'), findCos('trail', (l && l.trail) || 'aucune')];
+  const order = [1, 0, 2].filter(i => top[i]);
+  return `<div class="podium">${order.map(i => {
+    const e = top[i], [ball, hat, outfit, trail] = look(e.look), R = i === 0 ? 9 : 8, w = R * 2 + 16, h = R * 2 + 18 + (trail.fx ? 14 : 0);
+    return `<div class="pod p${i + 1}">
+      <div class="pod-crown">${i === 0 ? '👑' : ''}</div>
+      ${pix(mascotUrl(ball || SKINS[0], hat || HATS[0], R, outfit || OUTFITS[0], trail || TRAILS[0]), w * 1.4, h * 1.4)}
+      <div class="pod-step"><span class="pod-medal">${medal(i)}</span><b>${esc(e.name)}</b><span class="tiny">${fmtSize(e.total)}${opts.coins ? ` · +${PODIUM_COINS[i]} 🟡` : ''}</span></div>
+    </div>`;
+  }).join('')}</div>`;
+}
 function placeTxt(i) { return i === 0 ? '1er' : (i + 1) + 'e'; }
 function weekTotal(scores) {
   const top = scores.slice().sort((a, b) => b - a).slice(0, WEEK_BEST);
@@ -1649,7 +1672,7 @@ const Online = {
   },
   records() {
     return this.cached('records', RECORDS_TTL, () => this.run(async c => (await this.list(c, ['players'], 'best', 100))
-      .map(e => ({ name: e.name, best: e.best, bestStreak: e.bestStreak, legends: e.legends, badges: e.badges, team: e.team || '' }))));
+      .map(e => ({ name: e.name, best: e.best, bestStreak: e.bestStreak, legends: e.legends, badges: e.badges, team: e.team || '', look: e.look || null }))));
   },
   ghosts(day, targets) {
     return this.run(async c => (await Promise.all(targets.map(async t => {
@@ -1701,6 +1724,7 @@ const Online = {
         name: p.name, best: p.stats.best, bestStreak: p.bestStreak, team: p.team || '',
         legends: Object.keys(p.legends).length, badges: Object.keys(p.badges).length, at: Date.now(),
         account: !!p.account, runs: p.stats.runs || 0,
+        look: { ball: p.equip.ball, hat: p.equip.hat, outfit: p.equip.outfit || 'aucune', trail: p.equip.trail || 'aucune' },
       });
       return true;
     }, 8000);
@@ -1950,7 +1974,8 @@ const Leaderboard = {
     const lb = await Online.week(wk);
     if (!lb) return null;
     const full = lb.filter(e => e.played >= WEEK_BEST);
-    const res = { wk, players: lb.length, top: lb.length >= 2 ? lb.slice(0, 3).map(e => ({ name: e.name, total: e.total })) : [], last: full.length >= BOOST_MIN ? full[full.length - 1].name : null };
+    const looks = Object.fromEntries(((await Online.records()) || []).map(r => [r.name, r.look]));
+    const res = { wk, players: lb.length, top: lb.length >= 2 ? lb.slice(0, 3).map(e => ({ name: e.name, total: e.total, look: looks[e.name] || null })) : [], last: full.length >= BOOST_MIN ? full[full.length - 1].name : null };
     safeStorageSet(key, JSON.stringify(res));
     return res;
   },
@@ -4282,7 +4307,7 @@ const App = {
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
       ${p.boostMsg === weekKey(this.today) ? `<div class="banner">🚀 <b>Coup de pouce de la semaine</b> : 4 essais par jour et +${BOOST_COINS} 🟡. Merci d'avoir joué jusqu'au bout la semaine dernière ! <button class="btn ghost small" data-a="boostok">OK</button></div>` : ''}
-      ${podShow || mine ? `<div class="banner">${podShow ? `👑 Champion de la semaine dernière : <b>${esc(pod.top[0].name)}</b> (${fmtSize(pod.top[0].total)}) !${pod.top.slice(1).map((e, i) => ` ${medal(i + 1)} ${esc(e.name)}`).join('')}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
+      ${podShow || mine ? `<div class="banner">${podShow ? `👑 <b>Podium de la semaine dernière</b> — bravo ${esc(pod.top[0].name)} !${podiumHtml(pod.top)}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
       ${p.nameTaken ? '<div class="banner bad">Ce pseudo est déjà pris en ligne : tes scores ne sont pas envoyés. Crée un autre joueur.</div>' : ''}
@@ -4426,7 +4451,7 @@ const App = {
       extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés. Le vainqueur porte la 👑 toute la semaine suivante ; le podium gagne ${PODIUM_COINS.join(' / ')} 🟡.</div>`;
       const pod = await Leaderboard.podium(addDays(weekKey(this.today), -7));
       if (pod && pod.top.length) extra += `<div class="panel"><div class="label">Podium de la semaine dernière <span class="tiny">(${fmtWeek(pod.wk)})</span></div>
-        <table class="lb">${pod.top.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.name)}${i === 0 ? ' 👑' : ''}</td><td class="tiny gold">+${PODIUM_COINS[i]} 🟡</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')}</table></div>`;
+        ${podiumHtml(pod.top, { coins: true })}</div>`;
       extra += '<button class="btn ghost" data-a="go" data-v="palmares">📜 Palmarès des champions</button>';
     } else if (tab === 'teams') {
       const lb = await Leaderboard.teams(weekKey(this.today)), mine = nameKey(this.p.team || '');
