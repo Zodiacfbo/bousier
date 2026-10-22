@@ -1262,11 +1262,59 @@ const Store = {
     this.data = d;
     return d;
   },
+  // checked : la progression de cet appareil a été comparée à la version en ligne.
+  // Avant, on sauvegarde sur l'appareil sans la dater ni l'envoyer : une vieille
+  // progression ne doit jamais passer pour la plus récente.
+  checked: false, dirty: false,
   save() {
     const p = this.profile();
+    if (p && !this.checked) { this.dirty = true; safeStorageSet(SAVE_KEY, JSON.stringify(this.data)); return; }
     if (p) p.savedAt = Date.now();
     safeStorageSet(SAVE_KEY, JSON.stringify(this.data));
     if (p) Online.queueSync(p);
+  },
+
+  // 2. Deux versions d'une même progression (appareil / en ligne) : on part de la plus
+  // récente et on y ajoute tout ce qui a été gagné dans l'autre (rien ne se perd,
+  // aucun essai n'est rendu). Les pièces sont celles de la plus récente.
+  merge(local, cloud, cloudAt) {
+    const newer = (cloudAt || 0) > (local.savedAt || 0) ? cloud : local, older = newer === local ? cloud : local;
+    const m = JSON.parse(JSON.stringify({ ...newer, days: Object.fromEntries(Object.entries(newer.days || {}).map(([k, d]) => [k, { ...d, ghost: null }])) }));
+    m.owned = m.owned || {};
+    for (const t in older.owned || {}) m.owned[t] = [...new Set([...(m.owned[t] || []), ...older.owned[t]])];
+    m.badges = m.badges || {};
+    for (const k in older.badges || {}) if (!m.badges[k] || older.badges[k] < m.badges[k]) m.badges[k] = older.badges[k];
+    for (const key of ['collection', 'legends', 'weathers', 'counters']) {
+      m[key] = m[key] || {};
+      for (const k in older[key] || {}) m[key][k] = Math.max(m[key][k] || 0, older[key][k] || 0);
+    }
+    m.days = m.days || {};
+    for (const k in older.days || {}) {
+      const o = older.days[k], d = m.days[k];
+      if (!d) { m.days[k] = { ...o, ghost: null }; continue; }
+      d.attempts = Math.max(d.attempts || 0, o.attempts || 0);
+      if ((o.runs || []).length > (d.runs || []).length) d.runs = o.runs;
+      if ((o.best || 0) > (d.best || 0)) { d.best = o.best; d.bestRun = o.bestRun; }
+      d.quests = { ...(d.quests || {}) };
+      for (const q in o.quests || {}) if (o.quests[q]) d.quests[q] = true;
+      d.legend = d.legend || o.legend; d.questBonus = d.questBonus || o.questBonus;
+      if (!d.qs && o.qs) d.qs = o.qs;
+    }
+    // les fantômes restent ceux de cet appareil (ils ne sont pas en ligne)
+    for (const k in local.days || {}) if (local.days[k].ghost && m.days[k] && local.days[k].best === m.days[k].best) m.days[k].ghost = local.days[k].ghost;
+    const st = m.stats = m.stats || {}, os = older.stats || {};
+    for (const k of ['runs', 'absorbed', 'best', 'terriers', 'camels', 'days', 'practice']) if (os[k] != null) st[k] = Math.max(st[k] || 0, os[k]);
+    if (os.tot) { st.tot = st.tot || {}; for (const k in os.tot) st.tot[k] = Math.max(st.tot[k] || 0, os.tot[k]); }
+    if (os.rec) {
+      st.rec = st.rec || {};
+      for (const k in os.rec) { const x = st.rec[k], y = os.rec[k]; if (!x || (k === 'fast' ? y.v < x.v : y.v > x.v)) st.rec[k] = y; }
+    }
+    m.bestStreak = Math.max(m.bestStreak || 0, older.bestStreak || 0);
+    if ((older.lastDay || '') > (m.lastDay || '')) { m.lastDay = older.lastDay; m.streak = older.streak; }
+    m.weeks = { ...(older.weeks || {}), ...(m.weeks || {}) };
+    if (older.survival) m.survival = { best: Math.max((m.survival || {}).best || 0, older.survival.best || 0), runs: Math.max((m.survival || {}).runs || 0, older.survival.runs || 0) };
+    if ((older.awardsDay || '') > (m.awardsDay || '')) m.awardsDay = older.awardsDay;
+    return m;
   },
 
   profile() { return this.data.profiles[this.data.current] || null; },
@@ -1711,17 +1759,19 @@ const Online = {
     }, 8000);
   },
   // Récupère la progression en ligne si elle est plus récente (joué sur un autre appareil)
+  // Renvoie { local, cloud } : ce qui a changé de chaque côté après la fusion
   pullProfile(p) {
     return this.run(async c => {
-      if (!await this.ready(c, p)) return false;
+      if (!await this.ready(c, p)) return null;
       const snap = await c.fb.getDoc(this.ref(c, 'profiles', this.id(c, p.name)));
-      if (!snap.exists() || !(snap.data().at > (p.savedAt || 0))) return false;
-      const cloud = JSON.parse(snap.data().data);
-      for (const k in cloud.days) if (p.days[k] && p.days[k].ghost) cloud.days[k].ghost = p.days[k].ghost;
-      Object.assign(p, cloud, { savedAt: snap.data().at });
+      if (!snap.exists()) return { local: false, cloud: true };
+      const cloud = JSON.parse(snap.data().data), at = snap.data().at;
+      const sig = x => this.packProfile({ ...x, savedAt: 0, uid: 0, nameOk: 0, account: 0 });
+      const before = sig(p), merged = Store.merge(p, cloud, at);
+      Object.assign(p, merged, { name: p.name, uid: p.uid, account: p.account, nameOk: p.nameOk, nameTaken: p.nameTaken, savedAt: Math.max(at || 0, p.savedAt || 0) });
       Store.normalize(p);
       safeStorageSet(SAVE_KEY, JSON.stringify(Store.data));
-      return true;
+      return { local: sig(p) !== before, cloud: sig(p) !== sig(cloud) };
     }, 8000);
   },
 
@@ -1806,8 +1856,13 @@ const Online = {
       const realName = owner.exists() ? owner.data().name : name.trim();
       if (!owner.exists()) await c.fb.setDoc(this.nameRef(c, name), { uid, name: realName, at: Date.now() });
       const snap = await c.fb.getDoc(this.ref(c, 'profiles', uid + '_' + encodeURIComponent(nameKey(realName))));
-      const p = snap.exists() ? Object.assign(Store.newProfile(realName), JSON.parse(snap.data().data)) : Store.newProfile(realName);
+      // progression déjà présente sur cet appareil : fusionnée avec celle en ligne
+      const mine = Store.data.profiles[realName];
+      const cloud = snap.exists() ? JSON.parse(snap.data().data) : null;
+      const base = cloud && mine ? Store.merge(mine, cloud, snap.data().at) : cloud || mine || {};
+      const p = Object.assign(Store.newProfile(realName), base);
       Object.assign(p, { name: realName, uid, account: true, nameOk: uid, nameTaken: false });
+      Store.checked = true;
       Store.normalize(p);
       Store.data.profiles[realName] = p;
       Store.data.current = realName;
@@ -3365,8 +3420,11 @@ const App = {
 
   async syncOnStart() {
     const p = this.p;
-    if (this.devRefused(p)) return;
-    if (p && await Online.pullProfile(p)) { this.loadDay(); if (this.screen === 'home') this.show('home'); }
+    if (!p || this.devRefused(p) || !FIREBASE_CONFIG) { Store.checked = true; return; }
+    const r = await Online.pullProfile(p);
+    Store.checked = true;
+    if (r && r.local) { this.loadDay(); if (this.screen === 'home') this.show('home'); }
+    if ((r && r.cloud) || Store.dirty) { Store.dirty = false; Store.save(); }
     const g = p && await Online.claimGifts(p);
     if (g) {
       Store.save(); Sound.play('unlock');
@@ -3660,7 +3718,9 @@ const App = {
     if (!t) return;
     const uid = await Online.currentUid();
     if (t.account && uid && t.uid && t.uid !== uid) return this.show('login', name);
+    Store.checked = false;
     Store.switchProfile(name); this.loadDay(); this.show('home');
+    this.syncOnStart();
   },
 
   async doSecure() {
