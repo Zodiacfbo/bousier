@@ -202,9 +202,9 @@ const ADMIN_UIDS = ['iYDurji9CuUbdV04FBIM1d2nLiH2'];
 // Objets qu'on peut offrir (identiques à ceux du jeu)
 const GIFTABLE = {
   ball: { sable: 'Boule de sable', neige: 'Boule de neige', pasteque: 'Pastèque', lave: 'Boule de lave', planete: 'Petite planète', disco: 'Boule disco', saturne: 'Saturne', atome: 'Atome', uranium: 'Uranium', or: 'Boule d\'or', citrouille: 'Boule citrouille' },
-  hat: { casquette: 'Casquette', chantier: 'Casque de chantier', bob: 'Bob de touriste', fez: 'Fez', sombrero: 'Sombrero', couronne: 'Couronne de géant', nemes: 'Némès du pharaon', parapluie: 'Parapluie', lunettes: 'Lunettes de protection', charlotte: 'Charlotte de labo', casqueKevin: 'Casque de Kevin', coquille: 'Coquille d\'escargot', pansement: 'Pansement', aimant: 'Aimant', fleurCactus: 'Fleur de cactus', aureole: 'Auréole', sorciere: 'Chapeau de sorcière' },
-  outfit: { blouse: 'Blouse de labo', hazmat: 'Combinaison anti-contamination', cape: 'Cape de super-héros', smoking: 'Smoking' },
-  trail: { arcenciel: 'Arc-en-ciel', etincelles: 'Étincelles', bulles: 'Bulles', flammes: 'Flammes', fumee: 'Expérience ratée', notes: 'Notes de musique', binaire: 'Code binaire' },
+  hat: { casquette: 'Casquette', chantier: 'Casque de chantier', bob: 'Bob de touriste', fez: 'Fez', sombrero: 'Sombrero', couronne: 'Couronne de géant', nemes: 'Némès du pharaon', parapluie: 'Parapluie', lunettes: 'Lunettes de protection', charlotte: 'Charlotte de labo', casqueKevin: 'Casque de Kevin', coquille: 'Coquille d\'escargot', pansement: 'Pansement', aimant: 'Aimant', fleurCactus: 'Fleur de cactus', aureole: 'Auréole', sorciere: 'Chapeau de sorcière', frontale: 'Lampe frontale', lunetteseclipse: 'Lunettes d\'éclipse' },
+  outfit: { cire: 'Ciré jaune', blouse: 'Blouse de labo', hazmat: 'Combinaison anti-contamination', cape: 'Cape de super-héros', smoking: 'Smoking' },
+  trail: { arcenciel: 'Arc-en-ciel', etincelles: 'Étincelles', bulles: 'Bulles', flammes: 'Flammes', fumee: 'Expérience ratée', notes: 'Notes de musique', binaire: 'Code binaire', tourbillon: 'Tourbillon de sable' },
 };
 const TYPE_LABEL = { ball: 'Boule', hat: 'Chapeau', outfit: 'Tenue', trail: 'Traînée' };
 
@@ -314,6 +314,9 @@ $('search').oninput = renderPlayers;
 // --- calendrier des dunes : copie exacte du tirage de index.html (météo, trésor) ---
 const LAUNCH_DAY = '2026-10-20';
 const WEATHERS = [['☀️', 'Grand calme'], ['🌪️', 'Tempête de sable'], ['🌙', 'Nuit étoilée'], ['🌧️', 'Averse'], ['🔥', 'Canicule'], ['💨', 'Vent arrière']];
+// nouvelles météos (même ordre que dans le jeu) ; la neige est réservée à Noël
+const ALL_WEATHERS = WEATHERS.concat([['⛈️', 'Orage'], ['🌫️', 'Brouillard'], ['❄️', 'Neige'], ['🌀', 'Sables mouvants'], ['🌘', 'Éclipse']]);
+const WEEKLY_IDX = [6, 7, 9, 10];  // orage, brouillard, sables mouvants, éclipse
 const LEGENDS = ['Couronne du pharaon', 'Scarabée d\'or', 'Le téléphone de Kevin', 'Lampe magique', 'Le mug du bureau', 'Ankh sacré'];
 function mulberry32(seed) {
   return function () {
@@ -350,7 +353,16 @@ function rotatedWeather(day) {
   if (bag[0] === before) [bag[0], bag[1]] = [bag[1], bag[0]];
   return bag[n % WEATHERS.length];
 }
+const weekKeyOf = k => { const d = new Date(k + 'T12:00'); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return dayKey(d); };
+function weeklyWeather(day) {
+  if (day < WX_ROTATION_FROM) return -1;
+  const wk = weekKeyOf(day), n = Math.round((new Date(wk + 'T12:00') - new Date(WX_ROTATION_FROM + 'T12:00')) / (7 * 86400000));
+  const dow = 1 + Math.floor(rnd('wxweek|' + n) * 4);
+  return addDays(wk, dow) === day ? WEEKLY_IDX[n % WEEKLY_IDX.length] : -1;
+}
 function dayWeather(day, prev) {
+  const special = weeklyWeather(day);
+  if (special >= 0) return special;
   if (day >= WX_ROTATION_FROM) return rotatedWeather(day);
   const wi = rerollWeather(day, prev);
   if (!isHalloween(day)) return wi;
@@ -387,7 +399,7 @@ const dayNumber = k => Math.round((new Date(k + 'T12:00') - new Date(LAUNCH_DAY 
 function renderMeteo() {
   const today = dayKey(), rows = [];
   for (let i = 0; i <= 30; i++) {
-    const day = addDays(today, i), [icon, name] = WEATHERS[weatherIdx(day)];
+    const day = addDays(today, i), [icon, name] = ALL_WEATHERS[weatherIdx(day)];
     const date = new Date(day + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
     rows.push(`<tr${i === 0 ? ' style="font-weight:700"' : ''}><td>${date}${i === 0 ? ' (aujourd\'hui)' : ''}</td><td class="r">#${dayNumber(day)}</td><td>${icon} ${name}</td><td class="muted">${esc(legendOf(day))}${isHalloween(day) ? ' · 🎃' : ''}</td></tr>`);
   }
@@ -397,7 +409,7 @@ renderMeteo();
 
 // --- stats par joueur ---
 // noms des objets (identiques à ceux du jeu)
-const OBJ_NAMES = { grain: 'Graine', caillou: 'Caillou', crottin: 'Crottin', capsule: 'Capsule', feuille: 'Feuille', coquillage: 'Coquillage', brindille: 'Brindille', os: 'Os', sandale: 'Tong', lezard: 'Lézard', scorpion: 'Scorpion', cactus: 'Cactus', crane: 'Crâne', amphore: 'Amphore', valise: 'Valise', tente: 'Tente', chameau: 'Chameau', palmier: 'Palmier', rocher: 'Rocher', tortue: 'Tortue', cerfvolant: 'Cerf-volant', etoile: 'Étoile tombée', grenouille: 'Grenouille', parasol: 'Parasol', plume: 'Plume', citrouille: 'Citrouille', chauvesouris: 'Chauve-souris' };
+const OBJ_NAMES = { grain: 'Graine', caillou: 'Caillou', crottin: 'Crottin', capsule: 'Capsule', feuille: 'Feuille', coquillage: 'Coquillage', brindille: 'Brindille', os: 'Os', sandale: 'Tong', lezard: 'Lézard', scorpion: 'Scorpion', cactus: 'Cactus', crane: 'Crâne', amphore: 'Amphore', valise: 'Valise', tente: 'Tente', chameau: 'Chameau', palmier: 'Palmier', rocher: 'Rocher', tortue: 'Tortue', cerfvolant: 'Cerf-volant', etoile: 'Étoile tombée', grenouille: 'Grenouille', parasol: 'Parasol', plume: 'Plume', citrouille: 'Citrouille', chauvesouris: 'Chauve-souris', eclair: 'Éclair en bouteille', lanterne: 'Lanterne perdue', momie: 'Momie', fragmentlune: 'Fragment de lune' };
 // colonnes du tableau par joueur ; kind : m = taille (cm), t = durée (s), p = pourcentage, d = date
 const STAT_COLS = [
   ['name', 'Pseudo'], ['created', 'Inscrit le'], ['runs', 'Parties'], ['days', 'Jours joués'], ['best', 'Record', 'm'],
@@ -547,7 +559,7 @@ function renderQuota() {
     + `<div class="stat"><b>${t.players}</b>joueurs aujourd'hui<br><span class="muted">${R} parties</span></div>`;
 }
 // --- équilibrage : météo et quêtes ---
-const WX = { calme: '☀️ Grand calme', tempete: '🌪️ Tempête de sable', nuit: '🌙 Nuit étoilée', pluie: '🌧️ Averse', canicule: '🔥 Canicule', ventarriere: '💨 Vent arrière' };
+const WX = { calme: '☀️ Grand calme', tempete: '🌪️ Tempête de sable', nuit: '🌙 Nuit étoilée', pluie: '🌧️ Averse', canicule: '🔥 Canicule', ventarriere: '💨 Vent arrière', orage: '⛈️ Orage', brouillard: '🌫️ Brouillard', neige: '❄️ Neige', sablesmouvants: '🌀 Sables mouvants', eclipse: '🌘 Éclipse' };
 const QUEST_TYPES = { fast: 'Terrier en moins de N s', eat: 'Avaler N objets', type: 'Avaler un gros objet', nowall: 'Ne jamais toucher les bords', hole: 'Rentrer dans le terrier',
   size: 'Atteindre une taille', nopique: 'Ne jamais se faire piquer', legend: 'Trouver le trésor', wx: 'Avaler 2 objets de la météo', fewbumps: 'Maximum 2 chocs' };
 const questType = id => id.replace(/_.*$/, '').replace(/\d+$/, '');
@@ -576,8 +588,8 @@ function renderBalance() {
     }).join('') || '<tr><td colspan="5" class="muted">Pas encore de données : elles arrivent quand les joueurs rouvrent le jeu.</td></tr>');
 }
 // --- fiche joueur ---
-const BADGE_NAMES = { premier: '🪲 Premier roulé', terrier: '🕳️ Premier terrier', metre: '📏 Mètre étalon', geant: '🏔️ Boule de géant', titan: '🌋 Titan des sables', legende: '✨ Chasseur de trésor', archeo: '🏺 Archéologue', intouchable: '🛡️ Intouchable', serie3: '🔥 Assidu', serie7: '📅 Accro', serie30: '🏆 Légende vivante', meteo: '🌦️ Météorologue', tempete: '🌪️ Œil du cyclone', nuit: '🌙 Nyctalope', chameaux: '🐪 Dompteur', collection: '📖 Encyclopédiste', parfait: '🌟 Journée parfaite', roi: '🥇 Roi Bousier', champion: '👑 Champion de la semaine' };
-const WX_ICON = { calme: '☀️', tempete: '🌪️', nuit: '🌙', pluie: '🌧️', canicule: '🔥', ventarriere: '💨' };
+const BADGE_NAMES = { premier: '🪲 Premier roulé', terrier: '🕳️ Premier terrier', metre: '📏 Mètre étalon', geant: '🏔️ Boule de géant', titan: '🌋 Titan des sables', legende: '✨ Chasseur de trésor', archeo: '🏺 Archéologue', intouchable: '🛡️ Intouchable', serie3: '🔥 Assidu', serie7: '📅 Accro', serie30: '🏆 Légende vivante', meteo: '🌦️ Météorologue', tempete: '🌪️ Œil du cyclone', nuit: '🌙 Nyctalope', chameaux: '🐪 Dompteur', collection: '📖 Encyclopédiste', parfait: '🌟 Journée parfaite', roi: '🥇 Roi Bousier', champion: '👑 Champion de la semaine', tempetes: '⛈️ Chasseur de tempêtes' };
+const WX_ICON = { calme: '☀️', tempete: '🌪️', nuit: '🌙', pluie: '🌧️', canicule: '🔥', ventarriere: '💨', orage: '⛈️', brouillard: '🌫️', neige: '❄️', sablesmouvants: '🌀', eclipse: '🌘' };
 function openFiche(name) {
   const p = profiles.find(x => x.name === name), r = pstats.find(x => x.name === name);
   if (!p || !r) return toast('Pas encore de progression en ligne pour ce joueur.');

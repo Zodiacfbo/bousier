@@ -7,6 +7,15 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.15 — Nouvelles météos (préparé le 22 octobre 2026)
+- À partir du 2 novembre, chaque semaine, un jour du mardi au vendredi prend une nouvelle météo, à tour de rôle :
+  ⛈️ Orage (noir, éclairs, foudre à esquiver), 🌫️ Brouillard (bancs de brume), 🌀 Sables mouvants (tourbillons
+  qui ralentissent), 🌘 Éclipse (la nuit tombe pendant la course). La neige est réservée à l'événement de Noël.
+- Un objet exclusif par météo (Éclair en bouteille, Lanterne perdue, Momie, Fragment de lune) et un cosmétique à
+  gagner en rentrant dans le terrier ce jour-là (Ciré jaune, Lampe frontale, Tourbillon de sable, Lunettes d'éclipse).
+- Badge ⛈️ Chasseur de tempêtes (avoir joué sous les 4) ; le badge Météorologue ne compte que les 6 météos classiques.
+- Admin : calendrier et statistiques avec les nouvelles météos ; nouveaux objets offrables.
+
 ## v1.10.14 — Défi du labo d'Halloween (préparé le 22 octobre 2026)
 - 🎃 Du 26 octobre au 1er novembre : avaler 666 citrouilles à tous ; si c'est réussi, +150 🟡 le 2 novembre pour
   chaque joueur ayant joué une dune de la semaine. Barre de progression sur l'accueil, contribution en fin de partie.
