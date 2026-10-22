@@ -19,7 +19,8 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - À partir du lundi 30 novembre : **boutique de la semaine** (2 objets à 200 🟡 + 1 rare à 300 🟡, changés chaque lundi),
   12 objets exclusifs ; chacun revient toutes les 4 semaines, jamais deux semaines de suite.
 - Admin : tous les nouveaux objets, cadres, couleurs et titres peuvent être offerts.
-- News prévues le 2 novembre (prestige + classement) et le 30 novembre (boutique de la semaine).
+- News prévues le 2 novembre (deux news séparées : nouveautés de la dune, puis prestige + classement) et le 30 novembre
+  (boutique de la semaine).
 
 ## v1.10.17 — Deux météos spéciales par semaine (22 octobre 2026)
 - À partir du 2 novembre : deux jours par semaine (un en début, un en fin de semaine) prennent une météo spéciale,
