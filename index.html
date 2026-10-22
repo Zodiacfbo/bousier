@@ -978,10 +978,10 @@ const OBJECTS = [
   { id: 'etoile', name: 'Étoile tombée', sprite: 'etoile', r: 3.5, w: 0.8, tp: 0.4, s: 0.4, weather: 'nuit', glow: true, desc: 'Tombée du ciel les nuits étoilées. Elle brille dans le noir.' },
   { id: 'grenouille', name: 'Grenouille', sprite: 'grenouille', r: 3.5, w: 0.9, tp: 0.35, s: 0.4, move: 'side', weather: 'pluie', desc: 'Sort seulement quand il pleut. Une rareté dans le désert !' },
   { id: 'parasol', name: 'Parasol', sprite: 'parasol', r: 7, w: 0.7, tp: 0.55, s: 0.4, weather: 'canicule', desc: 'Planté là pendant la canicule. Très convoité.' },
-  { id: 'eclair', name: 'Éclair en bouteille', sprite: 'eclair', r: 3.5, w: 0.8, tp: 0.4, s: 0.4, weather: 'orage', glow: true, desc: 'Attrapé un soir d\'orage. Il crépite encore.' },
-  { id: 'lanterne', name: 'Lanterne perdue', sprite: 'lanterne', r: 3.5, w: 0.8, tp: 0.4, s: 0.4, weather: 'brouillard', glow: true, desc: 'Quelqu\'un cherchait son chemin dans le brouillard.' },
-  { id: 'momie', name: 'Momie', sprite: 'momie', r: 7, w: 0.6, tp: 0.6, s: 0.3, weather: 'sablesmouvants', desc: 'Remontée des sables mouvants. Elle ne s\'en plaint pas.' },
-  { id: 'fragmentlune', name: 'Fragment de lune', sprite: 'fragmentlune', r: 3.5, w: 0.8, tp: 0.45, s: 0.4, weather: 'eclipse', glow: true, desc: 'Tombé pendant l\'éclipse. Il brille dans le noir.' },
+  { id: 'eclair', bonus: true, name: 'Éclair en bouteille', sprite: 'eclair', r: 3.5, w: 0.8, tp: 0.4, s: 0.4, weather: 'orage', glow: true, desc: 'Attrapé un soir d\'orage. Il crépite encore.' },
+  { id: 'lanterne', bonus: true, name: 'Lanterne perdue', sprite: 'lanterne', r: 3.5, w: 0.8, tp: 0.4, s: 0.4, weather: 'brouillard', glow: true, desc: 'Quelqu\'un cherchait son chemin dans le brouillard.' },
+  { id: 'momie', bonus: true, name: 'Momie', sprite: 'momie', r: 7, w: 0.6, tp: 0.6, s: 0.3, weather: 'sablesmouvants', desc: 'Remontée des sables mouvants. Elle ne s\'en plaint pas.' },
+  { id: 'fragmentlune', bonus: true, name: 'Fragment de lune', sprite: 'fragmentlune', r: 3.5, w: 0.8, tp: 0.45, s: 0.4, weather: 'eclipse', glow: true, desc: 'Tombé pendant l\'éclipse. Il brille dans le noir.' },
   { id: 'plume', name: 'Plume', sprite: 'plume', r: 3.5, w: 0.9, tp: 0.35, s: 0.4, weather: 'ventarriere', desc: 'Portée par le vent arrière. Légère comme tout.' },
 ];
 // Semaine Halloween : objets et trésor qui n'existent que ces jours-là
@@ -1103,7 +1103,7 @@ const findCos = (type, id) => COSMETICS[type].find(c => c.id === id) || COSMETIC
 // mystery : visible, mais seul un indice est donné. secret : invisible tant qu'il n'est pas obtenu.
 const counter = (p, k) => (p.counters && p.counters[k]) || 0;
 const UNLOCKS = {
-  'ball:saturne': { text: 'Complète la Bousipédia', prog: p => [Store.discovered(p), OBJECTS.length + LEGENDS.length] },
+  'ball:saturne': { text: 'Complète la Bousipédia', prog: p => [Store.discovered(p), OBJECTS.filter(o => !o.bonus).length + LEGENDS.length] },
   'ball:atome': { price: 500 },
   'ball:uranium': { text: 'Rentre 10 fois dans le terrier', prog: p => [p.stats.terriers, 10] },
   'hat:parapluie': { text: 'Joue 5 parties du jour sous la pluie', prog: p => [counter(p, 'rain'), 5] },
@@ -1147,12 +1147,13 @@ const SECRET_COUNT = Object.values(UNLOCKS).filter(u => u.secret).length;
 // La première entrée est la plus récente : elle s'affiche une fois sur l'accueil
 // des joueurs qui ne l'ont pas encore vue.
 const CHANGELOG = [
-  { v: 10, date: '2026-11-02', items: ['⚡ 6 nouveaux événements surprise dans la dune : 🔌 coupure de courant, 🖨️ photocopieuse, ☕ pause café, 🧯 alarme incendie, 🦂 scorpion et 🧲 aimant !'] },
+  { v: 10, date: '2026-11-02', items: ['⚡ Du nouveau dans la dune : de nouveaux événements surprise, et chaque semaine une météo spéciale à découvrir… Ouvre l\'œil !'] },
   {
     v: 9, date: '2026-10-26', items: [
       '🎃 Semaine Halloween jusqu\'au 1er novembre : citrouilles et chauves-souris dans la dune, et des nuits plus fréquentes',
       '🎃 Joue une dune du jour cette semaine pour gagner la Boule citrouille',
       '🧙 Samedi 31 : dune spéciale de nuit avec le trésor « Crâne en sucre ». Rentre dans le terrier pour gagner le Chapeau de sorcière !',
+      '🎃 Défi du labo : avalez 666 citrouilles à vous tous et chacun gagne 150 🟡 !',
     ],
   },
   {
@@ -1457,7 +1458,7 @@ const Store = {
   },
 
   discovered(p) {
-    return OBJECTS.filter(o => p.collection[o.id]).length + LEGENDS.filter(l => p.legends[l.id]).length;
+    return OBJECTS.filter(o => !o.bonus && p.collection[o.id]).length + LEGENDS.filter(l => p.legends[l.id]).length;
   },
 };
 
@@ -4767,10 +4768,12 @@ const App = {
     const p = this.p;
     const obj = o => ({ id: o.id, name: o.name, sprite: o.rock ? 'rock_6_0' : o.sprite, desc: o.desc, n: p.collection[o.id] || 0, wx: o.weather, season: o.season });
     const leg = l => ({ id: l.id, name: l.name, sprite: l.sprite, desc: l.desc, n: p.legends[l.id] || 0, legend: true, season: l.season });
-    const list = OBJECTS.map(obj), legs = LEGENDS.map(leg);
+    const list = OBJECTS.filter(o => !o.bonus).map(obj), legs = LEGENDS.map(leg);
+    // objets des météos spéciales : section à part, ne comptent pas pour compléter la Bousipédia
+    const bonus = OBJECTS.filter(o => o.bonus).map(obj);
     // objets de saison : à part, ils ne comptent pas pour compléter la Bousipédia
     const seasonal = SEASON_OBJECTS.map(obj).concat(leg(SUGAR_SKULL)).filter(e => e.n || isHalloween(this.today));
-    const classic = list.concat(legs), all = classic.concat(seasonal);
+    const classic = list.concat(legs), all = classic.concat(seasonal, bonus);
     const sel = all.find(e => e.id === this.colSel && e.n > 0);
     const tile = e => `<button class="tile ${e.n ? '' : 'locked'} ${e.legend ? 'leg' : ''} ${this.colSel === e.id ? 'sel' : ''}" data-a="colsel" data-v="${e.id}">
         ${spriteImg(e.sprite, SPR[e.sprite].width > 20 ? 1 : 2, !e.n)}
@@ -4789,6 +4792,9 @@ const App = {
       <div class="grid">${list.map(tile).join('')}</div>
       <div class="label">Trésors légendaires</div>
       <div class="grid">${legs.map(tile).join('')}</div>
+      ${this.today >= WX_ROTATION_FROM || bonus.some(e => e.n) ? `<div class="label">🌦️ Objets des météos spéciales <span class="tiny">(ne comptent pas pour compléter la Bousipédia)</span></div>
+      <div class="tiny">${bonus.filter(e => e.n).length} / ${bonus.length}</div>
+      <div class="grid">${bonus.map(tile).join('')}</div>` : ''}
       ${seasonal.length ? `<div class="label">🎉 Objets de saison <span class="tiny">(ne comptent pas pour compléter la Bousipédia)</span></div>
       <div class="tiny">🎃 Halloween 2026 · ${seasonal.filter(e => e.n).length} / ${seasonal.length}</div>
       <div class="grid">${seasonal.map(tile).join('')}</div>` : ''}

@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.16 — Objets des météos spéciales à part (22 octobre 2026)
+- Les 4 objets des météos spéciales ont leur propre section dans la Bousipédia (visible à partir du 2 novembre) et
+  ne comptent pas pour la compléter ni pour la boule Saturne.
+- News du 26 octobre : ligne du défi des citrouilles ; news du 2 novembre : nouveautés annoncées sans les détailler.
+
 ## v1.10.15 — Nouvelles météos (préparé le 22 octobre 2026)
 - À partir du 2 novembre, chaque semaine, un jour du mardi au vendredi prend une nouvelle météo, à tour de rôle :
   ⛈️ Orage (noir, éclairs, foudre à esquiver), 🌫️ Brouillard (bancs de brume), 🌀 Sables mouvants (tourbillons
