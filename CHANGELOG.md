@@ -7,6 +7,13 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.3 — Statistiques détaillées dans l'admin (22 octobre 2026)
+- Page admin, onglet Stats : total de tous les joueurs, records (avec le pseudo et la date),
+  tableau par joueur enrichi (taille cumulée et moyenne, temps à rouler, terriers ratés et réussite,
+  chocs, piqûres, bords, objet préféré, entraînement…) et activité jour par jour depuis le lancement.
+- Le jeu garde désormais ces cumuls et records pour toujours (rattrapés d'après les parties déjà jouées) ;
+  les parties d'entraînement sont comptées (sans récompense).
+
 ## v1.10.2 — Coup de pouce (préparé le 21 octobre 2026)
 - 🚀 Chaque lundi (à partir du 26 octobre) : le dernier du classement de la semaine parmi les joueurs
   à 3 jours sur 3 (4 joueurs à 3/3 minimum) reçoit 50 🟡 et 4 essais par jour pendant la semaine suivante.

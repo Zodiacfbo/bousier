@@ -97,10 +97,17 @@ ol li { margin: 8px 0; }
     </section>
 
     <section id="tab-pstats" class="panel hidden">
-      <h2>Statistiques par joueur</h2>
-      <p class="muted">D'après la progression de chaque joueur (version choisie en haut). « Jours joués » est compté à partir du 22 octobre 2026.</p>
+      <p class="muted">D'après la progression de chaque joueur (version choisie en haut), dunes du jour seulement.
+        « Jours joués » est compté à partir du 22 octobre 2026, « Entraînement » à partir du 22 octobre 2026.</p>
+      <h2>🌍 Total</h2>
+      <div class="stats" id="gstats"></div>
+      <h2>🏅 Records</h2>
+      <div class="scroll"><table id="rtable"></table></div>
+      <h2>👤 Par joueur</h2>
       <div class="row"><button class="main" id="csv">⬇️ Télécharger en tableur (CSV)</button></div>
       <div class="scroll"><table id="pstable"></table></div>
+      <h2>📅 Activité jour par jour</h2>
+      <div class="scroll"><table id="atable"></table></div>
     </section>
 
     <section id="tab-meteo" class="panel hidden">
@@ -246,6 +253,7 @@ async function refresh() {
     .sort((a, b) => b.runs - a.runs);
   const runs = pstats.reduce((n, r) => n + r.runs, 0);
   renderStats();
+  renderActivity();
   $('stats').innerHTML = [
     ['Comptes (communs aux 2 versions)', names.length], ['Joueurs de cette version', recs.length], ['Actifs aujourd\'hui', scores.length], ['Actifs sur 7 jours', activeWeek.size],
     ['Parties jouées', runs || '—'],
@@ -329,28 +337,100 @@ function renderMeteo() {
 renderMeteo();
 
 // --- stats par joueur ---
+// noms des objets (identiques à ceux du jeu)
+const OBJ_NAMES = { grain: 'Graine', caillou: 'Caillou', crottin: 'Crottin', capsule: 'Capsule', feuille: 'Feuille', coquillage: 'Coquillage', brindille: 'Brindille', os: 'Os', sandale: 'Tong', lezard: 'Lézard', scorpion: 'Scorpion', cactus: 'Cactus', crane: 'Crâne', amphore: 'Amphore', valise: 'Valise', tente: 'Tente', chameau: 'Chameau', palmier: 'Palmier', rocher: 'Rocher', tortue: 'Tortue', cerfvolant: 'Cerf-volant', etoile: 'Étoile tombée', grenouille: 'Grenouille', parasol: 'Parasol', plume: 'Plume', citrouille: 'Citrouille', chauvesouris: 'Chauve-souris' };
+// colonnes du tableau par joueur ; kind : m = taille (cm), t = durée (s), p = pourcentage, d = date
 const STAT_COLS = [
-  ['name', 'Pseudo'], ['created', 'Inscrit le'], ['runs', 'Parties'], ['days', 'Jours joués'], ['best', 'Record'],
-  ['terriers', 'Terriers'], ['bestStreak', 'Série max'], ['coins', 'Pièces'], ['badges', 'Badges'],
-  ['bousipedia', 'Bousipédia'], ['legends', 'Trésors'], ['champion', '👑 Champion'], ['podiums', 'Podiums'], ['boosts', '🚀 Coups de pouce'], ['team', 'Équipe'], ['saved', 'Dernière sauvegarde'],
+  ['name', 'Pseudo'], ['created', 'Inscrit le'], ['runs', 'Parties'], ['days', 'Jours joués'], ['best', 'Record', 'm'],
+  ['size', 'Taille cumulée', 'm'], ['avg', 'Taille moyenne', 'm'], ['absorbed', 'Objets avalés'], ['time', 'Temps à rouler', 't'],
+  ['terriers', 'Terriers'], ['fails', 'Terriers ratés'], ['rate', 'Réussite', 'p'], ['legends', 'Trésors'], ['bumps', 'Chocs'], ['pricks', 'Piqûres'], ['walls', 'Bords touchés'],
+  ['camels', 'Chameaux'], ['fav', 'Objet préféré'], ['practice', 'Entraînement'], ['bestStreak', 'Série max'], ['coins', 'Pièces'], ['badges', 'Badges'],
+  ['bousipedia', 'Bousipédia'], ['champion', '👑 Champion'], ['podiums', 'Podiums'], ['boosts', '🚀 Coups de pouce'], ['team', 'Équipe'], ['saved', 'Dernière sauvegarde', 'd'],
 ];
+// cumuls et records : ceux du jeu s'ils existent, sinon recalculés d'après les parties gardées jour par jour
+function runTotals(p) {
+  const st = p.stats || {};
+  if (st.tot) return { tot: st.tot, rec: st.rec || {} };
+  const tot = { size: 0, time: 0, bumps: 0, pricks: 0, walls: 0, fails: 0 }, rec = {};
+  const up = (k, v, day, lower) => { if (v != null && (!rec[k] || (lower ? v < rec[k].v : v > rec[k].v))) rec[k] = { v, day }; };
+  for (const day of Object.keys(p.days || {}).sort()) for (const r of p.days[day].runs || []) {
+    tot.size += r.sizeCm || 0; tot.time += r.time || 0; tot.bumps += r.bumps || 0; tot.pricks += r.pricks || 0; tot.walls += r.wallHits || 0;
+    if (!r.terrier) tot.fails++;
+    up('size', r.sizeCm, day); up('absorbed', r.absorbed, day); up('bumps', r.bumps, day); up('long', r.time, day);
+    if (r.terrier) up('fast', r.time, day, true);
+  }
+  return { tot, rec };
+}
 function statRow(p, at) {
-  const st = p.stats || {}, weeks = Object.values(p.weeks || {});
+  const st = p.stats || {}, weeks = Object.values(p.weeks || {}), { tot, rec } = runTotals(p);
+  const col = p.collection || {}, favId = Object.keys(col).sort((a, b) => col[b] - col[a])[0];
+  const runs = st.runs || 0, terriers = st.terriers || 0;
   return {
-    name: p.name, created: p.created || '', runs: st.runs || 0, days: st.days || 0, best: st.best || 0,
-    terriers: st.terriers || 0, bestStreak: p.bestStreak || 0, coins: p.coins || 0, badges: Object.keys(p.badges || {}).length,
-    bousipedia: Object.keys(p.collection || {}).length, legends: Object.keys(p.legends || {}).length,
-    champion: weeks.filter(v => v === 1).length, podiums: weeks.filter(v => v > 0).length, boosts: p.boosts || 0, team: p.team || '', saved: at || 0,
+    name: p.name, created: p.created || '', runs, days: st.days || 0, best: st.best || 0,
+    size: tot.size, avg: runs ? tot.size / runs : 0, absorbed: st.absorbed || 0, time: tot.time,
+    terriers, fails: tot.fails, rate: terriers + tot.fails ? terriers / (terriers + tot.fails) : 0,
+    legends: Object.values(p.legends || {}).reduce((n, v) => n + v, 0), bumps: tot.bumps, pricks: tot.pricks, walls: tot.walls,
+    camels: st.camels || 0, fav: favId ? `${OBJ_NAMES[favId] || favId} (${col[favId]})` : '', practice: st.practice || 0,
+    bestStreak: p.bestStreak || 0, coins: p.coins || 0, badges: Object.keys(p.badges || {}).length,
+    bousipedia: Object.keys(col).length, champion: weeks.filter(v => v === 1).length, podiums: weeks.filter(v => v > 0).length,
+    boosts: p.boosts || 0, team: p.team || '', saved: at || 0, rec,
   };
 }
-const statCell = (k, v) => k === 'best' ? fmtSize(v) : k === 'saved' ? fmtDate(v) : v;
+const fmtDur = s => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? `${h} h ${String(m).padStart(2, '0')} min` : m ? `${m} min ${String(s % 60).padStart(2, '0')} s` : `${s} s`; };
+const fmtDay = k => k ? new Date(k + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+const statCell = (kind, v) => kind === 'm' ? fmtSize(v) : kind === 't' ? fmtDur(v) : kind === 'p' ? Math.round(v * 100) + ' %' : kind === 'd' ? fmtDate(v) : v;
 function renderStats() {
   $('pstable').innerHTML = '<tr>' + STAT_COLS.map(([, l]) => `<th>${l}</th>`).join('') + '</tr>'
-    + (pstats.map(r => '<tr>' + STAT_COLS.map(([k]) => `<td>${esc(statCell(k, r[k]))}</td>`).join('') + '</tr>').join('') || '<tr><td class="muted">Aucun joueur.</td></tr>');
+    + (pstats.map(r => '<tr>' + STAT_COLS.map(([k, , kind]) => `<td>${esc(statCell(kind, r[k]))}</td>`).join('') + '</tr>').join('') || '<tr><td class="muted">Aucun joueur.</td></tr>');
+  // total de tous les joueurs
+  const sum = k => pstats.reduce((n, r) => n + (r[k] || 0), 0);
+  const runs = sum('runs'), ok = sum('terriers'), ko = sum('fails');
+  $('gstats').innerHTML = [
+    ['Parties jouées', runs], ['Jours joués (cumul)', sum('days')], ['Taille de boule cumulée', fmtSize(sum('size'))],
+    ['Taille moyenne par partie', fmtSize(runs ? sum('size') / runs : 0)], ['Objets avalés', sum('absorbed').toLocaleString('fr-FR')],
+    ['Temps passé à rouler', fmtDur(sum('time'))], ['Terriers réussis', `${ok} (${ok + ko ? Math.round(ok * 100 / (ok + ko)) : 0} %)`], ['Terriers ratés', ko],
+    ['Trésors trouvés', sum('legends')], ['Chocs', sum('bumps')], ['Piqûres de cactus', sum('pricks')], ['Bords touchés', sum('walls')],
+    ['Chameaux avalés', sum('camels')], ['Parties d\'entraînement', sum('practice')], ['Pièces en poche', sum('coins').toLocaleString('fr-FR')],
+  ].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('');
+  // records, avec le pseudo de leur détenteur
+  const best = (get, lower) => pstats.filter(r => get(r) != null && get(r) !== 0).sort((a, b) => lower ? get(a) - get(b) : get(b) - get(a))[0];
+  const recs = [
+    ['🏆 Meilleur score', r => r.best, v => fmtSize(v)],
+    ['🪲 Plus grosse boule', r => r.rec.size && r.rec.size.v, v => fmtSize(v), r => r.rec.size.day],
+    ['🍽️ Plus d\'objets en une partie', r => r.rec.absorbed && r.rec.absorbed.v, v => v, r => r.rec.absorbed.day],
+    ['⚡ Terrier le plus rapide', r => r.rec.fast && r.rec.fast.v, v => fmtDur(v), r => r.rec.fast.day, true],
+    ['🐢 Partie la plus longue', r => r.rec.long && r.rec.long.v, v => fmtDur(v), r => r.rec.long.day],
+    ['💥 Plus de chocs en une partie', r => r.rec.bumps && r.rec.bumps.v, v => v, r => r.rec.bumps.day],
+    ['🔥 Plus longue série', r => r.bestStreak, v => v + ' jours'],
+    ['🎮 Plus de parties', r => r.runs, v => v],
+    ['⏱️ Plus de temps à rouler', r => r.time, v => fmtDur(v)],
+    ['🪲 Plus grosse taille cumulée', r => r.size, v => fmtSize(v)],
+    ['✨ Plus de trésors', r => r.legends, v => v],
+    ['🐪 Plus de chameaux', r => r.camels, v => v],
+    ['🌵 Plus de piqûres', r => r.pricks, v => v],
+    ['🏜️ Plus d\'entraînement', r => r.practice, v => v],
+  ];
+  $('rtable').innerHTML = '<tr><th>Record</th><th class="r">Valeur</th><th>Pseudo</th><th>Le</th></tr>' + recs.map(([label, get, fmt, day, lower]) => {
+    const r = best(get, lower);
+    return `<tr><td>${label}</td><td class="r">${r ? esc(fmt(get(r))) : '—'}</td><td><b>${r ? esc(r.name) : ''}</b></td><td class="muted">${r && day ? fmtDay(day(r)) : ''}</td></tr>`;
+  }).join('');
+}
+// activité jour par jour depuis le lancement (scores enregistrés en ligne)
+async function renderActivity() {
+  const days = [];
+  for (let d = dayKey(); d >= LAUNCH_DAY; d = addDays(d, -1)) days.push(d);
+  const lists = await Promise.all(days.map(d => all(envCol('days', d, 'scores'))));
+  $('atable').innerHTML = '<tr><th>Jour</th><th class="r">Joueurs</th><th class="r">Parties</th><th class="r">Terriers</th><th class="r">Meilleur score</th><th>Par</th></tr>' + days.map((d, i) => {
+    const l = lists[i], runs = l.reduce((n, s) => n + ((s.runs && s.runs.length) || 1), 0), ok = l.reduce((n, s) => n + (s.runs || []).filter(r => r.terrier).length, 0);
+    const top = l.slice().sort((a, b) => b.score - a.score)[0];
+    return `<tr><td>${fmtDay(d)}</td><td class="r">${l.length}</td><td class="r">${l.length ? runs : 0}</td><td class="r">${ok}</td><td class="r">${top ? fmtSize(top.score) : '—'}</td><td>${top ? esc(top.name) : ''}</td></tr>`;
+  }).join('');
 }
 $('csv').onclick = () => {
   const q = v => `"${String(v).replace(/"/g, '""')}"`;
-  const csv = [STAT_COLS.map(([k, l]) => q(k === 'best' ? 'Record (m)' : l)).join(';'), ...pstats.map(r => STAT_COLS.map(([k]) => q(k === 'best' ? (r[k] / 100).toFixed(2).replace('.', ',') : k === 'saved' ? fmtDate(r[k]) : r[k])).join(';'))].join('\r\n');
+  const num = (kind, v) => kind === 'm' ? (v / 100).toFixed(2).replace('.', ',') : kind === 't' ? Math.round(v / 60) : kind === 'p' ? Math.round(v * 100) : kind === 'd' ? fmtDate(v) : v;
+  const head = ([, l, kind]) => kind === 'm' ? l + ' (m)' : kind === 't' ? l + ' (min)' : kind === 'p' ? l + ' (%)' : l;
+  const csv = [STAT_COLS.map(c => q(head(c))).join(';'), ...pstats.map(r => STAT_COLS.map(([k, , kind]) => q(num(kind, r[k]))).join(';'))].join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
   a.download = `bousier-stats-${env}-${dayKey()}.csv`; a.click();

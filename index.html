@@ -1290,6 +1290,11 @@ const Store = {
     p.counters = p.counters || {};
     p.survival = p.survival || { best: 0, runs: 0 };
     p.weeks = p.weeks || {};  // { semaine: place (0 = hors podium) }
+    if (p.stats && !p.stats.tot) {
+      // premiers cumuls : rattrapés d'après les parties gardées jour par jour
+      p.stats.tot = { size: 0, time: 0, bumps: 0, pricks: 0, walls: 0, fails: 0 }; p.stats.rec = {};
+      for (const k of Object.keys(p.days || {}).sort()) for (const r of p.days[k].runs || []) addRunStats(p.stats, r, k);
+    }
     return p;
   },
 
@@ -1371,6 +1376,16 @@ function runSummary(run) {
   };
 }
 // Les 3 essais du jour, en résumé (titres liés au terrier)
+// Cumuls et records de toutes les parties du jour (statistiques pour l'organisateur)
+function addRunStats(st, r, day) {
+  const t = st.tot || (st.tot = { size: 0, time: 0, bumps: 0, pricks: 0, walls: 0, fails: 0 });
+  t.size += r.sizeCm || 0; t.time += r.time || 0; t.bumps += r.bumps || 0; t.pricks += r.pricks || 0; t.walls += r.wallHits || 0;
+  if (!r.terrier) t.fails++;
+  const rec = st.rec || (st.rec = {});
+  const up = (k, v, lower) => { if (v != null && (!rec[k] || (lower ? v < rec[k].v : v > rec[k].v))) rec[k] = { v, day }; };
+  up('size', r.sizeCm); up('absorbed', r.absorbed); up('bumps', r.bumps); up('long', r.time);
+  if (r.terrier) up('fast', r.time, true);
+}
 const runsBrief = runs => (runs || []).map(r => ({ terrier: !!r.terrier, holeOff: r.holeOff ?? null, missBy: r.missBy ?? null }));
 
 // Fantômes à affronter : le premier du jour et le rival (juste au-dessus de moi,
@@ -3806,6 +3821,7 @@ const App = {
       st.runs++; st.absorbed += run.absorbed; st.best = Math.max(st.best, run.score);
       if (run.terrier) st.terriers++;
       st.camels += run.byType.chameau || 0;
+      addRunStats(st, summary, this.today);
       res.coins += Math.floor(run.score / 4);
       parts.unshift(['🪲', 'Ta boule', Math.floor(run.score / 4)]);
       // quêtes
@@ -3838,6 +3854,7 @@ const App = {
       Store.save();
       Online.submitPlayer(p);
     }
+    if (this.mode === 'practice') { p.stats.practice = (p.stats.practice || 0) + 1; Store.save(); }
     if (this.mode === 'survival') {
       const sv = p.survival;
       res.dist = run.dist; res.prevBest = sv.best; res.newRecord = run.dist > sv.best;
