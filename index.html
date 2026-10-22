@@ -87,6 +87,9 @@ img.pix, canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; 
 button.banner { font: inherit; width: 100%; cursor: pointer; }
 .banner.off, .chip.off { box-shadow: inset 0 0 0 var(--u) #8a8aa0; color: #d8d8ea; }
 .head .chip.off { margin-left: auto; }
+.hwbar { position: relative; height: calc(var(--u) * 9); background: #1a1020; border: var(--u) solid var(--line); margin-top: calc(var(--u) * 2); }
+.hwbar > div { height: 100%; background: linear-gradient(90deg, #e8833a, #ffb84a); }
+.hwbar > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; text-shadow: var(--u) var(--u) 0 #1d1416; }
 .podium { display: flex; align-items: flex-end; justify-content: center; gap: calc(var(--u) * 2); margin: calc(var(--u) * 2) 0; }
 .pod { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 34%; }
 .pod-crown { height: 1.2em; font-size: 1.1em; }
@@ -970,6 +973,8 @@ const OBJECTS = [
 // Semaine Halloween : objets et trésor qui n'existent que ces jours-là
 const HALLOWEEN = { from: '2026-10-26', to: '2026-11-01', night: '2026-10-31' };
 const isHalloween = day => day >= HALLOWEEN.from && day <= HALLOWEEN.to;
+// Défi du labo d'Halloween : citrouilles avalées par tous les joueurs pendant la semaine
+const HW_GOAL = 666, HW_REWARD = 150;
 const SEASON_OBJECTS = [
   { id: 'citrouille', name: 'Citrouille', sprite: 'citrouille', r: 4.5, w: 0.9, tp: 0.4, s: 0.35, glow: true, season: 'halloween', desc: 'Semaine Halloween 2026. Elle brille encore un peu.' },
   { id: 'chauvesouris', name: 'Chauve-souris', sprite: 'chauvesouris', r: 3.5, w: 0.9, tp: 0.45, s: 0.35, move: 'side', season: 'halloween', desc: 'Semaine Halloween 2026. Elle voletait au ras du sable.' },
@@ -985,7 +990,15 @@ const WEATHERS = [
   { id: 'canicule', name: 'Canicule', icon: '🔥', desc: 'Ta boule sèche et rétrécit sur la durée. Ne traîne pas !', shrink: 0.6, speed: 1.06 },
   { id: 'ventarriere', name: 'Vent arrière', icon: '💨', desc: 'Ça va beaucoup plus vite. Les réflexes vont parler.', speed: 1.3 },
 ];
-const WEATHER = Object.fromEntries(WEATHERS.map(w => [w.id, w]));
+// Nouvelles météos en préparation : pas encore dans le tirage des dunes du jour
+const NEW_WEATHERS = [
+  { id: 'orage', name: 'Orage', icon: '⛈️', desc: 'Il fait noir : les éclairs montrent le chemin. Gare à la foudre !', storm: true },
+  { id: 'brouillard', name: 'Brouillard', icon: '🌫️', desc: 'Des bancs de brume cachent la dune par endroits.', fog: true },
+  { id: 'neige', name: 'Neige', icon: '❄️', desc: 'Le sable gelé glisse : ta boule dérape dans les virages.', snow: true, grip: 0.4, absorb: 1.2 },
+  { id: 'sablesmouvants', name: 'Sables mouvants', icon: '🌀', desc: 'Évite les tourbillons : ils aspirent ta boule et la ralentissent.', quicksand: true },
+  { id: 'eclipse', name: 'Éclipse', icon: '🌘', desc: 'La lumière baisse petit à petit… jusqu\'à la nuit totale au terrier.', eclipse: true },
+];
+const WEATHER = Object.fromEntries(WEATHERS.concat(NEW_WEATHERS).map(w => [w.id, w]));
 
 const LEGENDS = [
   { id: 'couronne', name: 'Couronne du pharaon', sprite: 'couronne', desc: 'Elle ira très bien sur ta boule.' },
@@ -1656,7 +1669,7 @@ const Online = {
     const past = day < dayKey();
     if (past) { const saved = this.pastGet(day); if (saved) { this.live = true; return saved; } }
     const lb = await this.cached('day:' + day, DAY_TTL, () => this.run(async c => sortBoard((await this.list(c, ['days', day, 'scores'], 'score', 200))
-      .map(e => ({ id: e.id, name: e.name, score: e.score, time: e.time, run: e.run || null, runs: e.runs || null, team: e.team || '' })))));
+      .map(e => ({ id: e.id, name: e.name, score: e.score, time: e.time, run: e.run || null, runs: e.runs || null, team: e.team || '', pumpkins: e.pumpkins || 0 })))));
     if (lb && past) this.pastSet(day, lb);
     return lb ? lb.slice() : lb;
   },
@@ -1705,13 +1718,13 @@ const Online = {
       const id = this.id(c, p.name), at = Date.now(), team = p.team || '';
       const time = d.bestRun && d.bestRun.time != null ? d.bestRun.time : null;
       const runs = runsBrief(d.runs);
-      const writes = [c.fb.setDoc(this.ref(c, 'days', day, 'scores', id), { name: p.name, score: d.best, time, run: d.bestRun, runs, team, at })];
+      const writes = [c.fb.setDoc(this.ref(c, 'days', day, 'scores', id), { name: p.name, score: d.best, time, run: d.bestRun, runs, team, at, ...(d.pumpkins ? { pumpkins: d.pumpkins } : {}) })];
       if (d.ghost) writes.push(c.fb.setDoc(this.ref(c, 'days', day, 'ghosts', id), { name: p.name, score: d.best, x: d.ghost.x, y: d.ghost.y, r: d.ghost.r, at }));
       await Promise.all(writes);
       // mon score remplace l'ancien dans le classement en mémoire (sans relecture)
       const c0 = this.mem['day:' + day];
       if (c0) {
-        const entry = { id, name: p.name, score: d.best, time, run: d.bestRun, runs, team };
+        const entry = { id, name: p.name, score: d.best, time, run: d.bestRun, runs, team, pumpkins: d.pumpkins || 0 };
         c0.val = sortBoard(c0.val.filter(e => e.id !== id).concat(entry));
       }
       return true;
@@ -1998,6 +2011,14 @@ const Leaderboard = {
     for (let wk = addDays(weekKey(today), -7); wk >= FIRST_WEEK; wk = addDays(wk, -7)) weeks.push(wk);
     return (await Promise.all(weeks.map(wk => this.podium(wk)))).filter(w => w && w.top.length);
   },
+  // Défi du labo d'Halloween : total des citrouilles de tous les joueurs (null hors connexion)
+  async hwTotal() {
+    const days = [];
+    for (let k = HALLOWEEN.from; k <= HALLOWEEN.to && k <= dayKey(); k = addDays(k, 1)) days.push(k);
+    const lists = await Promise.all(days.map(k => Online.day(k)));
+    if (lists.some(l => !l)) return null;
+    return lists.reduce((n, l) => n + l.reduce((m, e) => m + (e.pumpkins || 0), 0), 0);
+  },
   // Champion de la semaine précédente (couronne 👑)
   async champion(today) {
     const pod = await this.podium(addDays(weekKey(today), -7));
@@ -2135,6 +2156,11 @@ function dailyConfig(day) {
   return { day, num: dayNumber(day), seed, weather, legend, course, quests, mode: 'daily' };
 }
 
+// Aperçu d'une nouvelle météo (organisateur) : une dune d'entraînement sous cette météo
+function previewConfig(wxId) {
+  const seed = (Math.random() * 1e9) >>> 0, rng = makeRng(seed), weather = WEATHER[wxId], legend = rng.pick(LEGENDS);
+  return { seed, weather, legend, course: generateCourse(seed, weather, legend), quests: [], mode: 'practice' };
+}
 function practiceConfig() {
   const seed = (Math.random() * 1e9) >>> 0, rng = makeRng(seed);
   const weather = rng.pick(WEATHERS), legend = rng.pick(LEGENDS);
@@ -2425,7 +2451,9 @@ class Game {
   }
 
   setPalette(theme, weather) {
-    const tint = weather && weather.id === 'pluie' ? ['#34466e', 0.2] : weather && weather.id === 'canicule' ? ['#ff8a30', 0.1] : null;
+    // neige : le sable devient blanc, quel que soit le décor
+    if (weather && weather.snow) theme = { ...theme, sand: '#e6edf4', sandDark: '#c3d0dc', sandLight: '#ffffff', wall: '#9db0c6', wallDark: '#6f84a0', wallLight: '#c9d6e6' };
+    const tint = weather && weather.id === 'pluie' ? ['#34466e', 0.2] : weather && weather.id === 'canicule' ? ['#ff8a30', 0.1] : weather && weather.storm ? ['#20284a', 0.3] : null;
     const conv = h => { let c = hexToRgb(h); if (tint) c = mixRgb(c, hexToRgb(tint[0]), tint[1]); return pack(c); };
     this.pal = {};
     for (const k of ['sand', 'sandDark', 'sandLight', 'wall', 'wallDark', 'wallLight']) this.pal[k] = conv(theme[k]);
@@ -2465,6 +2493,7 @@ class Game {
     this.eatable = new Set(OBJECTS.filter(o => o.r <= this.ball.r * 0.8).map(o => o.id));
     this.state = 'run'; this.paused = false; this.phaseT = 0; this.hint = !!opts.hint;
     this.initFx();
+    this.initWeather();
   }
 
   windAt(t) {
@@ -2548,6 +2577,7 @@ class Game {
     b.anim += b.vy * TICK * 0.12;
     if (wx.shrink) b.area = Math.max(this.minArea, b.area - wx.shrink * TICK * (1 + r * 0.06));
     this.updateEvents(b);
+    this.stepWeather(b);
     this.updateKevins(b);
     if (this.trail) {
       if (this.trail.fx === 'rainbow') { this.trailPts.push({ x: b.x, y: b.y - b.r - 8 }); if (this.trailPts.length > 45) this.trailPts.shift(); }
@@ -3075,6 +3105,45 @@ class Game {
   }
 
   // --- Effets météo (espace écran) ----------------------------------------
+  // Zones et minuteries des nouvelles météos (sables mouvants, brouillard, orage)
+  initWeather() {
+    const wx = this.wx, rng = makeRng(((this.course.seed || 1) ^ 0x51a7e) >>> 0), hy = this.course.holeY;
+    this.sands = []; this.fogs = []; this.strike = null; this.flashT = 0; this.nextFlash = 1.5; this.nextStrike = 4;
+    if (wx.quicksand) for (let y = 650; y < hy - 350; y += rng.range(420, 650)) {
+      const [L, R] = this.edge(y), r = rng.int(15, 22);
+      this.sands.push({ x: rng.range(L + r + 4, R - r - 4), y, r });
+    }
+    if (wx.fog) for (let y = 450; y < hy - 200; y += rng.range(650, 950)) this.fogs.push({ y, h: rng.int(130, 190) });
+  }
+  stepWeather(b) {
+    const wx = this.wx;
+    for (const z of this.sands) {
+      const dx = z.x - b.x, dy = z.y - b.y;
+      if (Math.hypot(dx, dy) < z.r + b.r * 0.4) {
+        b.vy = Math.min(b.vy, 20); b.vx += dx * 3.5 * TICK;
+        if (this.frame % 3 === 0) this.particles.push({ x: b.x + (Math.random() - 0.5) * b.r * 2, y: b.y + b.r * 0.5, vx: dx, vy: -15, g: 0, life: 0.4, col: this.theme.sandDark, s: 1 });
+        if (!z.said) { z.said = true; this.floatText('ENLISE !', b.x, b.y - b.r - 10, '#ffd08a'); }
+      }
+    }
+    if (wx.storm) {
+      this.flashT -= TICK; this.nextFlash -= TICK;
+      if (this.nextFlash <= 0) { this.flashT = 0.22; this.nextFlash = 2 + Math.random() * 2.2; }
+      this.nextStrike -= TICK;
+      if (!this.strike && this.nextStrike <= 0) {
+        const y = b.y + 140, [L, R] = this.edge(y);
+        this.strike = { x: clamp(b.x + (Math.random() - 0.5) * 50, L + 10, R - 10), y, t: 1.3 };
+      }
+      if (this.strike) {
+        const st = this.strike;
+        st.t -= TICK;
+        if (st.t <= 0 && !st.hit) {
+          st.hit = true; this.flashT = 0.3; this.shake = 6; Sound.play('bump');
+          if (Math.hypot(b.x - st.x, b.y - st.y) < 14 + b.r) { b.area = Math.max(this.minArea, b.area * 0.88); this.run.bumps++; this.floatText('ZAP !', b.x, b.y - b.r - 10, '#fff4a8'); }
+        }
+        if (st.t < -0.35) { this.strike = null; this.nextStrike = 2.5 + Math.random() * 3; }
+      }
+    }
+  }
   initFx() {
     this.fx = [];
     for (let i = 0; i < 60; i++) this.fx.push({ x: Math.random() * W, y: Math.random() * (this.H || 320), v: 0.6 + Math.random() * 0.8, l: 2 + Math.random() * 5 });
@@ -3086,6 +3155,8 @@ class Game {
       else if (id === 'tempete') { const w = this.state === 'run' ? this.windAt(this.t) : 40; f.x += (w * 4 + Math.sign(w || 1) * 60) * f.v * TICK; f.y += 15 * TICK; }
       else if (id === 'ventarriere') { f.y -= 220 * f.v * TICK; }
       else if (id === 'nuit') { f.x += Math.sin(this.t * f.v + f.l) * 6 * TICK; f.y += Math.cos(this.t * f.v * 0.7 + f.l) * 6 * TICK; }
+      else if (id === 'neige') { f.y += 28 * f.v * TICK; f.x += Math.sin(this.t * 1.5 + f.l) * 12 * TICK; }
+      else if (id === 'orage') { f.y += 320 * f.v * TICK; f.x -= 70 * TICK; }
       else { f.y -= 10 * f.v * TICK; }
       if (f.y > H + 10) f.y -= H + 20; if (f.y < -10) f.y += H + 20;
       if (f.x > W + 10) f.x -= W + 20; if (f.x < -10) f.x += W + 20;
@@ -3105,6 +3176,16 @@ class Game {
     this.drawBackground(Math.round(camY));
     ctx.save();
     ctx.translate(0, -Math.round(camY));
+    for (const z of this.sands || []) {
+      if (z.y < camY - 40 || z.y > camY + H + 40) continue;
+      const rot = this.t * 2;
+      for (let k = 3; k >= 0; k--) {
+        ctx.fillStyle = k % 2 ? this.theme.sandDark : '#9a6a34';
+        ctx.beginPath(); ctx.ellipse(z.x, z.y, z.r * (k + 1) / 4, z.r * (k + 1) / 5, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = this.theme.sandLight;
+      for (let k = 0; k < 6; k++) { const a = rot + k * 1.05, rr = z.r * (0.3 + (k % 3) * 0.22); ctx.fillRect(Math.round(z.x + Math.cos(a) * rr), Math.round(z.y + Math.sin(a) * rr * 0.8), 2, 1); }
+    }
     if (this.theme.wallDeco) {
       // décor de saison posé sur les bords de la dune, en alternance gauche / droite
       const sp = SPR[this.theme.wallDeco];
@@ -3347,6 +3428,57 @@ class Game {
       for (const f of this.fx) if (f.v > 1) ctx.fillRect(Math.round(f.x), Math.round(f.y), 1, Math.round(f.l * 2));
     } else if (id === 'canicule') {
       ctx.fillStyle = 'rgba(255,140,40,0.07)'; ctx.fillRect(0, 0, W, H);
+    } else if (id === 'neige') {
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      for (const f of this.fx) { const sz = f.v > 1.1 ? 2 : 1; ctx.fillRect(Math.round(f.x), Math.round(f.y), sz, sz); }
+    } else if (id === 'brouillard') {
+      for (const fg of this.fogs || []) {
+        const y = Math.round(fg.y - camY);
+        if (y > H || y + fg.h < 0) continue;
+        for (let k = 0; k < 4; k++) {
+          const m = k * 12; ctx.fillStyle = `rgba(225,228,236,${0.22 + k * 0.2})`;
+          ctx.fillRect(0, y + m, W, Math.max(0, fg.h - 2 * m));
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        for (let k = 0; k < 8; k++) ctx.fillRect(Math.round((k * 37 + this.t * 8) % (W + 20) - 10), y + 8 + (k * 23) % Math.max(1, fg.h - 16), 14, 2);
+      }
+    } else if (id === 'orage' || id === 'eclipse') {
+      // orage : noir sauf pendant les éclairs ; éclipse : la nuit tombe au fil de la dune
+      const k = id === 'eclipse' ? clamp(this.state === 'attract' ? 0.5 : this.ball.y / this.course.holeY, 0, 1) : this.flashT > 0 ? 0 : 1;
+      if (k > 0.02) {
+        let lx, ly, LR;
+        if (this.state === 'attract') { lx = W / 2; ly = H * 0.45; LR = 70; }
+        else { lx = this.ball.x; ly = this.ball.y - camY; LR = id === 'eclipse' ? lerp(150, 40, k) + this.ball.r : 30 + this.ball.r; }
+        const m = lightMask(LR), S = m.width, mx = Math.round(lx - LR), my = Math.round(ly - LR);
+        ctx.globalAlpha = id === 'eclipse' ? k : 0.95;
+        ctx.drawImage(m, mx, my);
+        ctx.fillStyle = 'rgba(8,8,28,0.9)';
+        ctx.fillRect(0, 0, W, Math.max(0, my)); ctx.fillRect(0, my + S, W, H);
+        ctx.fillRect(0, my, Math.max(0, mx), S); ctx.fillRect(mx + S, my, W, S);
+        ctx.globalAlpha = 1;
+      } else if (id === 'orage') { ctx.fillStyle = 'rgba(230,235,255,0.25)'; ctx.fillRect(0, 0, W, H); }
+      if (id === 'orage') {
+        ctx.fillStyle = 'rgba(190,205,255,0.5)';
+        for (const f of this.fx) { const x = Math.round(f.x), y = Math.round(f.y); for (let q = 0; q < f.l; q++) ctx.fillRect(x - (q >> 2), y + q, 1, 1); }
+        const st = this.strike;
+        if (st && !st.hit && this.frame % 10 < 7) {
+          // là où la foudre va tomber : cible rouge, visible même dans le noir
+          const sx = st.x, sy = st.y - camY;
+          ctx.strokeStyle = '#ff5a3a'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.ellipse(sx, sy, 14, 9, 0, 0, Math.PI * 2); ctx.stroke();
+          ctx.beginPath(); ctx.ellipse(sx, sy, 8, 5, 0, 0, Math.PI * 2); ctx.stroke();
+          ctx.fillStyle = '#ff5a3a'; ctx.fillRect(sx - 1, sy - 3, 2, 6); ctx.fillRect(sx - 3, sy - 1, 6, 2);
+        }
+        if (st && st.hit && st.t > -0.15) {
+          // la foudre tombe : ligne brisée du haut de l'écran jusqu'à la cible
+          const sy = st.y - camY;
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.beginPath();
+          let x = st.x + 15; ctx.moveTo(x, 0);
+          for (let y = 10; y < sy; y += 10) { x = st.x + (Math.sin(y * 0.37 + st.x) * 9); ctx.lineTo(x, y); }
+          ctx.lineTo(st.x, sy); ctx.stroke();
+          ctx.fillStyle = 'rgba(255,255,200,0.6)'; ctx.beginPath(); ctx.ellipse(st.x, sy, 12, 7, 0, 0, Math.PI * 2); ctx.fill();
+        }
+      }
     } else if (id === 'nuit') {
       let lx, ly, LR;
       if (this.state === 'attract') { lx = W / 2; ly = H * 0.45; LR = 70; }
@@ -3677,6 +3809,14 @@ const App = {
       if (i === 0 && !p.badges.champion) p.badges.champion = this.today;
     }
     p.counters.champion = Object.values(p.weeks).filter(v => v === 1).length;
+    // défi du labo d'Halloween : récompense pour tous ceux qui ont joué pendant la semaine
+    if (this.today > HALLOWEEN.to && counter(p, 'halloween') > 0 && !p.counters.hwTeam) {
+      const total = await Leaderboard.hwTotal();
+      if (total != null) {
+        p.counters.hwTeam = total >= HW_GOAL ? 1 : -1;
+        if (total >= HW_GOAL) { p.coins += HW_REWARD; p.hwMsg = total; }
+      }
+    }
   },
 
   tick() {
@@ -3785,6 +3925,7 @@ const App = {
       ideatype: () => { this.ideaType = v; for (const b of this.ui.querySelectorAll('[data-a="ideatype"]')) b.classList.toggle('on', b.dataset.v === v); },
       sendidea: () => this.sendIdea(),
       hwok: () => { safeStorageSet('bousier_hw_' + ONLINE_ENV, this.today); this.show('home'); },
+      hwteamok: () => { delete this.p.hwMsg; Store.save(); this.show('home'); },
       boostok: () => { delete this.p.boostMsg; Store.save(); this.show('home'); },
       podok: () => { safeStorageSet('bousier_pod_' + ONLINE_ENV, v); if (this.p.weekMsg) { delete this.p.weekMsg; Store.save(); } this.show('home'); },
       annok: () => { safeStorageSet('bousier_ann_' + ONLINE_ENV, v); this.show('home'); },
@@ -3967,6 +4108,11 @@ const App = {
     this.show('none');
   },
 
+  // Aperçu d'une nouvelle météo (organisateur) : App.previewWeather('orage')
+  previewWeather(id) {
+    this.mode = 'practice';
+    this.launch(previewConfig(id), [], 'APERÇU');
+  },
   startPractice() {
     this.mode = 'practice';
     this.practiceCfg = practiceConfig();
@@ -4053,7 +4199,7 @@ const App = {
         p.legends[cfg.legend.id] = (p.legends[cfg.legend.id] || 0) + 1;
       }
       p.weathers[run.weather] = (p.weathers[run.weather] || 0) + 1;
-      if (isHalloween(this.today)) inc('halloween');
+      if (isHalloween(this.today)) { inc('halloween'); res.pumpkins = run.byType.citrouille || 0; d.pumpkins = (d.pumpkins || 0) + res.pumpkins; }
       if (this.today === HALLOWEEN.night && run.terrier) inc('sorciere');
       const st = p.stats;
       st.runs++; st.absorbed += run.absorbed; st.best = Math.max(st.best, run.score);
@@ -4342,6 +4488,7 @@ const App = {
     const news = await this.news(lb);
     this.ideasBadge = ideasChanged(await Online.myIdeas());
     const ann = await Online.announce();
+    const hwTotal = isHalloween(this.today) ? await Leaderboard.hwTotal() : null;
     const prevWk = addDays(weekKey(this.today), -7), pod = await Leaderboard.podium(prevWk);
     const podShow = pod && pod.top.length && safeStorageGet('bousier_pod_' + ONLINE_ENV) !== prevWk;
     const mine = p.weekMsg || null;
@@ -4367,6 +4514,7 @@ const App = {
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
+      ${p.hwMsg ? `<div class="banner">🎃 <b>Défi du labo réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b> <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}
       ${p.boostMsg === weekKey(this.today) ? `<div class="banner">🚀 <b>Coup de pouce de la semaine</b> : 4 essais par jour et +${BOOST_COINS} 🟡. Merci d'avoir joué jusqu'au bout la semaine dernière ! <button class="btn ghost small" data-a="boostok">OK</button></div>` : ''}
       ${podShow || mine ? `<div class="banner">${podShow ? `👑 <b>Podium de la semaine dernière</b> — bravo ${esc(pod.top[0].name)} !${podiumHtml(pod.top)}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
@@ -4390,6 +4538,12 @@ const App = {
         <div class="label">Quêtes du jour <span class="tiny">(+${QUEST_REWARD} 🟡 chacune)</span></div>
         <ul class="quests">${quests}</ul>
       </div>
+      ${hwTotal != null ? `<div class="panel">
+        <div class="label">🎃 Défi du labo <span class="tiny">(tous ensemble, jusqu'à dimanche soir)</span></div>
+        <div>Avalez <b>${HW_GOAL} citrouilles</b> à vous tous : <b>+${HW_REWARD} 🟡</b> pour chaque joueur de la semaine !</div>
+        <div class="hwbar"><div style="width:${Math.min(100, hwTotal * 100 / HW_GOAL)}%"></div><span>${Math.min(hwTotal, HW_GOAL)} / ${HW_GOAL}</span></div>
+        ${hwTotal >= HW_GOAL ? '<div class="good tiny">🎉 Défi réussi ! La récompense arrive lundi 2 novembre.</div>' : ''}
+      </div>` : ''}
       <div class="play-zone">
         <div class="dots">${dots}</div>
         ${playBtn}
@@ -4477,6 +4631,7 @@ const App = {
         <div class="gold big-num">+<span id="coinsum">${(r.parts || []).length ? 0 : r.coins}</span> 🟡</div>
         ${(r.parts || []).map(([ico, label, n], i) => `<div class="rw reveal ${ico === '✅' || ico === '🌟' ? 'good' : ''}" style="animation-delay:${0.4 + i * 0.5}s"><span>${ico} ${esc(label)}</span><span class="gold">+${n} 🟡</span></div>`).join('')}
         ${r.badges.map((b, i) => `<div class="good reveal" style="animation-delay:${0.4 + ((r.parts || []).length + i) * 0.5}s">🎖️ Badge : ${b.icon} ${esc(b.name)}${b.reward ? ` → débloque <b>${esc(b.reward)}</b>` : ''}</div>`).join('')}
+        ${r.pumpkins != null ? `<div class="tiny" style="margin-top:calc(var(--u)*2)">🎃 +${r.pumpkins} citrouille${r.pumpkins > 1 ? 's' : ''} pour le défi du labo</div>` : ''}
         ${disc ? `<div class="label" style="margin-top:calc(var(--u)*3)">Nouveaux objets dans la Bousipédia</div><div class="pills">${disc}</div>` : ''}
       </div>` : ''}
       ${(r.unlocked || []).length ? `<div class="panel banner">${r.unlocked.map(u => `🎁 Débloqué : <b>${esc(u.item.name)}</b>${u.item.secret ? ' 🤫 (secret !)' : ''}`).join('<br>')}<div class="tiny">À équiper dans 🎨 Style</div></div>` : ''}
