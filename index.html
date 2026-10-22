@@ -83,6 +83,8 @@ img.pix, canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; 
 .good { color: var(--good); }
 .bad { color: var(--bad); }
 button.banner { font: inherit; width: 100%; cursor: pointer; }
+.banner.off, .chip.off { box-shadow: inset 0 0 0 var(--u) #8a8aa0; color: #d8d8ea; }
+.head .chip.off { margin-left: auto; }
 .banner { background: #1a1020; border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) var(--gold); color: var(--gold); padding: calc(var(--u) * 3); text-align: center; }
 .lb tr.pick td { cursor: pointer; }
 .lb .rx { font-size: .75em; color: var(--muted); margin-left: var(--u); }
@@ -1587,13 +1589,16 @@ const Online = {
       if (!c) return null;
       const r = await withTimeout(fn(c), ms);
       this.live = true;
+      if (this.down) { this.down = false; if (window.App) App.netChanged(); }
       return r;
     } catch (e) {
       console.warn('Classement en ligne', e);
       this.live = false;
+      if (!this.down) { this.down = true; if (window.App) App.netChanged(); }
       return null;
     }
   },
+  down: false,  // vrai après un échange raté (pas d'internet ou serveur injoignable)
 
   uid(c) { return c.auth.currentUser ? c.auth.currentUser.uid : null; },
   id(c, name) { return this.uid(c) + '_' + encodeURIComponent(nameKey(name)); },
@@ -3441,6 +3446,9 @@ const App = {
     this.loadDay();
     document.getElementById('hud-pause').addEventListener('click', e => { e.stopPropagation(); this.pause(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) this.pause(); else this.resync(); });
+    window.addEventListener('offline', () => this.netChanged());
+    window.addEventListener('online', () => { Online.down = false; this.netChanged(); });
+    this.wasOffline = false;
     this.ui.addEventListener('click', e => this.onClick(e));
     setInterval(() => this.tick(), 1000);
     if (!Store.profile() || this.devRefused(Store.profile())) this.show('name'); else this.show('home');
@@ -3450,6 +3458,17 @@ const App = {
   // Récupère la progression jouée sur un autre appareil
   // Version de test : seul le compte de l'organisateur peut y entrer
   devRefused(p) { return DEV_LOCKED && (!p || p.uid !== ADMIN_UID); },
+
+  // --- Hors connexion : bandeau sur l'accueil, pastille 📴, message au retour ---
+  isOffline() { return navigator.onLine === false || Online.down; },
+  netChanged() {
+    const off = this.isOffline();
+    if (off === this.wasOffline) return;
+    const back = this.wasOffline && !off;
+    this.wasOffline = off;
+    if (back) { this.toast('✅ De nouveau en ligne : ta progression est à jour.'); this.resync(); }
+    if (this.game.state !== 'run' && this.screen && this.screen !== 'none' && this.screen !== 'results') this.show(this.screen);
+  },
 
   // Progression modifiée par la fusion avec un autre appareil : on rafraîchit l'écran
   onMerged() {
@@ -4087,10 +4106,11 @@ const App = {
       <button class="chip" data-a="go" data-v="tuto" aria-label="Comment jouer">❓</button>
       <span class="chip">🔥 ${Store.streakOf(p, this.today)}</span>
       <span class="chip gold">🟡 ${p.coins}</span>
+      ${this.isOffline() ? '<span class="chip off" title="Hors connexion">📴</span>' : ''}
     </div>`;
   },
   back(title, to = 'home') {
-    return `<div class="head"><button class="btn ghost small" data-a="go" data-v="${to}">◀</button><h2>${title}</h2></div>`;
+    return `<div class="head"><button class="btn ghost small" data-a="go" data-v="${to}">◀</button><h2>${title}</h2>${this.isOffline() ? '<span class="chip off" title="Hors connexion">📴</span>' : ''}</div>`;
   },
 
   scr_none() { return ''; },
@@ -4250,6 +4270,7 @@ const App = {
       </div>
       ${isHalloween(this.today) && safeStorageGet('bousier_hw_' + ONLINE_ENV) !== this.today ? `<div class="banner">🎃 <b>Semaine Halloween !</b> Citrouilles et chauves-souris dans la dune.<div class="tiny">${this.today === HALLOWEEN.night ? 'Ce soir, dune spéciale de nuit : rentre dans le terrier pour gagner le 🧙 Chapeau de sorcière !' : `Joue une dune pour gagner la 🎃 Boule citrouille. ${this.today < HALLOWEEN.night ? 'Samedi 31 : dune spéciale de nuit !' : ''}`}</div> <button class="btn ghost small" data-a="hwok">OK</button></div>` : ''}
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
+      ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
       ${p.boostMsg === weekKey(this.today) ? `<div class="banner">🚀 <b>Coup de pouce de la semaine</b> : 4 essais par jour et +${BOOST_COINS} 🟡. Merci d'avoir joué jusqu'au bout la semaine dernière ! <button class="btn ghost small" data-a="boostok">OK</button></div>` : ''}
       ${podShow || mine ? `<div class="banner">${podShow ? `👑 Champion de la semaine dernière : <b>${esc(pod.top[0].name)}</b> (${fmtSize(pod.top[0].total)}) !${pod.top.slice(1).map((e, i) => ` ${medal(i + 1)} ${esc(e.name)}`).join('')}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
