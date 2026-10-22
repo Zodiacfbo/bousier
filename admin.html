@@ -337,7 +337,21 @@ function rerollWeather(day, prev) {
 // semaine Halloween : nuits fréquentes, nuit et trésor spécial le 31
 const HALLOWEEN = { from: '2026-10-26', to: '2026-11-01', night: '2026-10-31' }, NIGHT_IDX = 2;
 const isHalloween = day => day >= HALLOWEEN.from && day <= HALLOWEEN.to;
+// à partir du 2 novembre 2026 : roulement par blocs de 6 jours (comme dans le jeu)
+const WX_ROTATION_FROM = '2026-11-02';
+function weatherBlock(b) {
+  const r = mulberry32(hashStr('wxbag|' + b)), a = WEATHERS.map((_, i) => i);
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function rotatedWeather(day) {
+  const n = Math.round((new Date(day + 'T12:00') - new Date(WX_ROTATION_FROM + 'T12:00')) / 86400000), b = Math.floor(n / WEATHERS.length);
+  const bag = weatherBlock(b), before = b > 0 ? weatherBlock(b - 1)[WEATHERS.length - 1] : weatherIdx(addDays(WX_ROTATION_FROM, -1));
+  if (bag[0] === before) [bag[0], bag[1]] = [bag[1], bag[0]];
+  return bag[n % WEATHERS.length];
+}
 function dayWeather(day, prev) {
+  if (day >= WX_ROTATION_FROM) return rotatedWeather(day);
   const wi = rerollWeather(day, prev);
   if (!isHalloween(day)) return wi;
   if (day === HALLOWEEN.night) return NIGHT_IDX;

@@ -2066,7 +2066,22 @@ function rerollWeather(day, prev) {
 }
 // Semaine Halloween : environ une nuit sur deux (jamais deux de suite), nuit le 31
 const NIGHT_IDX = WEATHERS.findIndex(w => w.id === 'nuit');
+// À partir du 2 novembre 2026 : roulement par blocs de 6 jours (chaque météo une fois
+// par bloc, dans un ordre tiré au sort, jamais deux jours de suite)
+const WX_ROTATION_FROM = '2026-11-02';
+function weatherBlock(b) {
+  const rng = makeRng(hashStr('wxbag|' + b)), a = WEATHERS.map((_, i) => i);
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng.next() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function rotatedWeather(day) {
+  const n = Math.round((dayFromKey(day) - dayFromKey(WX_ROTATION_FROM)) / 86400000), b = Math.floor(n / WEATHERS.length);
+  const bag = weatherBlock(b), before = b > 0 ? weatherBlock(b - 1)[WEATHERS.length - 1] : weatherIdx(addDays(WX_ROTATION_FROM, -1));
+  if (bag[0] === before) [bag[0], bag[1]] = [bag[1], bag[0]];
+  return bag[n % WEATHERS.length];
+}
 function dayWeather(day, prev) {
+  if (day >= WX_ROTATION_FROM) return rotatedWeather(day);
   const wi = rerollWeather(day, prev);
   if (!isHalloween(day)) return wi;
   if (day === HALLOWEEN.night) return NIGHT_IDX;

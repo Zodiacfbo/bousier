@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.13 — Météo mieux répartie (22 octobre 2026)
+- À partir du 2 novembre, la météo suit un roulement : chaque météo passe une fois tous les 6 jours, dans le désordre,
+  jamais deux jours de suite (au plus ~10 jours sans une météo, contre 19 avant). La semaine Halloween ne change pas.
+
 ## v1.10.12 — Trésors du jour mieux répartis (22 octobre 2026)
 - À partir du 23 octobre, le trésor du jour suit un roulement : chaque trésor passe une fois tous les 6 jours,
   dans un ordre tiré au sort, jamais deux jours de suite (avant : la Couronne 26 fois sur 90 jours, le Scarabée d'or 3 fois).
