@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.10.12 — Trésors du jour mieux répartis (22 octobre 2026)
+- À partir du 23 octobre, le trésor du jour suit un roulement : chaque trésor passe une fois tous les 6 jours,
+  dans un ordre tiré au sort, jamais deux jours de suite (avant : la Couronne 26 fois sur 90 jours, le Scarabée d'or 3 fois).
+  Le 31 octobre reste le Crâne en sucre. Les dunes, objets, quêtes et météos ne changent pas.
+
 ## v1.10.11 — Records protégés (22 octobre 2026)
 - Le record (onglet Records) ne peut plus redescendre, même envoyé par un appareil en retard.
 - Réparation automatique : à l'ouverture, la meilleure boule de tous les temps reprend au moins le meilleur

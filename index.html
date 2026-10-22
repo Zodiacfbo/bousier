@@ -2091,9 +2091,26 @@ function weatherIdx(day) {
   return WX_CACHE[day];
 }
 
+// Trésor du jour : à partir du 23 octobre 2026, roulement par blocs de 6 jours (chaque
+// trésor une fois par bloc, dans un ordre tiré au sort, jamais deux jours de suite)
+const LEGEND_ROTATION_FROM = '2026-10-23';
+function legendBlock(b) {
+  const rng = makeRng(hashStr('legbag|' + b)), a = LEGENDS.map((_, i) => i);
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng.next() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function legendIdx(day) {
+  if (day < LEGEND_ROTATION_FROM) return Math.floor(makeRng(hashStr(day + '|legend')).next() * LEGENDS.length);
+  const n = Math.round((dayFromKey(day) - dayFromKey(LEGEND_ROTATION_FROM)) / 86400000), b = Math.floor(n / LEGENDS.length);
+  const bag = legendBlock(b);
+  // le premier du bloc n'est jamais le trésor de la veille (bloc précédent, ou ancien tirage)
+  const before = b > 0 ? legendBlock(b - 1)[LEGENDS.length - 1] : Math.floor(makeRng(hashStr(addDays(LEGEND_ROTATION_FROM, -1) + '|legend')).next() * LEGENDS.length);
+  if (bag[0] === before) [bag[0], bag[1]] = [bag[1], bag[0]];
+  return bag[n % LEGENDS.length];
+}
 function dailyConfig(day) {
   const wi = weatherIdx(day);
-  const legend = day === HALLOWEEN.night ? SUGAR_SKULL : LEGENDS[Math.floor(makeRng(hashStr(day + '|legend')).next() * LEGENDS.length)];
+  const legend = day === HALLOWEEN.night ? SUGAR_SKULL : LEGENDS[legendIdx(day)];
   const seed = hashStr('bousier|' + day);
   const weather = WEATHERS[wi];
   const course = generateCourse(seed, weather, legend, day);

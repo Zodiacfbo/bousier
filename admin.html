@@ -353,7 +353,22 @@ function weatherIdx(day) {
   while (d < day) { d = addDays(d, 1); prev = dayWeather(d, prev); }
   return prev;
 }
-const legendOf = day => day === HALLOWEEN.night ? 'Crâne en sucre 🎃' : LEGENDS[Math.floor(rnd(day + '|legend') * LEGENDS.length)];
+// trésor : roulement par blocs de 6 jours à partir du 23 octobre 2026 (comme dans le jeu)
+const LEGEND_ROTATION_FROM = '2026-10-23';
+function legendBlock(b) {
+  const r = mulberry32(hashStr('legbag|' + b)), a = LEGENDS.map((_, i) => i);
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function legendIdx(day) {
+  if (day < LEGEND_ROTATION_FROM) return Math.floor(rnd(day + '|legend') * LEGENDS.length);
+  const n = Math.round((new Date(day + 'T12:00') - new Date(LEGEND_ROTATION_FROM + 'T12:00')) / 86400000), b = Math.floor(n / LEGENDS.length);
+  const bag = legendBlock(b);
+  const before = b > 0 ? legendBlock(b - 1)[LEGENDS.length - 1] : Math.floor(rnd(addDays(LEGEND_ROTATION_FROM, -1) + '|legend') * LEGENDS.length);
+  if (bag[0] === before) [bag[0], bag[1]] = [bag[1], bag[0]];
+  return bag[n % LEGENDS.length];
+}
+const legendOf = day => day === HALLOWEEN.night ? 'Crâne en sucre 🎃' : LEGENDS[legendIdx(day)];
 const dayNumber = k => Math.round((new Date(k + 'T12:00') - new Date(LAUNCH_DAY + 'T12:00')) / 86400000) + 1;
 function renderMeteo() {
   const today = dayKey(), rows = [];
