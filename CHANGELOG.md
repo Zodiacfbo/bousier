@@ -7,6 +7,13 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.13.5 — Détail des essais du jour, nouveaux titres du jour (23 octobre 2026)
+- Classement du jour : sous chaque joueur, une case par essai (meilleur entouré en doré, barré = sans terrier, « · » =
+  pas encore joué). Le score de chaque essai est désormais envoyé (le détail apparaît pour les parties jouées après
+  cette mise à jour).
+- À partir du lundi 26 : 4 nouveaux titres du jour (⚡ Le sprinteur, 📈 La remontada, 🧘 Le zen, 🍀 Le miraculé) ;
+  3 fois titré : traînée Éclairs, titre « Jamais abattu », Bandeau de méditation, Boule trèfle.
+
 ## v1.13.4 — Titre à côté du pseudo (23 octobre 2026)
 - Dans les classements (et l'aperçu de Style), le titre s'affiche juste après le pseudo au lieu d'en dessous.
 
