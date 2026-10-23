@@ -85,6 +85,9 @@ img.pix, canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; 
 .good { color: var(--good); }
 .bad { color: var(--bad); }
 button.banner { font: inherit; width: 100%; cursor: pointer; }
+.banner.gift { box-shadow: inset 0 0 0 var(--u) var(--gold), 0 0 calc(var(--u) * 4) rgba(255, 210, 90, .45); text-align: left; }
+.banner.gift .quests { margin: calc(var(--u) * 2) 0; }
+.gift-btns { display: flex; gap: calc(var(--u) * 2); justify-content: center; }
 .banner.off, .chip.off { box-shadow: inset 0 0 0 var(--u) #8a8aa0; color: #d8d8ea; }
 .head .chip.off { margin-left: auto; }
 .hwbar { position: relative; height: calc(var(--u) * 9); background: #1a1020; border: var(--u) solid var(--line); margin-top: calc(var(--u) * 2); }
@@ -1562,6 +1565,7 @@ const Store = {
     p.owned = { ball: [], hat: [], outfit: [], trail: [], theme: [], frame: [], color: [], title: [], ...p.owned };
     p.equip = { outfit: 'aucune', trail: 'aucune', frame: 'aucun', color: 'blanc', title: 'aucun', ...p.equip };
     p.counters = p.counters || {};
+    p.inbox = p.inbox || [];
     p.survival = p.survival || { best: 0, runs: 0 };
     p.weeks = p.weeks || {};  // { semaine: place (0 = hors podium) }
     if (p.stats && !p.stats.tot) {
@@ -1632,6 +1636,13 @@ function fmtWeek(wk) {
 function nameHtml(name, look, suffix = '') {
   const col = findCos('color', look && look.color), title = findCos('title', look && look.title);
   return `<span class="${col.rainbow ? 'rainbow' : ''}" ${col.id !== 'blanc' && col.col ? `style="color:${col.col}"` : ''}>${esc(name)}</span>${suffix}${title.id !== 'aucun' ? `<span class="ttl">« ${esc(title.name)} »</span>` : ''}`;
+}
+// Récompenses reçues hors d'une partie : gardées dans un encadré de l'accueil jusqu'à « OK »
+const REWARD_TYPE = { ball: '⚪ Boule', hat: '🎩 Chapeau', outfit: '👕 Tenue', trail: '✨ Traînée', theme: '🏜️ Décor', frame: '🖼️ Cadre', color: '🎨 Couleur', title: '🏷️ Titre' };
+function rewardLine(type, item) {
+  // « Cadre du podium », « Boule diamant » : le nom dit déjà le type, on ne garde que l'icône
+  const [icon, word] = (REWARD_TYPE[type] || ' ').split(' '), name = type === 'title' ? `« ${item.name} »` : item.name;
+  return { txt: `${icon} ${word && !item.name.toLowerCase().startsWith(word.toLowerCase()) ? word + ' ' : ''}${name}`, tab: RANK_TYPES.includes(type) ? 'rank' : type };
 }
 function frameCls(look) { const f = findCos('frame', look && look.frame); return f.id === 'aucun' ? '' : `fr fr-${f.id}`; }
 function podiumHtml(top, opts = {}) {
@@ -3927,9 +3938,9 @@ const App = {
     if (p.account && p.stats.runs) Online.submitPlayer(p);  // record et apparence à jour pour les autres
     const g = p && await Online.claimGifts(p);
     if (g) {
-      Store.save(); Sound.play('unlock');
-      const what = [g.coins ? `+${g.coins} 🟡` : '', ...(g.items || []).map(k => { const [t, id] = k.split(':'); return findCos(t, id).name; })].filter(Boolean).join(', ');
-      this.toast(`🎁 Cadeau de l'organisateur : ${what}${g.msg ? ' — ' + g.msg : ''}`);
+      this.addRewards([{ txt: `🎁 Cadeau de l'organisateur${g.coins ? ` : +${g.coins} 🟡` : ''}` },
+        ...(g.items || []).map(k => { const [t, id] = k.split(':'); return rewardLine(t, findCos(t, id)); }), ...(g.msg ? [{ txt: `💬 « ${g.msg} »` }] : [])]);
+      Store.save(); Sound.play('unlock'); this.toast('🎁 Un cadeau t\'attend !');
       if (this.screen === 'home') this.show('home');
     }
   },
@@ -3997,10 +4008,11 @@ const App = {
       if (this.today >= SHOP_FROM && !p.counters.pionnier && isPioneer(p)) { p.coins += PIONEER.coins; p.counters.pionnier = 1; pioneer = true; }
       p.awardsDay = this.today;
       const fresh = Store.checkUnlocks(p);
+      const lines = [...(roi ? [{ txt: '🥇 Badge « Roi Bousier »' }] : []), ...(pioneer ? [{ txt: `🌱 Merci pionnier : +${PIONEER.coins} 🟡` }] : []), ...fresh.map(f => rewardLine(f.type, f.item))];
+      if (lines.length) this.addRewards(lines);
       Store.save();
-      if (fresh.length || roi || pioneer) {
-        Sound.play('unlock');
-        this.toast([roi ? '🥇 Badge : Roi Bousier !' : '', pioneer ? `🌱 Merci pionnier : +${PIONEER.coins} 🟡 !` : '', fresh.length ? `🎁 Débloqué : ${fresh.map(f => f.item.name).join(', ')} !` : ''].filter(Boolean).join(' '));
+      if (lines.length) {
+        Sound.play('unlock'); this.toast('🎁 Nouvelles récompenses !');
         if (this.screen === 'home') this.show('home');
       }
     } finally { this.awarding = false; }
@@ -4152,6 +4164,8 @@ const App = {
       ideatype: () => { this.ideaType = v; for (const b of this.ui.querySelectorAll('[data-a="ideatype"]')) b.classList.toggle('on', b.dataset.v === v); },
       sendidea: () => this.sendIdea(),
       hwok: () => { safeStorageSet('bousier_hw_' + ONLINE_ENV, this.today); this.show('home'); },
+      giftok: () => { this.p.inbox = []; Store.save(); this.show('home'); },
+      giftgo: () => { const l = this.p.inbox || [], e = l.find(x => x.tab === 'rank') || l.find(x => x.tab); this.p.inbox = []; Store.save(); this.shopTab = e ? e.tab : 'ball'; this.shopSel = null; this.show('shop'); },
       hwteamok: () => { delete this.p.hwMsg; Store.save(); this.show('home'); },
       boostok: () => { delete this.p.boostMsg; Store.save(); this.show('home'); },
       podok: () => { safeStorageSet('bousier_pod_' + ONLINE_ENV, v); if (this.p.weekMsg) { delete this.p.weekMsg; Store.save(); } this.show('home'); },
@@ -4286,6 +4300,7 @@ const App = {
     this.show('leaderboard');
   },
 
+  addRewards(lines) { const p = this.p; p.inbox = (p.inbox || []).concat(lines).slice(-12); },
   toast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('on');
@@ -4743,6 +4758,8 @@ const App = {
         <div class="sub">Dune #${cfg.num} · ${esc(fmtDayLong(this.today))}</div>
         <div class="mascot bob">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
       </div>
+      ${(p.inbox || []).length ? `<div class="banner gift"><b>🎁 Tes récompenses</b><ul class="quests">${p.inbox.map(e => `<li>${esc(e.txt)}</li>`).join('')}</ul>
+        <div class="gift-btns">${p.inbox.some(e => e.tab) ? '<button class="btn small" data-a="giftgo">🎨 Aller équiper</button>' : ''}<button class="btn ghost small" data-a="giftok">OK</button></div></div>` : ''}
       ${isHalloween(this.today) && safeStorageGet('bousier_hw_' + ONLINE_ENV) !== this.today ? `<div class="banner">🎃 <b>Semaine Halloween !</b> Citrouilles et chauves-souris dans la dune.<div class="tiny">${this.today === HALLOWEEN.night ? 'Ce soir, dune spéciale de nuit : rentre dans le terrier pour gagner le 🧙 Chapeau de sorcière !' : `Joue une dune pour gagner la 🎃 Boule citrouille. ${this.today < HALLOWEEN.night ? 'Samedi 31 : dune spéciale de nuit !' : ''}`}</div> <button class="btn ghost small" data-a="hwok">OK</button></div>` : ''}
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
