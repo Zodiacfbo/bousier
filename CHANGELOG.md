@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.13.3 — Mini-calendrier plus lisible (23 octobre 2026)
+- Classement de la semaine : le mini-calendrier passe sur toute la largeur, sous la ligne du joueur (cases et chiffres
+  plus grands, lisibles même sur les petits téléphones). Cadres et titres entourent toujours le joueur entier.
+
 ## v1.13.2 — Détail de la semaine (23 octobre 2026)
 - Classement de la semaine : sous chaque pseudo, un mini-calendrier (L à D) avec le score de chaque jour joué au
   centimètre ; les 3 jours comptés sont entourés en doré, un score barré = sans terrier, le jour actuel est souligné.
