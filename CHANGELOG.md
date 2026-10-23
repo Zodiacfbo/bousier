@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.11.1 — Titres du jour jamais perdus (23 octobre 2026)
+- Les titres du jour (le plus lent, roi des chocs, l'aspirateur, l'ami des cactus) et la 1re place sont comptés pour
+  chaque journée terminée depuis la dernière visite (7 jours au plus), et plus seulement pour la veille : sauter un jour
+  ne fait plus perdre un titre. Chaque journée n'est comptée qu'une fois (reprise au bon jour après une coupure réseau).
+
 ## v1.11.0 — Boutique : prestige, classement personnalisé, boutique de la semaine (préparé le 22 octobre 2026)
 - À partir du 2 novembre, dans 🎨 Style :
   - 4 objets de prestige 💎 (contour bleu glacé) : Boule diamant 2 500, Haut-de-forme en or 3 000, Cape dorée 2 000,

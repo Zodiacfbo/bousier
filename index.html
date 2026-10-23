@@ -3949,15 +3949,19 @@ const App = {
     try {
       // un autre appareil a peut-être déjà distribué les récompenses d'aujourd'hui
       if (FIREBASE_CONFIG) { const r = await Online.pullProfile(p); if (r && r.cloud) Store.save(); if (p.awardsDay === this.today) return; }
-      const lb = await Online.day(addDays(this.today, -1));
-      if (!lb) return;  // hors ligne : on réessaiera
+      // awardsDay = premier jour pas encore compté : on reprend chaque journée terminée depuis la dernière visite
+      // (7 jours au plus), une seule fois chacune, d'après son classement final
       const ct = p.counters, inc = k => { ct[k] = (ct[k] || 0) + 1; };
-      for (const t of dayTitles(lb)) if (t.name === p.name) inc('t_' + t.key);
-      let roi = false;
-      if (lb.length >= 2 && lb[0].name === p.name) {
-        inc('firsts');
-        // badge Roi Bousier : 1er du classement final de la veille
-        if (!p.badges.roi) { p.badges.roi = this.today; roi = true; }
+      let roi = false, d = p.awardsDay ? (p.awardsDay > addDays(this.today, -7) ? p.awardsDay : addDays(this.today, -7)) : addDays(this.today, -1);
+      for (; d < this.today; d = addDays(d, 1)) {
+        const lb = await Online.day(d);
+        if (!lb) { if (d !== p.awardsDay && p.awardsDay) { p.awardsDay = d; Store.save(); } return; }  // hors ligne : on reprendra à ce jour
+        for (const t of dayTitles(lb)) if (t.name === p.name) inc('t_' + t.key);
+        if (lb.length >= 2 && lb[0].name === p.name) {
+          inc('firsts');
+          // badge Roi Bousier : 1er du classement final d'une journée
+          if (!p.badges.roi) { p.badges.roi = this.today; roi = true; }
+        }
       }
       await this.weeklyAwards();
       p.awardsDay = this.today;
