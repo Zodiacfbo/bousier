@@ -7,6 +7,13 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.11.2 — Nouveau calendrier et cadeau des pionniers (23 octobre 2026)
+- Prestige et onglet Classement avancés au lundi 26 octobre ; boutique de la semaine avancée au lundi 9 novembre.
+- Pionniers (au moins une dune du jour entre le 20 et le 25 octobre) : titre « 🌱 Pionnier de la dune », cadre
+  « Pionnier » et 150 🟡, donnés automatiquement une seule fois à partir du 26 octobre, avec une news visible
+  seulement par eux.
+- News réordonnées : 26 oct. (Halloween, Style, pionniers), 2 nov. (événements et météos), 9 nov. (boutique de la semaine).
+
 ## v1.11.1 — Titres du jour jamais perdus (23 octobre 2026)
 - Les titres du jour (le plus lent, roi des chocs, l'aspirateur, l'ami des cactus) et la 1re place sont comptés pour
   chaque journée terminée depuis la dernière visite (7 jours au plus), et plus seulement pour la veille : sauter un jour

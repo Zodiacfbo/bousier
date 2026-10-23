@@ -235,6 +235,7 @@ table { width: 100%; border-collapse: collapse; }
 .fr-argent { --frc: #d8dce4; --frb: rgba(216,220,228,.12); }
 .fr-or { --frc: #ffd25a; --frb: rgba(255,210,90,.16); }
 .fr-podium { --frc: #c87aff; --frb: rgba(200,122,255,.15); }
+.fr-pionnier { --frc: #5fae4a; --frb: rgba(95,174,74,.16); }
 .fr-flammes { --frc: #ff7a2a; --frb: rgba(255,122,42,.18); }
 .lb tr.fr-flammes td { animation: frfeu .5s steps(1) infinite; }
 @keyframes frfeu { 50% { border-color: #ffd05a; } }
@@ -1144,8 +1145,11 @@ const THEMES = [
   { id: 'sel', name: 'Désert de sel', badge: 'serie7', sand: '#eef0f0', sandDark: '#cdd6db', sandLight: '#ffffff', wall: '#d7e0e4', wallDark: '#a9b8c2', wallLight: '#ffffff' },
   { id: 'oasis', name: 'Oasis', badge: 'collection', sand: '#e2c98a', sandDark: '#c4a868', sandLight: '#f2e0aa', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
 ];
-// Prestige et personnalisation du classement : à partir du 2 novembre ; boutique de la semaine : à partir du 30 novembre
-const SHOP_FROM = '2026-11-02', WEEK_SHOP_FROM = '2026-11-30';
+// Prestige et personnalisation du classement : à partir du 26 octobre ; boutique de la semaine : à partir du 9 novembre
+const SHOP_FROM = '2026-10-26', WEEK_SHOP_FROM = '2026-11-09';
+// Pionniers : ceux qui ont joué une dune du jour pendant la première semaine (titre, cadre et 150 🟡, une seule fois)
+const PIONEER = { from: '2026-10-20', to: '2026-10-25', coins: 150 };
+function isPioneer(p) { return Object.keys(p.days || {}).some(k => k >= PIONEER.from && k <= PIONEER.to && (p.days[k].runs || []).length > 0); }
 SKINS.push(
   { id: 'diamant', name: 'Boule diamant', price: 2500, prestige: true, from: SHOP_FROM, base: '#9ad8f0', light: '#c8f0ff', hi: '#ffffff', dark: '#5aa0c8', out: '#14385a', specks: ['#ffffff', '#e8faff', '#7ac0e0'], count: 120, bigSpecks: true },
   { id: 'menthe', name: 'Boule menthe', price: 200, week: true, from: WEEK_SHOP_FROM, base: '#5ac8a0', light: '#8ae6c0', hi: '#d8fff0', dark: '#2f8a6a', out: '#0e3a2a', specks: ['#ffffff', '#2f8a6a'] },
@@ -1175,6 +1179,7 @@ const FRAMES = [
   { id: 'or', name: 'Or', price: 1000, col: '#ffd25a', from: SHOP_FROM },
   { id: 'flammes', name: '🔥 Flammes', price: 1500, col: '#ff7a2a', prestige: true, from: SHOP_FROM },
   { id: 'podium', name: 'Cadre du podium', col: '#c87aff', from: SHOP_FROM },
+  { id: 'pionnier', name: '🌱 Pionnier', col: '#5fae4a', from: SHOP_FROM },
 ];
 const NAME_COLORS = [
   { id: 'blanc', name: 'Blanc', price: 0, col: '#ffffff' },
@@ -1200,6 +1205,7 @@ const TITLES = [
   { id: 'chasseur', name: 'Chasseur de trésors', from: SHOP_FROM },
   { id: 'kevin', name: 'Ami de Kevin', from: SHOP_FROM },
   { id: 'citrouille', name: 'Citrouille d\'or 🎃', from: SHOP_FROM },
+  { id: 'pionnier', name: '🌱 Pionnier de la dune', from: SHOP_FROM },
 ];
 const RANK_TYPES = ['frame', 'color', 'title'];
 const COSMETICS = { ball: SKINS, hat: HATS, outfit: OUTFITS, trail: TRAILS, theme: THEMES, frame: FRAMES, color: NAME_COLORS, title: TITLES };
@@ -1259,6 +1265,8 @@ const UNLOCKS = {
   'title:fidele': { text: 'Fais une série de 30 jours', prog: p => [p.bestStreak, 30] },
   'title:chasseur': { text: 'Trouve 20 trésors légendaires', prog: p => [Object.values(p.legends).reduce((a, b) => a + b, 0), 20] },
   'title:kevin': { text: 'Retrouve ce que Kevin a perdu…', prog: p => [counter(p, 'kevin'), 1] },
+  'frame:pionnier': { text: 'Avoir joué pendant la toute première semaine de Bousier', prog: p => [isPioneer(p) ? 1 : 0, 1] },
+  'title:pionnier': { text: 'Avoir joué pendant la toute première semaine de Bousier', prog: p => [isPioneer(p) ? 1 : 0, 1] },
   'title:citrouille': { text: 'Avoir joué pendant la semaine Halloween 2026 🎃', prog: p => [counter(p, 'halloween'), 1] },
   'hat:bandana': { text: 'Parcours 1 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 1000] },
   'trail:survivant': { text: 'Parcours 2 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 2000] },
@@ -1276,17 +1284,18 @@ const SECRET_COUNT = Object.values(UNLOCKS).filter(u => u.secret).length;
 // La première entrée est la plus récente : elle s'affiche une fois sur l'accueil
 // des joueurs qui ne l'ont pas encore vue.
 const CHANGELOG = [
-  { v: 12, date: '2026-11-30', items: ['⭐ Nouveau dans 🎨 Style : la boutique de la semaine ! Chaque lundi, 3 objets introuvables ailleurs, dont un rare. Ils reviendront… un jour. Peut-être.'] },
-  { v: 11, date: '2026-11-02', items: ['💎 Dans 🎨 Style : des objets de prestige pour les grosses économies, et un onglet Classement pour décorer ta ligne (cadre, couleur du pseudo, titre). Certains titres ne s\'achètent pas : ils se méritent…'] },
-  { v: 10, date: '2026-11-02', items: ['⚡ Du nouveau dans la dune : de nouveaux événements surprise, et chaque semaine une météo spéciale à découvrir… Ouvre l\'œil !'] },
+  { v: 13, date: '2026-11-09', items: ['⭐ Nouveau dans 🎨 Style : la boutique de la semaine ! Chaque lundi, 3 objets introuvables ailleurs, dont un rare. Ils reviendront… un jour. Peut-être.'] },
+  { v: 12, date: '2026-11-02', items: ['⚡ Du nouveau dans la dune : de nouveaux événements surprise, et chaque semaine une météo spéciale à découvrir… Ouvre l\'œil !'] },
   {
-    v: 9, date: '2026-10-26', items: [
+    v: 11, date: '2026-10-26', items: [
       '🎃 Semaine Halloween jusqu\'au 1er novembre : citrouilles et chauves-souris dans la dune, et des nuits plus fréquentes',
       '🎃 Joue une dune du jour cette semaine pour gagner la Boule citrouille',
       '🧙 Samedi 31 : dune spéciale de nuit avec le trésor « Crâne en sucre ». Rentre dans le terrier pour gagner le Chapeau de sorcière !',
       '🎃 Défi du labo : avalez 666 citrouilles à vous tous et chacun gagne 150 🟡 !',
     ],
   },
+  { v: 10, date: '2026-10-26', items: ['💎 Dans 🎨 Style : des objets de prestige pour les grosses économies, et un onglet Classement pour décorer ta ligne (cadre, couleur du pseudo, titre). Certains titres ne s\'achètent pas : ils se méritent…'] },
+  { v: 9, date: '2026-10-26', only: isPioneer, items: ['🌱 Merci aux pionniers ! Tu as joué pendant la toute première semaine de Bousier : voici 150 🟡, le titre « Pionnier de la dune » et son cadre, à équiper dans 🎨 Style > Classement.'] },
   {
     v: 8, date: '2026-10-21', items: [
       '👑 Champion de la semaine : nouveau badge (×1, ×2…) et podium récompensé 200 / 100 / 50 🟡, annoncé chaque lundi',
@@ -1320,7 +1329,7 @@ function ideasChanged(mine) {
 
 // Nombre de mises à jour pas encore lues (pastille du bouton 📰)
 // Une nouveauté préparée à l'avance n'apparaît qu'à partir de sa date
-function visibleNews() { const today = dayKey(); return CHANGELOG.filter(c => c.date <= today); }
+function visibleNews() { const today = dayKey(), p = Store.profile(); return CHANGELOG.filter(c => c.date <= today && (!c.only || (p && c.only(p)))); }
 function unreadNews() { return visibleNews().filter(c => c.v > (Store.data.settings.seenVersion || 0)).length; }
 
 // --- Badges ----------------------------------------------------------------
@@ -3964,12 +3973,14 @@ const App = {
         }
       }
       await this.weeklyAwards();
+      let pioneer = false;
+      if (this.today >= SHOP_FROM && !p.counters.pionnier && isPioneer(p)) { p.coins += PIONEER.coins; p.counters.pionnier = 1; pioneer = true; }
       p.awardsDay = this.today;
       const fresh = Store.checkUnlocks(p);
       Store.save();
-      if (fresh.length || roi) {
+      if (fresh.length || roi || pioneer) {
         Sound.play('unlock');
-        this.toast([roi ? '🥇 Badge : Roi Bousier !' : '', fresh.length ? `🎁 Débloqué : ${fresh.map(f => f.item.name).join(', ')} !` : ''].filter(Boolean).join(' '));
+        this.toast([roi ? '🥇 Badge : Roi Bousier !' : '', pioneer ? `🌱 Merci pionnier : +${PIONEER.coins} 🟡 !` : '', fresh.length ? `🎁 Débloqué : ${fresh.map(f => f.item.name).join(', ')} !` : ''].filter(Boolean).join(' '));
         if (this.screen === 'home') this.show('home');
       }
     } finally { this.awarding = false; }
