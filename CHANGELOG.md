@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.13.7 — Classement du jour au format de la semaine (23 octobre 2026)
+- Les cases des essais du jour reprennent le format du mini-calendrier de la semaine (numérotées 1, 2, 3) ; la colonne
+  d'icônes disparaît (terrier lisible dans les cases, ✨ trésor devant le score).
+
 ## v1.13.6 — Renvoi des essais du jour (23 octobre 2026)
 - À l'ouverture du jeu, si les essais du jour ont été joués avant la v1.13.5, le score est renvoyé une fois avec le
   détail des essais : les cases du classement du jour apparaissent sans rejouer.
