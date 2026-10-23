@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.14.1 — Classement du jour en grandes cases (23 octobre 2026)
+- Les essais du jour s'affichent en 3 grandes cases sur toute la largeur, avec seulement le score (meilleur entouré et
+  en doré, barré = sans terrier, « · » = pas encore joué).
+
 ## v1.14.0 — Plusieurs annonces (23 octobre 2026)
 - Admin : onglet Annonce transformé en liste d'annonces, chacune avec ses dates (en ligne / prévue / terminée,
   suppression). On peut préparer plusieurs annonces à l'avance.
