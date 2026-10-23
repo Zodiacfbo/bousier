@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.13.6 — Renvoi des essais du jour (23 octobre 2026)
+- À l'ouverture du jeu, si les essais du jour ont été joués avant la v1.13.5, le score est renvoyé une fois avec le
+  détail des essais : les cases du classement du jour apparaissent sans rejouer.
+
 ## v1.13.5 — Détail des essais du jour, nouveaux titres du jour (23 octobre 2026)
 - Classement du jour : sous chaque joueur, une case par essai (meilleur entouré en doré, barré = sans terrier, « · » =
   pas encore joué). Le score de chaque essai est désormais envoyé (le détail apparaît pour les parties jouées après

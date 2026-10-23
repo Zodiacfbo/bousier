@@ -4105,6 +4105,9 @@ const App = {
     if ((r && r.cloud) || Store.dirty) { Store.dirty = false; Store.save(); }
     this.dailyAwards();  // titres et récompenses de la semaine : seulement une fois la progression à jour
     this.claimFirsts();  // secrets trouvés hors connexion : on tente d'être le premier
+    // essais du jour joués avant la mise à jour : renvoyés une fois avec le score de chaque essai
+    const dd = p && p.days[this.today];
+    if (p && p.account && dd && dd.best > 0 && (dd.runs || []).length && !dd.runsSent) Online.submitScore(p, this.today).then(ok => { if (ok) { dd.runsSent = true; Store.save(); } });
     await this.repairBest(p);
     if (p.account && p.stats.runs) Online.submitPlayer(p);  // record et apparence à jour pour les autres
     const g = p && await Online.claimGifts(p);
@@ -4709,7 +4712,7 @@ const App = {
       p.coins += res.coins;
       // badges
       // envoyé à chaque partie : rattrape aussi un envoi raté hors connexion
-      await Online.submitScore(p, this.today);
+      if (await Online.submitScore(p, this.today)) d.runsSent = true;
       const lb = await Leaderboard.day(this.today);
       res.rank = lb.findIndex(e => e.name === p.name) + 1;
       res.players = lb.length;
