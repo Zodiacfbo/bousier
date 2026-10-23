@@ -256,21 +256,16 @@ table { width: 100%; border-collapse: collapse; }
 .fr-podium { --frc: #c87aff; --frb: rgba(200,122,255,.15); }
 .fr-pionnier { --frc: #5fae4a; --frb: rgba(95,174,74,.16); }
 .fr-pilepoil { --frc: #5ad8ff; --frb: rgba(90,216,255,.14); }
-/* maquette : nouveaux cadres */
+/* nouveaux cadres (à l'essai sur dev) */
 .fr-menthe { --frc: #6ad8a8; --frb: rgba(106,216,168,.13); }
 .fr-ocean { --frc: #3a7ac8; --frb: rgba(45,106,168,.18); }
 .fr-sakura { --frc: #f5b0c8; --frb: rgba(245,176,200,.13); }
 .fr-amethyste { --frc: #a86ad8; --frb: rgba(154,90,200,.16); }
 .fr-brique { --frc: #c8603a; --frb: rgba(200,96,58,.16); }
 .fr-onyx { --frc: #8a8590; --frb: rgba(0,0,0,.35); }
-.fr-neon { --frc: #5ad8ff; --frb: rgba(90,216,255,.10); }
+.fr-neon { --frc: #8a7aff; --frb: rgba(138,122,255,.10); }
 .lb tr.fr-neon td { animation: neon 1.6s steps(1) infinite; }
-@keyframes neon { 0%, 46%, 54%, 100% { border-color: #5ad8ff; } 50% { border-color: #1a4a5a; } 80% { border-color: #b8f4ff; } }
-.fr-damier { --frc: #fff; --frb: #141018; }
-.lb tr.fr-damier td, .lb tr.fr-cactusfr td, .lb tr.fr-hwfr td, .lb tr.fr-noelfr td { border-top-style: dashed; border-bottom-style: dashed; }
-.lb tr.fr-damier td:first-child, .lb tr.fr-cactusfr td:first-child, .lb tr.fr-hwfr td:first-child, .lb tr.fr-noelfr td:first-child { border-left-style: dashed; }
-.lb tr.fr-damier td:last-child, .lb tr.fr-cactusfr td:last-child, .lb tr.fr-hwfr td:last-child, .lb tr.fr-noelfr td:last-child { border-right-style: dashed; }
-.fr-cactusfr { --frc: #5fae4a; --frb: rgba(79,154,58,.14); }
+@keyframes neon { 0%, 46%, 54%, 100% { border-color: #8a7aff; } 50% { border-color: #2a2260; } 80% { border-color: #d0c8ff; } }
 .fr-sunset { --frc: #ff8a5a; --frb: rgba(255,120,90,.12); }
 .lb tr.fr-sunset td { animation: sunset 3s steps(3) infinite; }
 @keyframes sunset { 0% { border-color: #ffb43a; } 33% { border-color: #ff6a8a; } 66% { border-color: #b86ad8; } }
@@ -283,11 +278,15 @@ table { width: 100%; border-collapse: collapse; }
 .fr-diamantfr { --frc: #c8f0ff; --frb: rgba(200,240,255,.10); }
 .lb tr.fr-diamantfr td { animation: diam 1.2s steps(2) infinite; }
 @keyframes diam { 50% { border-color: #ffffff; } 75% { border-color: #7ac0e0; } }
-.fr-hwfr { --frc: #ff8a2a; --frb: #3e2648; }
-.fr-noelfr { --frc: #e8463a; --frb: rgba(255,255,255,.14); }
-.fr-champfr { --frc: #ffd25a; --frb: rgba(255,210,90,.2); }
-.lb tr.fr-champfr td { animation: champ 1s steps(2) infinite; }
-@keyframes champ { 50% { border-color: #fff4a8; } }
+/* Champion : doré épais pour tous les anciens champions ; le champion en titre (.now) a en plus un reflet qui traverse la ligne */
+.fr-champfr { --frc: #ffb82a; --frb: rgba(255,184,42,.2); }
+.lb tr.fr-champfr td { border-top-width: calc(var(--u) * 2); border-bottom-width: calc(var(--u) * 2); }
+.lb tr.fr-champfr td:first-child { border-left-width: calc(var(--u) * 2); }
+.lb tr.fr-champfr td:last-child { border-right-width: calc(var(--u) * 2); }
+.lb tr.fr-champfr.now { background: linear-gradient(100deg, transparent 0 40%, rgba(255,246,200,.45) 50%, transparent 60% 100%) no-repeat; background-size: 300% 100%; animation: shine 2.4s linear infinite; }
+.lb tr.fr-champfr.now td { animation: champ 1.2s steps(2) infinite; }
+@keyframes shine { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+@keyframes champ { 50% { border-color: #fff0a0; } }
 .fr-fidelefr { --frc: #ff9a3a; --frb: rgba(255,154,58,.12); }
 .lb tr.fr-fidelefr td { border-top-style: double; border-bottom-style: double; border-top-width: calc(var(--u) * 2); border-bottom-width: calc(var(--u) * 2); }
 .fr-flammes { --frc: #ff7a2a; --frb: rgba(255,122,42,.18); }
@@ -311,6 +310,25 @@ table { width: 100%; border-collapse: collapse; }
 .ttl { display: inline; margin-left: calc(var(--u) * 2); font-size: .72em; color: var(--muted); font-style: italic; }
 .rainbow, .rainbow-bg { background: linear-gradient(90deg, #ff5a5a, #ffb85a, #ffe05a, #6aff8a, #5ad8ff, #c87aff, #ff5a5a); background-size: 200% 100%; animation: arcenciel 3s linear infinite; }
 .rainbow { -webkit-background-clip: text; background-clip: text; color: transparent !important; }
+/* couleurs de pseudo à effet (classe nc-<id>) */
+.nc-grad { -webkit-background-clip: text; background-clip: text; color: transparent !important; background-size: 300% 100%; animation: ncwave 3s linear infinite; }
+@keyframes ncwave { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+.nc-ordore { background-image: linear-gradient(100deg, #e0a030 0 40%, #fff6c8 50%, #e0a030 60% 100%); }
+.nc-braise { background-image: linear-gradient(90deg, #ff3a2a, #ffb43a, #ff3a2a, #ffb43a, #ff3a2a); }
+.nc-oceanps { background-image: linear-gradient(90deg, #3a8ae8, #6ae8e8, #3a8ae8, #6ae8e8, #3a8ae8); }
+.nc-sunsetps { background-image: linear-gradient(90deg, #ffb43a, #ff6a8a, #c07ae8, #ff6a8a, #ffb43a); }
+.nc-scarabps { background-image: linear-gradient(90deg, #2fc8b0, #5ae86a, #4a8aff, #5ae86a, #2fc8b0); }
+.nc-diamps { background-image: linear-gradient(100deg, #b8e8ff 0 40%, #ffffff 47%, #ffffff 53%, #b8e8ff 60% 100%); animation-duration: 1.8s; }
+.nc-galaxie { background-image: linear-gradient(90deg, #8a5aff, #4a4ad8, #e08aff, #4a4ad8, #8a5aff); }
+.nc-galaxie::after, .nc-diamps::after { content: '✦'; font-size: .55em; vertical-align: super; color: #fff; -webkit-text-fill-color: #fff; animation: twinkle 1.4s steps(2) infinite; }
+.nc-galaxie::after { content: '✧'; color: #e0c8ff; -webkit-text-fill-color: #e0c8ff; }
+@keyframes twinkle { 50% { opacity: .15; } }
+.nc-neonps { color: #e4e0ff !important; text-shadow: 0 0 calc(var(--u) * 1.5) #8a7aff, 0 0 calc(var(--u) * 3) #6a5aff; animation: ncneon 2s steps(1) infinite; }
+@keyframes ncneon { 0%, 44%, 52%, 100% { opacity: 1; } 48% { opacity: .45; } }
+.nc-champps { color: #ffc83a !important; text-shadow: 0 0 calc(var(--u) * 1.5) rgba(255,184,42,.6); }
+tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-background-clip: text; background-clip: text; background-image: linear-gradient(100deg, #ffb82a 0 40%, #fff6c8 50%, #ffb82a 60% 100%); background-size: 300% 100%; animation: ncwave 2.4s linear infinite; }
+.nc-fantome { color: #ece8ff !important; animation: ncghost 3s ease-in-out infinite; }
+@keyframes ncghost { 50% { opacity: .3; } }
 @keyframes arcenciel { to { background-position: 200% 0; } }
 .detail { display: flex; gap: calc(var(--u) * 4); align-items: center; }
 
@@ -1316,16 +1334,12 @@ const FRAMES = [
   { devOnly: true, id: 'amethyste', name: 'Améthyste', price: 400, col: '#9a5ac8' },
   { devOnly: true, id: 'brique', name: 'Brique', price: 400, col: '#c8603a' },
   { devOnly: true, id: 'onyx', name: 'Onyx', price: 500, col: '#6a6570' },
-  { devOnly: true, id: 'neon', name: '⚡ Néon', price: 800, col: '#5ad8ff' },
-  { devOnly: true, id: 'damier', name: '🏁 Damier', price: 800, col: '#ffffff' },
-  { devOnly: true, id: 'cactusfr', name: '🌵 Cactus', price: 900, col: '#4f9a3a' },
+  { devOnly: true, id: 'neon', name: '⚡ Néon', price: 800, col: '#8a7aff' },
   { devOnly: true, id: 'sunset', name: '🌅 Coucher de soleil', price: 1000, col: '#ff8a5a' },
   { devOnly: true, id: 'scarabee', name: '🪲 Scarabée', price: 1200, col: '#2fa8a0' },
   { devOnly: true, id: 'arcenfr', name: '🌈 Arc-en-ciel', price: 2000, col: '#ff5a5a', prestige: true },
   { devOnly: true, id: 'diamantfr', name: '💎 Diamant', price: 2500, col: '#c8f0ff', prestige: true },
-  { devOnly: true, id: 'hwfr', name: '🎃 Halloween', price: 400, col: '#ff8a2a' },
-  { devOnly: true, id: 'noelfr', name: '🎅 Sucre d\'orge', price: 400, col: '#d8463a' },
-  { devOnly: true, id: 'champfr', name: '👑 Champion', col: '#ffd25a', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
+  { devOnly: true, id: 'champfr', name: '👑 Champion', col: '#ffb82a', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
   { devOnly: true, id: 'fidelefr', name: '🔥 Fidèle', col: '#ff9a3a', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
 ];
 const NAME_COLORS = [
@@ -1335,6 +1349,22 @@ const NAME_COLORS = [
   { id: 'vert', name: 'Vert', price: 250, col: '#6ad86a', from: SHOP_FROM },
   { id: 'violet', name: 'Violet', price: 250, col: '#c87aff', from: SHOP_FROM },
   { id: 'arcenciel', name: 'Arc-en-ciel', price: 1500, rainbow: true, prestige: true, from: SHOP_FROM },
+  // à l'essai sur dev : nouvelles couleurs (invisibles sur le site officiel) ; fx = classe nc-<id>
+  { devOnly: true, id: 'orange', name: 'Orange', price: 250, col: '#ffa03a' },
+  { devOnly: true, id: 'rose', name: 'Rose', price: 250, col: '#ff8ac8' },
+  { devOnly: true, id: 'citron', name: 'Jaune citron', price: 250, col: '#e8f05a' },
+  { devOnly: true, id: 'sable', name: 'Sable', price: 300, col: '#e0c08a' },
+  { devOnly: true, id: 'acier', name: 'Gris acier', price: 300, col: '#9aa8b8' },
+  { devOnly: true, id: 'ordore', name: '✨ Or', price: 800, col: '#ffd25a', fx: 'grad' },
+  { devOnly: true, id: 'braise', name: '🔥 Braise', price: 900, col: '#ff6a2a', fx: 'grad' },
+  { devOnly: true, id: 'oceanps', name: '🌊 Océan', price: 900, col: '#3a8ae8', fx: 'grad' },
+  { devOnly: true, id: 'sunsetps', name: '🌅 Coucher de soleil', price: 1000, col: '#ff6a8a', fx: 'grad' },
+  { devOnly: true, id: 'scarabps', name: '🪲 Scarabée', price: 1200, col: '#2fc8b0', fx: 'grad' },
+  { devOnly: true, id: 'neonps', name: '⚡ Néon', price: 1000, col: '#8a7aff', fx: 'fx' },
+  { devOnly: true, id: 'diamps', name: '💎 Diamant', price: 2500, col: '#c8f0ff', fx: 'grad', prestige: true },
+  { devOnly: true, id: 'galaxie', name: '🌌 Galaxie', price: 2500, col: '#8a5aff', fx: 'grad', prestige: true },
+  { devOnly: true, id: 'champps', name: '👑 Champion', col: '#ffc83a', fx: 'fx', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
+  { devOnly: true, id: 'fantome', name: '👻 Fantôme', col: '#ece8ff', fx: 'fx', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
 ];
 const TITLES = [
   { id: 'aucun', name: 'Aucun', price: 0 },
@@ -1436,6 +1466,10 @@ const UNLOCKS = {
   'hat:plumeHat': { secret: true, how: '100 chatouilles au bousier de l\'accueil', prog: p => [counter(p, 'tickle'), EGG.tickle] },
   'ball:lune': { secret: true, how: '13 touches d\'affilée sur la lune de l\'accueil', prog: p => [counter(p, 'lune'), 1] },
   'title:maniaque': { secret: true, how: 'Une partie finie pile à 10,0 cm, 1,00 m, 2,00 m ou 3,00 m', prog: p => [['pp10', 'pp100', 'pp200', 'pp300'].some(k => counter(p, k)) ? 1 : 0, 1] },
+  'frame:champfr': { text: 'Sois champion de la semaine 👑 (le reflet brille tant que tu es champion en titre)', prog: p => [counter(p, 'champion'), 1] },
+  'color:champps': { text: 'Sois champion de la semaine 👑 (le reflet brille tant que tu es champion en titre)', prog: p => [counter(p, 'champion'), 1] },
+  'frame:fidelefr': { text: 'Fais une série de 30 jours', prog: p => [p.bestStreak, 30] },
+  'color:fantome': { text: 'Dépasse 10 fois le fantôme du meilleur (une fois par partie du jour)', prog: p => [counter(p, 'ghostpass'), 10] },
   'frame:pilepoil': { secret: true, how: 'Pile à 10,0 cm, 1,00 m, 2,00 m et 3,00 m', prog: p => [['pp10', 'pp100', 'pp200', 'pp300'].filter(k => counter(p, k)).length, 4] },
   'title:leve': { secret: true, how: 'Une dune du jour jouée avant 7 h', prog: p => [counter(p, 'early'), 1] },
   'title:hibou': { secret: true, how: 'Une dune du jour jouée après 23 h', prog: p => [counter(p, 'owl'), 1] },
@@ -1798,7 +1832,7 @@ function fmtWeek(wk) {
 // Pseudo personnalisé (couleur, titre) et cadre de la ligne, d'après l'apparence publiée
 function nameHtml(name, look, suffix = '') {
   const col = findCos('color', look && look.color), title = findCos('title', look && look.title);
-  return `<span class="${col.rainbow ? 'rainbow' : ''}" ${col.id !== 'blanc' && col.col ? `style="color:${col.col}"` : ''}>${esc(name)}</span>${suffix}${title.id !== 'aucun' ? `<span class="ttl">« ${esc(title.name)} »</span>` : ''}`;
+  return `<span class="${col.rainbow ? 'rainbow' : ''}${col.fx ? ` nc-${col.id}${col.fx === 'grad' ? ' nc-grad' : ''}` : ''}" ${col.id !== 'blanc' && col.col && !col.fx ? `style="color:${col.col}"` : ''}>${esc(name)}</span>${suffix}${title.id !== 'aucun' ? `<span class="ttl">« ${esc(title.name)} »</span>` : ''}`;
 }
 // Récompenses reçues hors d'une partie : gardées dans un encadré de l'accueil jusqu'à « OK »
 const REWARD_TYPE = { ball: '⚪ Boule', hat: '🎩 Chapeau', outfit: '👕 Tenue', trail: '✨ Traînée', theme: '🏜️ Décor', frame: '🖼️ Cadre', color: '🎨 Couleur', title: '🏷️ Titre' };
@@ -3531,7 +3565,7 @@ class Game {
       const gh = g.ghost;
       if (idx >= gh.x.length || idx < 20) continue;
       const gy = gh.y[idx], role = g.role || 'rival', n = g.name.slice(0, 8);
-      if (!g.passed && b.y > gy + 6) { g.passed = true; this.sayText((COMMENTS.pass[role] || COMMENTS.pass.rival)(n)); }
+      if (!g.passed && b.y > gy + 6) { g.passed = true; if (role === 'leader') this.run.ghostPass = true; this.sayText((COMMENTS.pass[role] || COMMENTS.pass.rival)(n)); }
       else if (g.passed && b.y < gy - 6) { g.passed = false; this.sayText((COMMENTS.passed[role] || COMMENTS.passed.rival)(n)); }
     }
   }
@@ -4757,6 +4791,7 @@ const App = {
       }
       p.weathers[run.weather] = (p.weathers[run.weather] || 0) + 1;
       if (run.terrier && WEEKLY_WEATHERS.includes(run.weather)) inc('hole_' + run.weather);
+      if (run.ghostPass) inc('ghostpass');
       if (run.byType.megot && !d.megot) { d.megot = true; inc('megot'); }  // un seul mégot compté par jour
       if (this.today >= EGG.from) {
         if (run.chat) inc('chat');
@@ -5240,7 +5275,7 @@ const App = {
   async scr_leaderboard() {
     const tab = this.lbTab, me = this.p.name, champ = await Leaderboard.champion(this.today), looks = await this.looks();
     const crown = name => name === champ ? ' 👑' : '';
-    const who = (name, extra = '') => nameHtml(name, looks[name], crown(name) + extra), fr = name => frameCls(looks[name]);
+    const who = (name, extra = '') => nameHtml(name, looks[name], crown(name) + extra), fr = name => frameCls(looks[name]) + (name === champ ? ' now' : '');
     let body = '', extra = '';
     if (tab === 'day') {
       const lb = await Leaderboard.day(this.today);
@@ -5414,7 +5449,7 @@ const App = {
       // aperçu de sa ligne avec l'objet touché
       const look = {}; for (const t of RANK_TYPES) look[t] = (type === t && prev ? prev : eq(t)).id;
       top = `<div class="panel"><div class="tiny center">Aperçu de ta ligne au classement</div>
-        <table class="lb"><tr class="${frameCls(look)}"><td>🥇</td><td>${nameHtml(p.name, look)}</td><td class="r">${fmtSize(p.stats.best || 0)}</td></tr></table></div>`;
+        <table class="lb"><tr class="${frameCls(look)}${ONLINE_ENV === 'dev' ? ' now' : ''}"><td>🥇</td><td>${nameHtml(p.name, look)}</td><td class="r">${fmtSize(p.stats.best || 0)}</td></tr></table></div>`;
       // chaque catégorie : d'abord ce qui s'achète, puis ce qui se gagne (🏅)
       const rstatus = (t, it) => !Store.owns(p, t, it) && it.prog ? `🏅 À gagner · ${Math.min(...it.prog(p))}/${it.prog(p)[1]}` : `${it.prog ? '🏅 ' : ''}${status(it, t)}`;
       const pill = (t, it) => `<button class="pill ${p.equip[t] === it.id ? 'on' : ''} ${this.shopSel === it.id && type === t ? 'sel2' : ''} ${Store.owns(p, t, it) ? '' : 'lock'} ${it.prog ? 'earn' : ''}" data-a="rankitem" data-v="${t}:${it.id}"><span class="pn">${t === 'color' ? `<span class="sw ${it.rainbow ? 'rainbow-bg' : ''}" style="${it.col ? 'background:' + it.col : ''}"></span> ` : t === 'frame' && it.col ? `<span class="sw" style="background:${it.col}"></span> ` : ''}${t === 'title' && it.id !== 'aucun' ? `« ${esc(it.name)} »` : esc(it.name)}</span><span class="tiny">${rstatus(t, it)}</span></button>`;
