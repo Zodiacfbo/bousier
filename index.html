@@ -1164,6 +1164,8 @@ const THEMES = [
 const SHOP_FROM = '2026-10-26', WEEK_SHOP_FROM = '2026-11-09';
 // Pionniers : ceux qui ont joué une dune du jour pendant la première semaine (titre, cadre et 150 🟡, une seule fois)
 const PIONEER = { from: '2026-10-20', to: '2026-10-25', coins: 150 };
+// Bienvenue : 100 🟡 une seule fois pour chaque joueur qui n'a pas joué avant le 26 octobre (les pionniers ont leur cadeau)
+const WELCOME = { from: '2026-10-26', coins: 100 };
 function isPioneer(p) { return Object.keys(p.days || {}).some(k => k >= PIONEER.from && k <= PIONEER.to && (p.days[k].runs || []).length > 0); }
 SKINS.push(
   { id: 'diamant', name: 'Boule diamant', price: 2500, prestige: true, from: SHOP_FROM, base: '#9ad8f0', light: '#c8f0ff', hi: '#ffffff', dark: '#5aa0c8', out: '#14385a', specks: ['#ffffff', '#e8faff', '#7ac0e0'], count: 120, bigSpecks: true },
@@ -4004,11 +4006,14 @@ const App = {
         }
       }
       await this.weeklyAwards();
-      let pioneer = false;
+      let pioneer = false, welcome = false;
       if (this.today >= SHOP_FROM && !p.counters.pionnier && isPioneer(p)) { p.coins += PIONEER.coins; p.counters.pionnier = 1; pioneer = true; }
+      if (this.today >= WELCOME.from && !p.counters.welcome && !isPioneer(p) && !Object.keys(p.days || {}).some(k => k < WELCOME.from && (p.days[k].runs || []).length)) {
+        p.coins += WELCOME.coins; p.counters.welcome = 1; welcome = true;
+      }
       p.awardsDay = this.today;
       const fresh = Store.checkUnlocks(p);
-      const lines = [...(roi ? [{ txt: '🥇 Badge « Roi Bousier »' }] : []), ...(pioneer ? [{ txt: `🌱 Merci pionnier : +${PIONEER.coins} 🟡` }] : []), ...fresh.map(f => rewardLine(f.type, f.item))];
+      const lines = [...(welcome ? [{ txt: `👋 Bienvenue dans la dune ! Voici un petit présent pour bien commencer : +${WELCOME.coins} 🟡` }] : []), ...(roi ? [{ txt: '🥇 Badge « Roi Bousier »' }] : []), ...(pioneer ? [{ txt: `🌱 Merci pionnier : +${PIONEER.coins} 🟡` }] : []), ...fresh.map(f => rewardLine(f.type, f.item))];
       if (lines.length) this.addRewards(lines);
       Store.save();
       if (lines.length) {

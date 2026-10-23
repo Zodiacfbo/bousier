@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.11.8 — Cadeau de bienvenue (23 octobre 2026)
+- À partir du 26 octobre, chaque joueur qui n'a pas joué avant (nouveau, ou inscrit sans avoir joué) reçoit une fois
+  100 🟡 dans l'encadré « 🎁 Tes récompenses » : « 👋 Bienvenue dans la dune ! Voici un petit présent pour bien
+  commencer : +100 🟡 ». Pas pour les pionniers (ils ont leur cadeau), ni en se reconnectant ou sur un nouvel appareil.
+
 ## v1.11.7 — Encadré « Tes récompenses » (23 octobre 2026)
 - Ce qui se gagne hors d'une partie (titres, cadres et objets débloqués à l'ouverture, cadeau des pionniers, badge Roi
   Bousier, cadeaux de l'organisateur) s'affiche dans un encadré « 🎁 Tes récompenses » sur l'accueil, qui reste jusqu'à
