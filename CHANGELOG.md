@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.11.6 — Météos spéciales le lundi et le vendredi (23 octobre 2026)
+- À partir du 2 novembre, les deux météos spéciales de la semaine tombent toujours le lundi et le vendredi
+  (lun. 2 : orage, ven. 6 : brouillard, lun. 9 : sables mouvants, ven. 13 : éclipse, puis on recommence).
+  Jeu et calendrier de l'admin à jour ; aucune dune déjà jouée ne change.
+
 ## v1.11.5 — Sables mouvants plus piégeux (23 octobre 2026)
 - Tourbillons plus nombreux (environ ×1,5) et plus grands, qui grandissent avec la boule ; autour, une zone d'aspiration
   (grains qui tournent vers le centre) attire la boule : il faut contre-braquer. Enlisement un peu plus fort.

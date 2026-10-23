@@ -368,10 +368,8 @@ const weekKeyOf = k => { const d = new Date(k + 'T12:00'); d.setDate(d.getDate()
 function weeklyWeather(day) {
   if (day < WX_ROTATION_FROM) return -1;
   const wk = weekKeyOf(day), n = Math.round((new Date(wk + 'T12:00') - new Date(WX_ROTATION_FROM + 'T12:00')) / (7 * 86400000));
-  const r = mulberry32(hashStr('wxweek2|' + n)), a = Math.floor(r() * 3);
-  let b = 3 + Math.floor(r() * 3);
-  if (b === a + 1) b++;
-  const i = addDays(wk, a) === day ? 0 : addDays(wk, b) === day ? 1 : -1;
+  // toujours le lundi et le vendredi (comme dans le jeu)
+  const i = wk === day ? 0 : addDays(wk, 4) === day ? 1 : -1;
   return i < 0 ? -1 : WEEKLY_IDX[(2 * n + i) % WEEKLY_IDX.length];
 }
 function dayWeather(day, prev) {
