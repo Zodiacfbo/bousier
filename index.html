@@ -256,6 +256,40 @@ table { width: 100%; border-collapse: collapse; }
 .fr-podium { --frc: #c87aff; --frb: rgba(200,122,255,.15); }
 .fr-pionnier { --frc: #5fae4a; --frb: rgba(95,174,74,.16); }
 .fr-pilepoil { --frc: #5ad8ff; --frb: rgba(90,216,255,.14); }
+/* maquette : nouveaux cadres */
+.fr-menthe { --frc: #6ad8a8; --frb: rgba(106,216,168,.13); }
+.fr-ocean { --frc: #3a7ac8; --frb: rgba(45,106,168,.18); }
+.fr-sakura { --frc: #f5b0c8; --frb: rgba(245,176,200,.13); }
+.fr-amethyste { --frc: #a86ad8; --frb: rgba(154,90,200,.16); }
+.fr-brique { --frc: #c8603a; --frb: rgba(200,96,58,.16); }
+.fr-onyx { --frc: #8a8590; --frb: rgba(0,0,0,.35); }
+.fr-neon { --frc: #5ad8ff; --frb: rgba(90,216,255,.10); }
+.lb tr.fr-neon td { animation: neon 1.6s steps(1) infinite; }
+@keyframes neon { 0%, 46%, 54%, 100% { border-color: #5ad8ff; } 50% { border-color: #1a4a5a; } 80% { border-color: #b8f4ff; } }
+.fr-damier { --frc: #fff; --frb: #141018; }
+.lb tr.fr-damier td, .lb tr.fr-cactusfr td, .lb tr.fr-hwfr td, .lb tr.fr-noelfr td { border-top-style: dashed; border-bottom-style: dashed; }
+.lb tr.fr-damier td:first-child, .lb tr.fr-cactusfr td:first-child, .lb tr.fr-hwfr td:first-child, .lb tr.fr-noelfr td:first-child { border-left-style: dashed; }
+.lb tr.fr-damier td:last-child, .lb tr.fr-cactusfr td:last-child, .lb tr.fr-hwfr td:last-child, .lb tr.fr-noelfr td:last-child { border-right-style: dashed; }
+.fr-cactusfr { --frc: #5fae4a; --frb: rgba(79,154,58,.14); }
+.fr-sunset { --frc: #ff8a5a; --frb: rgba(255,120,90,.12); }
+.lb tr.fr-sunset td { animation: sunset 3s steps(3) infinite; }
+@keyframes sunset { 0% { border-color: #ffb43a; } 33% { border-color: #ff6a8a; } 66% { border-color: #b86ad8; } }
+.fr-scarabee { --frc: #2fa8a0; --frb: rgba(47,168,160,.13); }
+.lb tr.fr-scarabee td { animation: scarab 2.4s steps(6) infinite; }
+@keyframes scarab { 0% { border-color: #2fa8a0; } 33% { border-color: #3fc86a; } 66% { border-color: #3a7ad8; } 100% { border-color: #2fa8a0; } }
+.fr-arcenfr { --frc: #ff5a5a; --frb: rgba(255,255,255,.05); }
+.lb tr.fr-arcenfr td { animation: arcfr 1.8s steps(6) infinite; }
+@keyframes arcfr { 0% { border-color: #ff5a5a; } 17% { border-color: #ffb85a; } 33% { border-color: #ffe05a; } 50% { border-color: #6aff8a; } 67% { border-color: #5ad8ff; } 83% { border-color: #c87aff; } }
+.fr-diamantfr { --frc: #c8f0ff; --frb: rgba(200,240,255,.10); }
+.lb tr.fr-diamantfr td { animation: diam 1.2s steps(2) infinite; }
+@keyframes diam { 50% { border-color: #ffffff; } 75% { border-color: #7ac0e0; } }
+.fr-hwfr { --frc: #ff8a2a; --frb: #3e2648; }
+.fr-noelfr { --frc: #e8463a; --frb: rgba(255,255,255,.14); }
+.fr-champfr { --frc: #ffd25a; --frb: rgba(255,210,90,.2); }
+.lb tr.fr-champfr td { animation: champ 1s steps(2) infinite; }
+@keyframes champ { 50% { border-color: #fff4a8; } }
+.fr-fidelefr { --frc: #ff9a3a; --frb: rgba(255,154,58,.12); }
+.lb tr.fr-fidelefr td { border-top-style: double; border-bottom-style: double; border-top-width: calc(var(--u) * 2); border-bottom-width: calc(var(--u) * 2); }
 .fr-flammes { --frc: #ff7a2a; --frb: rgba(255,122,42,.18); }
 .lb tr.fr-flammes td { animation: frfeu .5s steps(1) infinite; }
 @keyframes frfeu { 50% { border-color: #ffd05a; } }
@@ -1275,6 +1309,24 @@ const FRAMES = [
   { id: 'podium', name: 'Cadre du podium', col: '#c87aff', from: SHOP_FROM },
   { id: 'pionnier', name: '🌱 Pionnier', col: '#5fae4a', from: SHOP_FROM },
   { from: EGG.from, id: 'pilepoil', name: '🎯 Pile poil', col: '#5ad8ff' },
+  // maquette : nouveaux cadres
+  { id: 'menthe', name: 'Menthe', price: 300, col: '#6ad8a8' },
+  { id: 'ocean', name: 'Océan', price: 300, col: '#2d6aa8' },
+  { id: 'sakura', name: 'Sakura', price: 300, col: '#f5b0c8' },
+  { id: 'amethyste', name: 'Améthyste', price: 400, col: '#9a5ac8' },
+  { id: 'brique', name: 'Brique', price: 400, col: '#c8603a' },
+  { id: 'onyx', name: 'Onyx', price: 500, col: '#6a6570' },
+  { id: 'neon', name: '⚡ Néon', price: 800, col: '#5ad8ff' },
+  { id: 'damier', name: '🏁 Damier', price: 800, col: '#ffffff' },
+  { id: 'cactusfr', name: '🌵 Cactus', price: 900, col: '#4f9a3a' },
+  { id: 'sunset', name: '🌅 Coucher de soleil', price: 1000, col: '#ff8a5a' },
+  { id: 'scarabee', name: '🪲 Scarabée', price: 1200, col: '#2fa8a0' },
+  { id: 'arcenfr', name: '🌈 Arc-en-ciel', price: 2000, col: '#ff5a5a', prestige: true },
+  { id: 'diamantfr', name: '💎 Diamant', price: 2500, col: '#c8f0ff', prestige: true },
+  { id: 'hwfr', name: '🎃 Halloween', price: 400, col: '#ff8a2a' },
+  { id: 'noelfr', name: '🎅 Sucre d\'orge', price: 400, col: '#d8463a' },
+  { id: 'champfr', name: '👑 Champion', col: '#ffd25a' },
+  { id: 'fidelefr', name: '🔥 Fidèle', col: '#ff9a3a' },
 ];
 const NAME_COLORS = [
   { id: 'blanc', name: 'Blanc', price: 0, col: '#ffffff' },
