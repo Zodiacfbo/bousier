@@ -7,6 +7,14 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.13.0 — Easter eggs (23 octobre 2026)
+- À partir du 26 octobre, sans news : plots en entraînement (25 → Plot de chantier), 50 entraînements (Sifflet du coach
+  + titre), chat noir du vendredi 13 (Fer à cheval), chatouilles au bousier de l'accueil (100 → Plume), lune de l'accueil
+  les jours de nuit (13 touches → Boule Lune), titres secrets (Lève-tôt, Oiseau de nuit, Le maniaque, Le timide,
+  Jamais sans mon terrier, Régime sans verdure), cadre Pile poil, mots secrets de la boîte à idées.
+- 20 novembre : 1 mois de Bousier (gâteau sur la dune, +50 🟡 et titre pour ceux qui ont joué le premier mois, news).
+- Chaque récompense obtenue est expliquée (écran de fin et encadré « Tes récompenses »). Secrets : 19.
+
 ## v1.12.0 — Easter egg des mégots (23 octobre 2026)
 - À partir du 26 octobre, un mégot très discret apparaît sur la dune du jour, une fois par période de 5 jours (jour au
   hasard), près d'un bord. Avalé : « UN MEGOT ?! ». Un seul compté par jour ; 4 mégots débloquent la Cigarette 🚬
