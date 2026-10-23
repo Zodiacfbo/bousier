@@ -259,6 +259,10 @@ table { width: 100%; border-collapse: collapse; }
 .fr-flammes { --frc: #ff7a2a; --frb: rgba(255,122,42,.18); }
 .lb tr.fr-flammes td { animation: frfeu .5s steps(1) infinite; }
 @keyframes frfeu { 50% { border-color: #ffd05a; } }
+.lb td.r { white-space: nowrap; }
+.wkdet { display: flex; flex-wrap: wrap; gap: 0 calc(var(--u) * 2.5); font-size: .66em; color: #7a6a7a; margin-top: calc(var(--u) * 0.5); }
+.wkdet .on { color: var(--muted); }
+.lb tr.me .wkdet .on { color: var(--gold); }
 .ttl { display: block; font-size: .72em; color: var(--muted); font-style: italic; }
 .rainbow, .rainbow-bg { background: linear-gradient(90deg, #ff5a5a, #ffb85a, #ffe05a, #6aff8a, #5ad8ff, #c87aff, #ff5a5a); background-size: 200% 100%; animation: arcenciel 3s linear infinite; }
 .rainbow { -webkit-background-clip: text; background-clip: text; color: transparent !important; }
@@ -1723,6 +1727,13 @@ function podiumHtml(top, opts = {}) {
   }).join('')}</div>`;
 }
 function placeTxt(i) { return i === 0 ? '1er' : (i + 1) + 'e'; }
+// Détail d'une semaine : chaque jour joué ; les WEEK_BEST meilleurs (comptés) en clair
+function weekDetail(det) {
+  if (!det || !det.length) return '';
+  const top = det.slice().sort((a, b) => b.score - a.score).slice(0, WEEK_BEST);
+  return `<div class="wkdet">${det.map(x => { const w = ALL_WEATHERS.find(y => y.id === x.wx);
+    return `<span class="${top.includes(x) ? 'on' : ''}">${fmtDayLong(x.day).split(' ')[0]} ${w ? w.icon : ''} ${fmtSize(x.score)}${x.terrier ? '' : ' ✗'}</span>`; }).join('')}</div>`;
+}
 function weekTotal(scores) {
   const top = scores.slice().sort((a, b) => b - a).slice(0, WEEK_BEST);
   return Math.round(top.reduce((a, b) => a + b, 0) * 10) / 10;
@@ -1789,8 +1800,9 @@ const LocalBoard = {
   async week(wk) {
     const days = weekDays(wk);
     return Object.values(Store.data.profiles).map(p => {
-      const scores = days.map(k => p.days[k]).filter(d => d && d.best > 0).map(d => d.best);
-      return { name: p.name, team: p.team || '', total: weekTotal(scores), played: scores.length };
+      const ks = days.filter(k => p.days[k] && p.days[k].best > 0), scores = ks.map(k => p.days[k].best);
+      const det = ks.map(k => { const r = p.days[k].bestRun || {}; return { day: k, score: p.days[k].best, wx: r.weather, terrier: !!r.terrier }; });
+      return { name: p.name, team: p.team || '', total: weekTotal(scores), played: scores.length, det };
     }).filter(e => e.played > 0).sort((a, b) => b.total - a.total);
   },
   async records() {
@@ -1932,14 +1944,17 @@ const Online = {
     return lb ? lb.slice() : lb;
   },
   async week(wk) {
-    const today = dayKey(), days = await Promise.all(weekDays(wk).filter(k => k <= today).map(k => this.day(k)));
+    const today = dayKey(), ks = weekDays(wk).filter(k => k <= today), days = await Promise.all(ks.map(k => this.day(k)));
     if (days.some(d => !d)) return null;
     const by = {};
-    for (const list of days) for (const e of list) {
-      const t = by[e.name] || (by[e.name] = { name: e.name, team: '', scores: [] });
-      t.scores.push(e.score); if (e.team) t.team = e.team;
-    }
-    return Object.values(by).map(e => ({ name: e.name, team: e.team, total: weekTotal(e.scores), played: e.scores.length })).sort((a, b) => b.total - a.total);
+    days.forEach((list, i) => {
+      for (const e of list) {
+        const t = by[e.name] || (by[e.name] = { name: e.name, team: '', scores: [], det: [] });
+        t.scores.push(e.score); if (e.team) t.team = e.team;
+        t.det.push({ day: ks[i], score: e.score, wx: e.run && e.run.weather, terrier: !!(e.run && e.run.terrier) });
+      }
+    });
+    return Object.values(by).map(e => ({ name: e.name, team: e.team, total: weekTotal(e.scores), played: e.scores.length, det: e.det })).sort((a, b) => b.total - a.total);
   },
   records() {
     return this.cached('records', RECORDS_TTL, () => this.run(async c => (await this.list(c, ['players'], 'best', 100))
@@ -5128,9 +5143,9 @@ const App = {
       if (rx && lb.some(e => e.name !== me)) extra += '<div class="tiny center">Touche la ligne d\'un collègue pour lui envoyer une réaction 👏 😂 💩 🔥</div>';
     } else if (tab === 'week') {
       const lb = await Leaderboard.week(weekKey(this.today));
-      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''} ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny ${e.played >= WEEK_BEST ? 'good' : ''}">${Math.min(e.played, WEEK_BEST)}/${WEEK_BEST}</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
+      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''} ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}${weekDetail(e.det)}</td><td class="tiny ${e.played >= WEEK_BEST ? 'good' : ''}">${Math.min(e.played, WEEK_BEST)}/${WEEK_BEST}</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Rien cette semaine.</td></tr>';
-      extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés. Le vainqueur porte la 👑 toute la semaine suivante ; le podium gagne ${PODIUM_COINS.join(' / ')} 🟡.</div>`;
+      extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés (en clair sous chaque nom ; ✗ = sans terrier). Le vainqueur porte la 👑 toute la semaine suivante ; le podium gagne ${PODIUM_COINS.join(' / ')} 🟡.</div>`;
       const pod = await Leaderboard.podium(addDays(weekKey(this.today), -7));
       if (pod && pod.top.length) extra += `<div class="panel"><div class="label">Podium de la semaine dernière <span class="tiny">(${fmtWeek(pod.wk)})</span></div>
         ${podiumHtml(pod.top, { coins: true })}</div>`;
