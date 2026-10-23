@@ -3314,18 +3314,24 @@ class Game {
   initWeather() {
     const wx = this.wx, rng = makeRng(((this.course.seed || 1) ^ 0x51a7e) >>> 0), hy = this.course.holeY;
     this.sands = []; this.fogs = []; this.strike = null; this.flashT = 0; this.nextFlash = 1.5; this.nextStrike = 4;
-    if (wx.quicksand) for (let y = 650; y < hy - 350; y += rng.range(420, 650)) {
-      const [L, R] = this.edge(y), r = rng.int(15, 22);
+    if (wx.quicksand) for (let y = 650; y < hy - 350; y += rng.range(300, 460)) {
+      const [L, R] = this.edge(y), r = rng.int(18, 25);
       this.sands.push({ x: rng.range(L + r + 4, R - r - 4), y, r });
     }
     if (wx.fog) for (let y = 450; y < hy - 200; y += rng.range(650, 950)) this.fogs.push({ y, h: rng.int(130, 190) });
   }
+  sandR(z) { return z.r + this.ball.r * 0.5; }
   stepWeather(b) {
     const wx = this.wx;
     for (const z of this.sands) {
-      const dx = z.x - b.x, dy = z.y - b.y;
-      if (Math.hypot(dx, dy) < z.r + b.r * 0.4) {
-        b.vy = Math.min(b.vy, 20); b.vx += dx * 3.5 * TICK;
+      // le tourbillon grandit avec la boule ; autour, une zone d'aspiration attire vers le centre
+      const dx = z.x - b.x, dy = z.y - b.y, d = Math.hypot(dx, dy), core = this.sandR(z), pull = core * 2.2;
+      if (d >= core && d < pull) {
+        const acc = 900 / (1 + b.r * 0.09) * (wx.grip || 1);
+        b.vx += dx / d * acc * 0.33 * (1 - (d - core) / (pull - core)) * TICK;
+      }
+      if (d < core) {
+        b.vy = Math.min(b.vy, 16); b.vx += dx * 4.5 * TICK;
         if (this.frame % 3 === 0) this.particles.push({ x: b.x + (Math.random() - 0.5) * b.r * 2, y: b.y + b.r * 0.5, vx: dx, vy: -15, g: 0, life: 0.4, col: this.theme.sandDark, s: 1 });
         if (!z.said) { z.said = true; this.floatText('ENLISE !', b.x, b.y - b.r - 10, '#ffd08a'); }
       }
@@ -3382,14 +3388,18 @@ class Game {
     ctx.save();
     ctx.translate(0, -Math.round(camY));
     for (const z of this.sands || []) {
-      if (z.y < camY - 40 || z.y > camY + H + 40) continue;
+      const zr = this.sandR(z);
+      if (z.y < camY - zr * 2.5 || z.y > camY + H + zr * 2.5) continue;
       const rot = this.t * 2;
+      // zone d'aspiration : grains qui tournent vers le centre
+      ctx.fillStyle = '#9a6a34';
+      for (let k = 0; k < 18; k++) { const a = -rot * 0.6 + k * 0.349, rr = zr * (1.15 + (1 - (this.t * 0.5 + k * 0.37) % 1) * 1.05); ctx.fillRect(Math.round(z.x + Math.cos(a) * rr), Math.round(z.y + Math.sin(a) * rr * 0.8), 2, 1); }
       for (let k = 3; k >= 0; k--) {
         ctx.fillStyle = k % 2 ? this.theme.sandDark : '#9a6a34';
-        ctx.beginPath(); ctx.ellipse(z.x, z.y, z.r * (k + 1) / 4, z.r * (k + 1) / 5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(z.x, z.y, zr * (k + 1) / 4, zr * (k + 1) / 5, 0, 0, Math.PI * 2); ctx.fill();
       }
       ctx.fillStyle = this.theme.sandLight;
-      for (let k = 0; k < 6; k++) { const a = rot + k * 1.05, rr = z.r * (0.3 + (k % 3) * 0.22); ctx.fillRect(Math.round(z.x + Math.cos(a) * rr), Math.round(z.y + Math.sin(a) * rr * 0.8), 2, 1); }
+      for (let k = 0; k < 6; k++) { const a = rot + k * 1.05, rr = zr * (0.3 + (k % 3) * 0.22); ctx.fillRect(Math.round(z.x + Math.cos(a) * rr), Math.round(z.y + Math.sin(a) * rr * 0.8), 2, 1); }
     }
     if (this.theme.wallDeco) {
       // décor de saison posé sur les bords de la dune, en alternance gauche / droite

@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.11.5 — Sables mouvants plus piégeux (23 octobre 2026)
+- Tourbillons plus nombreux (environ ×1,5) et plus grands, qui grandissent avec la boule ; autour, une zone d'aspiration
+  (grains qui tournent vers le centre) attire la boule : il faut contre-braquer. Enlisement un peu plus fort.
+- Équilibrage testé : un joueur qui ne les évite pas reste enlisé ~2,5 fois plus longtemps qu'avant ; en les évitant,
+  on passe sans encombre, et le terrier reste toujours atteignable. Première journée concernée : le 11 novembre.
+
 ## v1.11.4 — Onglet Classement plus lisible (23 octobre 2026)
 - Grandes cases (2 par ligne) ; les cadres et titres à gagner sont rangés dans leur catégorie, repérés par un fond doré
   et « 🏅 À gagner » avec la progression.
