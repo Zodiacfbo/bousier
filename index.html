@@ -1732,6 +1732,13 @@ function nameHtml(name, look, suffix = '') {
 }
 // Récompenses reçues hors d'une partie : gardées dans un encadré de l'accueil jusqu'à « OK »
 const REWARD_TYPE = { ball: '⚪ Boule', hat: '🎩 Chapeau', outfit: '👕 Tenue', trail: '✨ Traînée', theme: '🏜️ Décor', frame: '🖼️ Cadre', color: '🎨 Couleur', title: '🏷️ Titre' };
+// Annonces déjà fermées sur cet appareil (identifiées par leur date de création)
+function annSeen() {
+  let l = [];
+  try { l = JSON.parse(safeStorageGet('bousier_annseen_' + ONLINE_ENV) || '[]'); } catch (e) { l = []; }
+  const old = safeStorageGet('bousier_ann_' + ONLINE_ENV);  // ancienne version : une seule annonce
+  return old ? l.concat(old) : l;
+}
 function rewardLine(type, item) {
   // « Cadre du podium », « Boule diamant » : le nom dit déjà le type, on ne garde que l'icône
   const [icon, word] = (REWARD_TYPE[type] || ' ').split(' '), name = type === 'title' ? `« ${item.name} »` : item.name;
@@ -4347,7 +4354,7 @@ const App = {
       hwteamok: () => { delete this.p.hwMsg; Store.save(); this.show('home'); },
       boostok: () => { delete this.p.boostMsg; Store.save(); this.show('home'); },
       podok: () => { safeStorageSet('bousier_pod_' + ONLINE_ENV, v); if (this.p.weekMsg) { delete this.p.weekMsg; Store.save(); } this.show('home'); },
-      annok: () => { safeStorageSet('bousier_ann_' + ONLINE_ENV, v); this.show('home'); },
+      annok: () => { safeStorageSet('bousier_annseen_' + ONLINE_ENV, JSON.stringify([...annSeen(), v].slice(-40))); this.show('home'); },
       eye: () => { for (const i of this.ui.querySelectorAll('input.pw')) i.type = i.type === 'password' ? 'text' : 'password'; },
       secure: () => this.doSecure(),
       saveteam: () => this.saveTeam(),
@@ -4995,8 +5002,9 @@ const App = {
     // rappel du dimanche : jours joués cette semaine (d'après cet appareil)
     const nowDays = weekDays(weekKey(this.today)).filter(k => p.days[k] && p.days[k].best > 0).length;
     const sunday = dayFromKey(this.today).getDay() === 0 && left > 0 && !(d.best > 0) && nowDays < WEEK_BEST;
-    const annOn = ann && ann.text && (!ann.from || this.today >= ann.from) && (!ann.to || this.today <= ann.to);
-    const annText = annOn && safeStorageGet('bousier_ann_' + ONLINE_ENV) !== String(ann.at) ? ann.text : '';
+    // annonces de l'organisateur : toutes celles en cours, chacune jusqu'à « OK »
+    const seenAnn = annSeen(), annList = !ann ? [] : (ann.list || (ann.text ? [ann] : []))
+      .filter(a => a && a.text && (!a.from || this.today >= a.from) && (!a.to || this.today <= a.to) && !seenAnn.includes(String(a.at)));
     const leg = cfg.legend;
     const quests = cfg.quests.map(q => `<li class="${d.quests[q.id] ? 'done' : ''}">${d.quests[q.id] ? '✅' : '⬜'} ${esc(q.text)}</li>`).join('');
     const dots = [...Array(tries).keys()].map(i => `<span class="dot ${i < d.attempts ? 'used' : ''}"></span>`).join('');
@@ -5015,7 +5023,7 @@ const App = {
         <div class="tiny center">Tout s'équipe dans 🎨 Style.</div>
         <div class="gift-btns"><button class="btn ghost small" data-a="giftok">OK</button></div></div>` : ''}
       ${isHalloween(this.today) && safeStorageGet('bousier_hw_' + ONLINE_ENV) !== this.today ? `<div class="banner">🎃 <b>Semaine Halloween !</b> Citrouilles et chauves-souris dans la dune.<div class="tiny">${this.today === HALLOWEEN.night ? 'Ce soir, dune spéciale de nuit : rentre dans le terrier pour gagner le 🧙 Chapeau de sorcière !' : `Joue une dune pour gagner la 🎃 Boule citrouille. ${this.today < HALLOWEEN.night ? 'Samedi 31 : dune spéciale de nuit !' : ''}`}</div> <button class="btn ghost small" data-a="hwok">OK</button></div>` : ''}
-      ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
+      ${annList.map(a => `<div class="banner">📣 ${esc(a.text)} <button class="btn ghost small" data-a="annok" data-v="${a.at}">OK</button></div>`).join('')}
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
       ${p.hwMsg ? `<div class="banner">🎃 <b>Défi du labo réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b> <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}

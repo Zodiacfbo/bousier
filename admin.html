@@ -157,13 +157,14 @@ svg text { fill: var(--muted); font-size: 10px; }
     </section>
 
     <section id="tab-announce" class="panel hidden">
-      <h2>Annonce sur l'accueil</h2>
-      <p class="muted">Affichée en haut de l'accueil de tous les joueurs, jusqu'à ce qu'ils appuient sur OK.</p>
+      <h2>Annonces sur l'accueil</h2>
+      <p class="muted">Affichées en haut de l'accueil de tous les joueurs, chacune jusqu'à ce qu'ils appuient sur OK. Tu peux en préparer plusieurs à l'avance avec leurs dates.</p>
       <textarea id="atext" maxlength="200" placeholder="Ex. : Fin de la saison 1 vendredi ! Bravo à…"></textarea>
       <div class="row"><label class="muted">Du <input id="afrom" type="date"></label><label class="muted">au <input id="ato" type="date"></label>
         <span class="muted">(facultatif : vide = tout de suite et sans fin)</span></div>
-      <div class="row"><button class="main" id="asend">Publier</button><button id="aclear">Retirer l'annonce</button></div>
-      <p class="muted" id="acur"></p>
+      <div class="row"><button class="main" id="asend">Ajouter l'annonce</button></div>
+      <h2>Annonces prévues</h2>
+      <div class="scroll"><table id="alist"></table></div>
     </section>
 
     <section id="tab-password" class="panel hidden">
@@ -298,9 +299,8 @@ async function refresh() {
   $('inew').textContent = fresh ? `(${fresh})` : '';
   renderIdeas();
   const ann = await fb.getDoc(envRef('config', 'announce'));
-  const a = ann.exists() ? ann.data() : {};
-  const period = a.from || a.to ? ` · affichée ${a.from ? 'du ' + fmtDay(a.from) : 'dès maintenant'}${a.to ? ' au ' + fmtDay(a.to) : ''}` : '';
-  $('acur').textContent = a.text ? `En ligne : « ${a.text} » (${fmtDate(a.at)})${period}` : 'Aucune annonce en ligne.';
+  announces = annList(ann.exists() ? ann.data() : {});
+  renderAnnounces();
 }
 
 function renderPlayers() {
@@ -712,16 +712,35 @@ $('stable').onclick = async e => {
   toast('Score supprimé'); refresh();
 };
 
-// --- annonce ---
+// --- annonces (plusieurs, chacune avec ses dates) ---
+let announces = [];
+// ancien format : une seule annonce { text, at, from, to }
+const annList = a => (a.list || (a.text ? [{ text: a.text, at: a.at, from: a.from, to: a.to }] : [])).filter(x => x && x.text);
+const annState = x => { const t = dayKey(); return x.to && x.to < t ? 'terminée' : x.from && x.from > t ? 'prévue' : 'en ligne'; };
+function renderAnnounces() {
+  const list = announces.slice().sort((a, b) => (a.from || '').localeCompare(b.from || '') || a.at - b.at);
+  $('alist').innerHTML = list.length ? '<tr><th>Texte</th><th>Dates</th><th>État</th><th></th></tr>' + list.map(x => `<tr><td>${esc(x.text)}</td>
+    <td class="muted">${x.from ? fmtDay(x.from) : 'dès maintenant'} → ${x.to ? fmtDay(x.to) : 'sans fin'}</td><td>${annState(x) === 'en ligne' ? '🟢 en ligne' : annState(x) === 'prévue' ? '🕒 prévue' : '⚪ terminée'}</td>
+    <td class="r"><button class="danger" data-adel="${x.at}">Supprimer</button></td></tr>`).join('') : '<tr><td class="muted">Aucune annonce.</td></tr>';
+}
+async function saveAnnounces() {
+  // on garde aussi l'ancien format (la dernière ajoutée) pour les jeux pas encore mis à jour
+  const t = dayKey(), keep = announces.filter(x => !x.to || x.to >= addDays(t, -7)), last = keep[keep.length - 1];
+  await fb.setDoc(envRef('config', 'announce'), { list: keep, text: last ? last.text : '', at: last ? last.at : Date.now(), ...(last && last.from ? { from: last.from } : {}), ...(last && last.to ? { to: last.to } : {}) });
+}
 $('asend').onclick = async () => {
   const text = $('atext').value.trim(); if (!text) return toast('Écris une annonce.');
   const from = $('afrom').value, to = $('ato').value;
   if (from && to && to < from) return toast('La date de fin est avant la date de début.');
-  await fb.setDoc(envRef('config', 'announce'), { text, at: Date.now(), ...(from ? { from } : {}), ...(to ? { to } : {}) });
-  $('afrom').value = ''; $('ato').value = '';
+  announces.push({ text, at: Date.now(), ...(from ? { from } : {}), ...(to ? { to } : {}) });
+  await saveAnnounces();
+  $('atext').value = ''; $('afrom').value = ''; $('ato').value = '';
   toast(from && from > dayKey() ? `📣 Annonce programmée à partir du ${fmtDay(from)}` : '📣 Annonce publiée'); refresh();
 };
-$('aclear').onclick = async () => { await fb.setDoc(envRef('config', 'announce'), { text: '', at: Date.now() }); toast('Annonce retirée'); refresh(); };
+$('alist').onclick = async e => {
+  const at = +e.target.dataset.adel; if (!at || !confirm('Supprimer cette annonce ?')) return;
+  announces = announces.filter(x => x.at !== at); await saveAnnounces(); toast('Annonce supprimée'); refresh();
+};
 
 // --- mot de passe oublié ---
 $('fcheck').onclick = () => {

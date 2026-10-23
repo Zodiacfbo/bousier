@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.14.0 — Plusieurs annonces (23 octobre 2026)
+- Admin : onglet Annonce transformé en liste d'annonces, chacune avec ses dates (en ligne / prévue / terminée,
+  suppression). On peut préparer plusieurs annonces à l'avance.
+- Jeu : toutes les annonces en cours s'affichent, chacune avec son OK (mémorisé par annonce). Compatible avec l'ancien
+  format (une seule annonce).
+
 ## v1.13.9 — Réactions désactivées (23 octobre 2026)
 - Les réactions 👏 😂 💩 🔥 du classement du jour sont désactivées pour l'instant (interrupteur REACTIONS_ON ; les
   réactions déjà envoyées sont gardées et réapparaîtront si on les réactive).
