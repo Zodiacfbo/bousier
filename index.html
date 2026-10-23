@@ -262,8 +262,7 @@ table { width: 100%; border-collapse: collapse; }
 .lb td.r { white-space: nowrap; }
 .wkdet { display: flex; gap: calc(var(--u) * 1); }
 .lb tr.wk-main td { border-bottom: 0; padding-bottom: 0; }
-.wkdet.daydet span { flex: 0 0 calc(var(--u) * 26); }
-.wkdet.daydet span i { font-size: .7em; }
+.wkdet.daydet span { flex: 0 0 calc((100% - var(--u) * 6) / 7); }
 .lb tr.wk-det td { padding-top: calc(var(--u) * 1); }
 .lb tr.fr.wk-main td { border-bottom: 0; }
 .lb tr.fr.wk-det td { border-top: 0; }
@@ -1762,8 +1761,8 @@ function weekDetail(det, wk, today) {
 function dayDetail(runs, best) {
   if (!runs || !runs.length || runs.some(r => r.score == null)) return '';  // scores envoyés avant la mise à jour : pas de détail
   const bi = runs.findIndex(r => r.score === best);
-  const cells = runs.map((r, i) => `<span class="${i === bi ? 'on' : 'off'}${r.terrier ? '' : ' miss'}"><i>Essai ${i + 1}</i><b>${(r.score / 100).toFixed(2).replace('.', ',')}</b></span>`);
-  for (let i = runs.length; i < 3; i++) cells.push(`<span><i>Essai ${i + 1}</i><b>·</b></span>`);
+  const cells = runs.map((r, i) => `<span class="${i === bi ? 'on' : 'off'}${r.terrier ? '' : ' miss'}"><i>${i + 1}</i><b>${(r.score / 100).toFixed(2).replace('.', ',')}</b></span>`);
+  for (let i = runs.length; i < 3; i++) cells.push(`<span><i>${i + 1}</i><b>·</b></span>`);
   return `<div class="wkdet daydet">${cells.join('')}</div>`;
 }
 function weekTotal(scores) {
@@ -5172,7 +5171,7 @@ const App = {
       body = lb.length ? lb.map((e, i) => {
         const pick = rx && e.name !== me;
         const det = dayDetail(e.runs, e.score), attrs = `${pick ? `data-a="reactsel" data-v="${esc(e.id)}"` : ''}`, cls = `${e.name === me ? 'me' : ''} ${pick ? 'pick' : ''} ${fr(e.name)}`;
-        let row = `<tr class="${det ? 'wk-main' : ''} ${cls}" ${attrs}><td>${medal(i)}</td><td>${who(e.name, rxTxt(e.id) + (pick && !rx.mine[e.id] ? '<span class="rx-add">+👏</span>' : ''))}</td><td>${e.run && e.run.terrier ? '🕳️' : ''}${e.run && e.run.legend ? '✨' : ''}</td><td class="r">${fmtSize(e.score)}</td></tr>`;
+        let row = `<tr class="${det ? 'wk-main' : ''} ${cls}" ${attrs}><td>${medal(i)}</td><td>${who(e.name, rxTxt(e.id) + (pick && !rx.mine[e.id] ? '<span class="rx-add">+👏</span>' : ''))}</td><td>${det ? '' : e.run && e.run.terrier ? '🕳️' : ''}</td><td class="r">${e.run && e.run.legend ? '✨ ' : ''}${fmtSize(e.score)}</td></tr>`;
         if (det) row += `<tr class="wk-det ${cls}" ${attrs}><td></td><td colspan="3">${det}</td></tr>`;
         if (pick && this.reactSel === e.id) row += `<tr><td colspan="4"><div class="reacts">${REACTIONS.map(r => `<button class="${rx.mine[e.id] === r ? 'on' : ''}" data-a="react" data-v="${r}">${r}</button>`).join('')}</div></td></tr>`;
         return row;
