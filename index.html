@@ -677,6 +677,7 @@ const ROWS = {
   bonnet: ['.ccccc.', 'cCwwwCc', 'cwwwwwc', 'cCwwwCc', '.CCCCC.'],
   toque: ['.wwwww.', 'wWwWwWw', 'wwWwWww', 'wWwWwWw', '.hhhhh.'],
   hautdeforme: ['..YYYYY..', '.YrrrrrY.', 'YryyyyyrY', 'YrywyyyrY', 'YryyyyyrY', '.YrrrrrY.', '..YYYYY..'],
+  cigarette: ['.....twwwo', '.....ThhhO'],
   trCoeur: ['.r.r.', 'rprrr', 'rrrrr', '.rrr.', '..r..'],
   // particules de traînées
   trBulle: ['.cc.', 'cw.c', 'c..c', '.cc.'],
@@ -1178,6 +1179,7 @@ HATS.push(
   { id: 'beret', name: 'Béret', price: 200, week: true, from: WEEK_SHOP_FROM, sprite: 'beret' },
   { id: 'bonnet', name: 'Bonnet de laine', price: 200, week: true, from: WEEK_SHOP_FROM, sprite: 'bonnet' },
   { id: 'chantierFluo', name: 'Casque de chantier fluo', price: 200, week: true, from: WEEK_SHOP_FROM, sprite: 'chantierFluo' },
+  { id: 'cigarette', name: 'Cigarette', gift: true, sprite: 'cigarette', dy: 2, smoke: true },
   { id: 'toque', name: 'Toque de chef cuisinier', price: 300, week: true, rare: true, from: WEEK_SHOP_FROM, sprite: 'toque' });
 OUTFITS.push(
   { id: 'capeor', name: 'Cape dorée', price: 2000, prestige: true, from: SHOP_FROM, pal: { q: '#b8860b', Q: '#e8b830', u: '#fff4a8' }, cape: true, capeCol: ['#ffffff', '#8a6a10', '#d4a017'] },
@@ -2799,6 +2801,8 @@ class Game {
       if (this.trail.fx === 'rainbow') { this.trailPts.push({ x: b.x, y: b.y - b.r - 8 }); if (this.trailPts.length > 45) this.trailPts.shift(); }
       else emitTrail(this, this.trail, b);
     }
+    // cigarette (cadeau spécial) : petites volutes de fumée
+    if (this.hat && this.hat.smoke && this.frame % 7 === 0) this.particles.push({ x: b.x + 4, y: b.y - b.r - 2, vx: 3 + Math.random() * 5, vy: -14 - Math.random() * 6, g: 0, life: 1, col: this.frame % 14 ? 'rgba(225,225,225,0.55)' : 'rgba(190,190,190,0.5)', s: 2 });
     // les gouttes rebondissent sur le parapluie
     if (this.hat && this.hat.id === 'parapluie' && wx.id === 'pluie' && this.frame % 4 === 0)
       this.particles.push({ x: b.x + (Math.random() - 0.5) * 9, y: b.y - b.r - 10, vx: (Math.random() - 0.5) * 50, vy: -35, g: 260, life: 0.3, col: '#dce8ff', s: 1 });
@@ -4568,6 +4572,7 @@ const App = {
         pts.push({ x: b.x, y: b.y - R - 8 }); if (pts.length > 40) pts.shift();
         drawRainbow(ctx, pts, R, st.t);
       } else if (trail.fx) emitTrail(st, trail, b);
+      if (hat.smoke && st.frame % 7 === 0) st.particles.push({ x: b.x + 4, y: b.y - R - 2, vx: 3 + Math.random() * 5, vy: -14, g: 0, life: 1, col: 'rgba(225,225,225,0.6)', s: 2 });
       for (let i = st.particles.length - 1; i >= 0; i--) {
         const q = st.particles[i]; q.life -= TICK;
         if (q.life <= 0) { st.particles.splice(i, 1); continue; }
@@ -5034,7 +5039,7 @@ const App = {
     if (this.shopTab === 'rank' && !open) this.shopTab = 'ball';
     const tab = this.shopTab, type = this.shopType(), rank = tab === 'rank';
     const shown = (t, it) => { const own = Store.owns(p, t, it); return (!it.secret || own) && (!it.survival || SURVIVAL_ON)
-      && (!it.season || isHalloween(this.today) || own) && (!it.from || this.today >= it.from || own) && (!it.week || own); };
+      && (!it.season || isHalloween(this.today) || own) && (!it.from || this.today >= it.from || own) && (!it.week || own) && (!it.gift || own); };
     const items = rank ? [] : COSMETICS[tab].filter(it => shown(tab, it));
     const eq = t => findCos(t, p.equip[t]);
     const prev = this.shopSel ? findCos(type, this.shopSel) : null;
