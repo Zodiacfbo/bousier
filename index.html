@@ -260,9 +260,13 @@ table { width: 100%; border-collapse: collapse; }
 .lb tr.fr-flammes td { animation: frfeu .5s steps(1) infinite; }
 @keyframes frfeu { 50% { border-color: #ffd05a; } }
 .lb td.r { white-space: nowrap; }
-.wkdet { display: flex; flex-wrap: wrap; gap: 0 calc(var(--u) * 2.5); font-size: .66em; color: #7a6a7a; margin-top: calc(var(--u) * 0.5); }
-.wkdet .on { color: var(--muted); }
-.lb tr.me .wkdet .on { color: var(--gold); }
+.wkdet { display: flex; gap: calc(var(--u) * 1); margin-top: calc(var(--u) * 1); }
+.wkdet span { width: calc(var(--u) * 13); text-align: center; font-size: .6em; line-height: 1.15; color: #6a5a6a; background: rgba(255,255,255,.04); padding: calc(var(--u) * 0.5) 0; }
+.wkdet span i { display: block; font-style: normal; font-size: .8em; opacity: .7; }
+.wkdet span.off { color: #9a8a9a; background: rgba(255,255,255,.07); }
+.wkdet span.on { color: #2a1408; background: var(--gold); font-weight: 700; }
+.wkdet span b { font-weight: inherit; }
+.wkdet span.miss b { text-decoration: line-through; }
 .ttl { display: block; font-size: .72em; color: var(--muted); font-style: italic; }
 .rainbow, .rainbow-bg { background: linear-gradient(90deg, #ff5a5a, #ffb85a, #ffe05a, #6aff8a, #5ad8ff, #c87aff, #ff5a5a); background-size: 200% 100%; animation: arcenciel 3s linear infinite; }
 .rainbow { -webkit-background-clip: text; background-clip: text; color: transparent !important; }
@@ -1727,12 +1731,13 @@ function podiumHtml(top, opts = {}) {
   }).join('')}</div>`;
 }
 function placeTxt(i) { return i === 0 ? '1er' : (i + 1) + 'e'; }
-// Détail d'une semaine : chaque jour joué ; les WEEK_BEST meilleurs (comptés) en clair
-function weekDetail(det) {
+// Détail d'une semaine : une case par jour (L M M J V S D) ; les WEEK_BEST meilleurs jours (comptés) en couleur
+function weekDetail(det, wk) {
   if (!det || !det.length) return '';
   const top = det.slice().sort((a, b) => b.score - a.score).slice(0, WEEK_BEST);
-  return `<div class="wkdet">${det.map(x => { const w = ALL_WEATHERS.find(y => y.id === x.wx);
-    return `<span class="${top.includes(x) ? 'on' : ''}">${fmtDayLong(x.day).split(' ')[0]} ${w ? w.icon : ''} ${fmtSize(x.score)}${x.terrier ? '' : ' ✗'}</span>`; }).join('')}</div>`;
+  const short = v => v >= 100 ? (v / 100).toFixed(1).replace('.', ',') : String(Math.round(v));
+  return `<div class="wkdet">${weekDays(wk || weekKey(det[0].day)).map((k, i) => { const x = det.find(y => y.day === k);
+    return `<span class="${x ? (top.includes(x) ? 'on' : 'off') : ''}${x && !x.terrier ? ' miss' : ''}"><i>${'LMMJVSD'[i]}</i><b>${x ? short(x.score) : '·'}</b></span>`; }).join('')}</div>`;
 }
 function weekTotal(scores) {
   const top = scores.slice().sort((a, b) => b - a).slice(0, WEEK_BEST);
@@ -5143,9 +5148,9 @@ const App = {
       if (rx && lb.some(e => e.name !== me)) extra += '<div class="tiny center">Touche la ligne d\'un collègue pour lui envoyer une réaction 👏 😂 💩 🔥</div>';
     } else if (tab === 'week') {
       const lb = await Leaderboard.week(weekKey(this.today));
-      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''} ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}${weekDetail(e.det)}</td><td class="tiny ${e.played >= WEEK_BEST ? 'good' : ''}">${Math.min(e.played, WEEK_BEST)}/${WEEK_BEST}</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
+      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''} ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}${weekDetail(e.det, weekKey(this.today))}</td><td class="tiny ${e.played >= WEEK_BEST ? 'good' : ''}">${Math.min(e.played, WEEK_BEST)}/${WEEK_BEST}</td><td class="r">${fmtSize(e.total)}</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Rien cette semaine.</td></tr>';
-      extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés (en clair sous chaque nom ; ✗ = sans terrier). Le vainqueur porte la 👑 toute la semaine suivante ; le podium gagne ${PODIUM_COINS.join(' / ')} 🟡.</div>`;
+      extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés (cases dorées, en m ; barré = sans terrier). Le vainqueur porte la 👑 toute la semaine suivante ; le podium gagne ${PODIUM_COINS.join(' / ')} 🟡.</div>`;
       const pod = await Leaderboard.podium(addDays(weekKey(this.today), -7));
       if (pod && pod.top.length) extra += `<div class="panel"><div class="label">Podium de la semaine dernière <span class="tiny">(${fmtWeek(pod.wk)})</span></div>
         ${podiumHtml(pod.top, { coins: true })}</div>`;
