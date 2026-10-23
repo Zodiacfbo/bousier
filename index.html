@@ -1194,7 +1194,8 @@ const OUTFITS = [
   { id: 'blouse', name: 'Blouse de labo', pal: { q: '#d6d8dc', Q: '#ffffff', u: '#9aa0a8' }, pixels: [[7, 2, '#2d6aa8'], [7, 3, '#2d6aa8'], [6, 3, '#9aa0a8']] },
   { id: 'hazmat', name: 'Combinaison anti-contamination', pal: { q: '#d9b400', Q: '#ffd84a', u: '#2c2442' }, pixels: [[4, 4, '#2c2442'], [6, 4, '#2c2442'], [5, 5, '#2c2442']] },
   { id: 'cape', name: 'Cape de super-héros', pal: { q: '#a8202a', Q: '#d8463a', u: '#ffd25a' }, cape: true },
-  { id: 'chatnoir', name: 'Chat noir', gift: true, body: 'chat' },
+  // essai : seulement sur le site de test (dev), offert d'office ; invisible sur le site officiel
+  { id: 'chatnoir', name: 'Chat noir', gift: true, devOnly: true, body: 'chat', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
   { from: NEW_WX_FROM, id: 'cire', name: 'Ciré jaune', pal: { q: '#e8c020', Q: '#ffe14a', u: '#b8901a' }, pixels: [[5, 2, '#1d1416']] },
   { id: 'smoking', name: 'Smoking', pal: { q: '#1d1d24', Q: '#2c2c38', u: '#ffffff' }, pixels: [[4, 8, '#d8463a'], [6, 8, '#d8463a'], [5, 8, '#8a2a2a']] },
 ];
@@ -5303,7 +5304,7 @@ const App = {
     if (this.shopTab === 'rank' && !open) this.shopTab = 'ball';
     const tab = this.shopTab, type = this.shopType(), rank = tab === 'rank';
     const shown = (t, it) => { const own = Store.owns(p, t, it); return (!it.secret || own) && (!it.survival || SURVIVAL_ON)
-      && (!it.season || isHalloween(this.today) || own) && (!it.from || this.today >= it.from || own) && (!it.week || own) && (!it.gift || own); };
+      && (!it.season || isHalloween(this.today) || own) && (!it.from || this.today >= it.from || own) && (!it.week || own) && (!it.gift || own) && (!it.devOnly || ONLINE_ENV === 'dev'); };
     const items = rank ? [] : COSMETICS[tab].filter(it => shown(tab, it));
     const eq = t => findCos(t, p.equip[t]);
     const prev = this.shopSel ? findCos(type, this.shopSel) : null;
