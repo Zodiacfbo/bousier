@@ -678,6 +678,7 @@ const ROWS = {
   toque: ['.wwwww.', 'wWwWwWw', 'wwWwWww', 'wWwWwWw', '.hhhhh.'],
   hautdeforme: ['..YYYYY..', '.YrrrrrY.', 'YryyyyyrY', 'YrywyyyrY', 'YryyyyyrY', '.YrrrrrY.', '..YYYYY..'],
   cigarette: ['.....twwwo', '.....ThhhO'],
+  megot: ['Tww'],
   trCoeur: ['.r.r.', 'rprrr', 'rrrrr', '.rrr.', '..r..'],
   // particules de traînées
   trBulle: ['.cc.', 'cw.c', 'c..c', '.cc.'],
@@ -1064,6 +1065,9 @@ const SEASON_OBJECTS = [
   { id: 'chauvesouris', name: 'Chauve-souris', sprite: 'chauvesouris', r: 3.5, w: 0.9, tp: 0.45, s: 0.35, move: 'side', season: 'halloween', desc: 'Semaine Halloween 2026. Elle voletait au ras du sable.' },
 ];
 const SUGAR_SKULL = { id: 'cranesucre', name: 'Crâne en sucre', sprite: 'cranesucre', season: 'halloween', desc: 'Trésor de la nuit d\'Halloween, le 31 octobre 2026.' };
+// Easter egg : un mégot très rare sur la dune du jour (un seul par période de 5 jours, à un jour au hasard, à partir du 26 octobre).
+// 4 mégots avalés débloquent la Cigarette (secret). Ni Bousipédia, ni quêtes, ni indice.
+const MEGOT = { from: '2026-10-26', every: 5, need: 4, def: { id: 'megot', name: 'Mégot', sprite: 'megot', r: 1.2, megot: true } };
 const OBJ = Object.fromEntries(OBJECTS.concat(SEASON_OBJECTS).map(o => [o.id, o]));
 
 const WEATHERS = [
@@ -1287,6 +1291,7 @@ const UNLOCKS = {
   'frame:pionnier': { text: 'Avoir joué pendant la toute première semaine de Bousier', prog: p => [isPioneer(p) ? 1 : 0, 1] },
   'title:pionnier': { text: 'Avoir joué pendant la toute première semaine de Bousier', prog: p => [isPioneer(p) ? 1 : 0, 1] },
   'title:citrouille': { text: 'Avoir joué pendant la semaine Halloween 2026 🎃', prog: p => [counter(p, 'halloween'), 1] },
+  'hat:cigarette': { secret: true, prog: p => [counter(p, 'megot'), MEGOT.need] },
   'hat:bandana': { text: 'Parcours 1 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 1000] },
   'trail:survivant': { text: 'Parcours 2 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 2000] },
 };
@@ -1522,7 +1527,7 @@ const Store = {
       if ((o.best || 0) > (d.best || 0)) { d.best = o.best; d.bestRun = o.bestRun; }
       d.quests = { ...(d.quests || {}) };
       for (const q in o.quests || {}) if (o.quests[q]) d.quests[q] = true;
-      d.legend = d.legend || o.legend; d.questBonus = d.questBonus || o.questBonus;
+      d.legend = d.legend || o.legend; d.questBonus = d.questBonus || o.questBonus; d.megot = d.megot || o.megot;
       if (!d.qs && o.qs) d.qs = o.qs;
     }
     // les fantômes restent ceux de cet appareil (ils ne sont pas en ligne)
@@ -2367,7 +2372,7 @@ function dailyConfig(day) {
   const legend = day === HALLOWEEN.night ? SUGAR_SKULL : LEGENDS[legendIdx(day)];
   const seed = hashStr('bousier|' + day);
   const weather = ALL_WEATHERS[wi];
-  const course = generateCourse(seed, weather, legend, day);
+  const course = generateCourse(seed, weather, legend, day, true);
   const qr = makeRng(hashStr(day + '|quests'));
   const pool = QUEST_GEN.slice(), quests = [];
   while (quests.length < 3) quests.push(pool.splice(Math.floor(qr.next() * pool.length), 1)[0](qr, course));
@@ -2386,7 +2391,7 @@ function practiceConfig() {
 }
 
 // --- Génération de la dune --------------------------------------------------
-function generateCourse(seed, weather, legend, day = dayKey()) {
+function generateCourse(seed, weather, legend, day = dayKey(), daily = false) {
   const rng = makeRng(seed);
   const len = COURSE_LEN, holeY = HOLE_Y;
   const p = [0, 0, 0, 0, 0].map(() => rng.range(0, Math.PI * 2));
@@ -2471,6 +2476,15 @@ function generateCourse(seed, weather, legend, day = dayKey()) {
 
   const counts = {};
   for (const o of final) if (!o.deco) counts[o.def.id] = (counts[o.def.id] || 0) + 1;
+  // mégot (dune du jour) : tirage à part, il ne déplace aucun autre objet et ne compte pas pour les quêtes
+  if (daily && day >= MEGOT.from) {
+    const n = Math.round((dayFromKey(day) - dayFromKey(MEGOT.from)) / 86400000), mr = makeRng(hashStr('megot|' + Math.floor(n / MEGOT.every)));
+    if (n % MEGOT.every === mr.int(0, MEGOT.every - 1)) {
+      const my = Math.round(holeY * mr.range(0.2, 0.85)), mx = mr.next() < 0.5 ? Lx[my] + mr.range(5, 12) : Rx[my] - mr.range(5, 12);
+      final.push({ def: MEGOT.def, x: mx, x0: mx, y: my, r: MEGOT.def.r, sprite: 'megot', dead: false, hitT: -9, phase: 0, amp: 0, w: 0 });
+      final.sort((a, b) => a.y - b.y);
+    }
+  }
   return {
     seed, weather, legend, len, holeY, holeX, Lx, Rx, objects: final, counts,
     windPh: [rng.range(0, 6.28), rng.range(0, 6.28)],
@@ -2945,7 +2959,8 @@ class Game {
     } else {
       Sound.play('pop', o.r);
       this.burst(b.x + dx, b.y + dy, Math.min(10, 2 + o.r), ['#ffffff', '#fff4a8'], 40);
-      if (o.r >= 5 && !this.alert && this.texts.length < 2) this.floatText(o.def.name, b.x + dx, b.y + dy - 6, '#ffffff');
+      if (o.def.megot) this.floatText('UN MEGOT ?!', clamp(b.x + dx, 45, W - 45), b.y + dy - 6, '#d8d8d8');
+      else if (o.r >= 5 && !this.alert && this.texts.length < 2) this.floatText(o.def.name, b.x + dx, b.y + dy - 6, '#ffffff');
       if (o.r >= 6) this.say('big', 0.5);
     }
   }
@@ -4438,7 +4453,7 @@ const App = {
       if (run.score > d.best || faster) { res.newBest = d.best > 0 || true; d.best = run.score; d.bestRun = summary; d.ghost = run.ghost; }
       // collection
       for (const id in run.byType) {
-        if (LEGEND[id]) continue;
+        if (LEGEND[id] || id === 'megot') continue;
         if (!p.collection[id]) res.discovered = (res.discovered || []).concat(id);
         p.collection[id] = (p.collection[id] || 0) + run.byType[id];
       }
@@ -4450,6 +4465,7 @@ const App = {
       }
       p.weathers[run.weather] = (p.weathers[run.weather] || 0) + 1;
       if (run.terrier && WEEKLY_WEATHERS.includes(run.weather)) inc('hole_' + run.weather);
+      if (run.byType.megot && !d.megot) { d.megot = true; inc('megot'); }  // un seul mégot compté par jour
       if (isHalloween(this.today)) { inc('halloween'); res.pumpkins = run.byType.citrouille || 0; d.pumpkins = (d.pumpkins || 0) + res.pumpkins; }
       if (this.today === HALLOWEEN.night && run.terrier) inc('sorciere');
       const st = p.stats;

@@ -614,7 +614,7 @@ function openFiche(name) {
     <div class="row" style="justify-content:space-between"><h2>👤 ${esc(p.name)}</h2><button id="fclose">✕ Fermer</button></div>
     <p class="muted">Inscrit le ${fmtDay(p.created)} · dernière dune ${p.lastDay ? fmtDay(p.lastDay) : '—'} · ${p.coins || 0} 🟡 · série actuelle 🔥${p.streak || 0} (max ${p.bestStreak || 0})${p.team ? ' · équipe ' + esc(p.team) : ''}</p>
     <div class="stats">${[['Parties', r.runs], ['Jours joués', r.days], ['Record', fmtSize(r.best)], ['Taille moyenne', fmtSize(r.avg)], ['Temps à rouler', fmtDur(r.time)],
-      ['Terriers', `${r.terriers} (${Math.round(r.rate * 100)} %)`], ['Objets avalés', r.absorbed], ['Trésors', r.legends], ['Chocs', r.bumps], ['Entraînement', r.practice]].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('')}</div>
+      ['Terriers', `${r.terriers} (${Math.round(r.rate * 100)} %)`], ['Objets avalés', r.absorbed], ['Trésors', r.legends], ['Chocs', r.bumps], ['Entraînement', r.practice], ['🚬 Mégots', `${(p.counters || {}).megot || 0} / 4`]].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('')}</div>
     <h2>📅 Jour par jour</h2>
     <div class="scroll"><table><tr><th>Jour</th><th>Météo</th><th class="r">Essais</th><th class="r">Meilleur</th><th>Tailles des essais</th><th>Terrier</th><th class="r">Quêtes</th></tr>
       ${days.map(k => { const d = p.days[k], runs = d.runs || []; return `<tr><td>${fmtDay(k)}</td><td>${WX_ICON[(runs[0] || {}).weather] || ''}</td><td class="r">${runs.length}</td><td class="r">${fmtSize(d.best || 0)}</td>
