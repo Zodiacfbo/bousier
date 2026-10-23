@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.13.4 — Titre à côté du pseudo (23 octobre 2026)
+- Dans les classements (et l'aperçu de Style), le titre s'affiche juste après le pseudo au lieu d'en dessous.
+
 ## v1.13.3 — Mini-calendrier plus lisible (23 octobre 2026)
 - Classement de la semaine : le mini-calendrier passe sur toute la largeur, sous la ligne du joueur (cases et chiffres
   plus grands, lisibles même sur les petits téléphones). Cadres et titres entourent toujours le joueur entier.
