@@ -87,6 +87,7 @@ img.pix, canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; 
 button.banner { font: inherit; width: 100%; cursor: pointer; }
 .banner.gift { box-shadow: inset 0 0 0 var(--u) var(--gold), 0 0 calc(var(--u) * 4) rgba(255, 210, 90, .45); text-align: left; }
 .banner.gift .quests { margin: calc(var(--u) * 2) 0; }
+.banner .why { color: var(--muted); padding-left: calc(var(--u) * 6); }
 .gift-btns { display: flex; gap: calc(var(--u) * 2); justify-content: center; }
 .banner.off, .chip.off { box-shadow: inset 0 0 0 var(--u) #8a8aa0; color: #d8d8ea; }
 .head .chip.off { margin-left: auto; }
@@ -151,7 +152,17 @@ input, textarea {
 }
 .title.small { font-size: calc(var(--u) * 13); }
 .sub { text-align: center; color: var(--ink); text-shadow: var(--u) var(--u) 0 #120a16; margin-top: calc(var(--u) * 2); }
-.hero { display: flex; flex-direction: column; align-items: center; }
+.hero { display: flex; flex-direction: column; align-items: center; position: relative; }
+.tickle { cursor: pointer; }
+.tickle.wiggle img { animation: wiggle .3s steps(3); }
+.tickle.roll img { animation: roll .6s steps(8); }
+@keyframes wiggle { 33% { transform: translateX(calc(var(--u) * -2)); } 66% { transform: translateX(calc(var(--u) * 2)); } }
+@keyframes roll { to { transform: rotate(360deg); } }
+.tickle-txt { position: absolute; font-weight: 700; color: #fff; text-shadow: calc(var(--u)) calc(var(--u)) 0 #120a16; animation: up 1s forwards; pointer-events: none; }
+@keyframes up { to { transform: translateY(calc(var(--u) * -14)); opacity: 0; } }
+.moon { position: absolute; top: calc(var(--u) * 2); right: calc(var(--u) * 4); background: none; border: 0; padding: 0; cursor: pointer; filter: drop-shadow(0 0 calc(var(--u) * 3) rgba(255, 240, 160, .6)); }
+.moon.fall { animation: fall .9s steps(9); }
+@keyframes fall { 40% { transform: translateY(calc(var(--u) * 60)) rotate(90deg); opacity: .2; } 41% { transform: translateY(calc(var(--u) * -30)); opacity: 0; } 100% { transform: none; opacity: 1; } }
 .mascot { display: flex; justify-content: center; margin: calc(var(--u) * 2) 0; }
 .bob { animation: bob 0.8s steps(2) infinite; }
 @keyframes bob { 50% { transform: translateY(calc(var(--u) * -2)); } }
@@ -244,6 +255,7 @@ table { width: 100%; border-collapse: collapse; }
 .fr-or { --frc: #ffd25a; --frb: rgba(255,210,90,.16); }
 .fr-podium { --frc: #c87aff; --frb: rgba(200,122,255,.15); }
 .fr-pionnier { --frc: #5fae4a; --frb: rgba(95,174,74,.16); }
+.fr-pilepoil { --frc: #5ad8ff; --frb: rgba(90,216,255,.14); }
 .fr-flammes { --frc: #ff7a2a; --frb: rgba(255,122,42,.18); }
 .lb tr.fr-flammes td { animation: frfeu .5s steps(1) infinite; }
 @keyframes frfeu { 50% { border-color: #ffd05a; } }
@@ -679,6 +691,15 @@ const ROWS = {
   hautdeforme: ['..YYYYY..', '.YrrrrrY.', 'YryyyyyrY', 'YrywyyyrY', 'YryyyyyrY', '.YrrrrrY.', '..YYYYY..'],
   cigarette: ['.....twwwo', '.....ThhhO'],
   megot: ['Tww'],
+  // easter eggs
+  plot: ['..o..', '.oOo.', '.www.', 'ooooo'],
+  plotHat: ['...o...', '..oOo..', '..www..', '.ooooo.', 'OOOOOOO'],
+  sifflet: ['r.....r', '.r...r.', '..hhh..', '.hWhhh.', '..hhh..'],
+  ferACheval: ['hh...hh', 'hW...Wh', 'h.....h', '.h...h.', '..hhh..'],
+  plumeHat: ['.....rr', '....rrR', '...rrR.', '..rrR..', '.rR....', 'k......'],
+  chat: ['k.k......', 'kkk......', 'kykk....k', 'kkkkkkkk.', '.kkkkkkk.', '.k.k.k.k.'],
+  gateau: ['.y.y.y.', '.r.r.r.', 'wwwwwww', 'ppppppp', 'wwwwwww', 'ppppppp'],
+  luneHome: ['..yyyyy..', '.yyyYyyy.', 'yyYyyyyyy', 'yyyyyyYyy', 'yYyyyyyyy', 'yyyyyYyyy', 'yyyYyyyyy', '.yyyyyyy.', '..yyyyy..'],
   trCoeur: ['.r.r.', 'rprrr', 'rrrrr', '.rrr.', '..r..'],
   // particules de traînées
   trBulle: ['.cc.', 'cw.c', 'c..c', '.cc.'],
@@ -966,6 +987,7 @@ function buildSprites() {
   SPR.chantierFluo = spriteFromRows(ROWS.chantier, { ...PAL, y: '#e6ff3a', Y: '#a8c020' });
   SPR.lezardF = flipCanvas(SPR.lezard);
   SPR.kevinF = flipCanvas(SPR.kevin);
+  SPR.chatF = flipCanvas(SPR.chat);
   SPR.scorpionF = flipCanvas(SPR.scorpion);
   SPR.tortueF = flipCanvas(SPR.tortue);
   SPR.grenouilleF = SPR.grenouille;
@@ -1068,6 +1090,10 @@ const SUGAR_SKULL = { id: 'cranesucre', name: 'Crâne en sucre', sprite: 'cranes
 // Easter egg : un mégot très rare sur la dune du jour (un seul par période de 5 jours, à un jour au hasard, à partir du 26 octobre).
 // 4 mégots avalés débloquent la Cigarette (secret). Ni Bousipédia, ni quêtes, ni indice.
 const MEGOT = { from: '2026-10-26', every: 5, need: 4, def: { id: 'megot', name: 'Mégot', sprite: 'megot', r: 1.2, megot: true } };
+// Autres easter eggs (sans news) : plots d'entraînement, chat noir du vendredi 13, chatouilles, lune, etc.
+const EGG = { from: '2026-10-26', plots: 25, practice: 50, tickle: 100, moon: 13, shy: 10, month1: '2026-11-20', month1Coins: 50,
+  plot: { id: 'plot', name: 'Plot', sprite: 'plot', r: 2.5, plot: true } };
+function isFriday13(day) { return day.slice(8) === '13' && dayFromKey(day).getDay() === 5; }
 const OBJ = Object.fromEntries(OBJECTS.concat(SEASON_OBJECTS).map(o => [o.id, o]));
 
 const WEATHERS = [
@@ -1173,6 +1199,7 @@ const PIONEER = { from: '2026-10-20', to: '2026-10-25', coins: 150 };
 const WELCOME = { from: '2026-10-26', coins: 100 };
 function isPioneer(p) { return Object.keys(p.days || {}).some(k => k >= PIONEER.from && k <= PIONEER.to && (p.days[k].runs || []).length > 0); }
 SKINS.push(
+  { from: EGG.from, id: 'lune', name: 'Boule Lune', base: '#d8d4c0', light: '#ece8d8', hi: '#ffffff', dark: '#a8a490', out: '#3a3828', specks: ['#b8b4a0', '#9a9682'], count: 18, bigSpecks: true },
   { id: 'diamant', name: 'Boule diamant', price: 2500, prestige: true, from: SHOP_FROM, base: '#9ad8f0', light: '#c8f0ff', hi: '#ffffff', dark: '#5aa0c8', out: '#14385a', specks: ['#ffffff', '#e8faff', '#7ac0e0'], count: 120, bigSpecks: true },
   { id: 'menthe', name: 'Boule menthe', price: 200, week: true, from: WEEK_SHOP_FROM, base: '#5ac8a0', light: '#8ae6c0', hi: '#d8fff0', dark: '#2f8a6a', out: '#0e3a2a', specks: ['#ffffff', '#2f8a6a'] },
   { id: 'cookie', name: 'Boule cookie', price: 200, week: true, from: WEEK_SHOP_FROM, base: '#c8904a', light: '#e0ac64', hi: '#f2cc8a', dark: '#946430', out: '#3a2410', specks: ['#3a2010', '#4a2a14'], count: 28, bigSpecks: true },
@@ -1184,6 +1211,10 @@ HATS.push(
   { id: 'bonnet', name: 'Bonnet de laine', price: 200, week: true, from: WEEK_SHOP_FROM, sprite: 'bonnet' },
   { id: 'chantierFluo', name: 'Casque de chantier fluo', price: 200, week: true, from: WEEK_SHOP_FROM, sprite: 'chantierFluo' },
   { id: 'cigarette', name: 'Cigarette', gift: true, sprite: 'cigarette', dy: 2, smoke: true },
+  { from: EGG.from, id: 'plotHat', name: 'Plot de chantier', sprite: 'plotHat', dy: -3 },
+  { from: EGG.from, id: 'sifflet', name: 'Sifflet du coach', sprite: 'sifflet' },
+  { from: EGG.from, id: 'ferACheval', name: 'Fer à cheval', sprite: 'ferACheval', dy: -4 },
+  { from: EGG.from, id: 'plumeHat', name: 'Plume', sprite: 'plumeHat', dy: -3 },
   { id: 'toque', name: 'Toque de chef cuisinier', price: 300, week: true, rare: true, from: WEEK_SHOP_FROM, sprite: 'toque' });
 OUTFITS.push(
   { id: 'capeor', name: 'Cape dorée', price: 2000, prestige: true, from: SHOP_FROM, pal: { q: '#b8860b', Q: '#e8b830', u: '#fff4a8' }, cape: true, capeCol: ['#ffffff', '#8a6a10', '#d4a017'] },
@@ -1203,6 +1234,7 @@ const FRAMES = [
   { id: 'flammes', name: '🔥 Flammes', price: 1500, col: '#ff7a2a', prestige: true, from: SHOP_FROM },
   { id: 'podium', name: 'Cadre du podium', col: '#c87aff', from: SHOP_FROM },
   { id: 'pionnier', name: '🌱 Pionnier', col: '#5fae4a', from: SHOP_FROM },
+  { from: EGG.from, id: 'pilepoil', name: '🎯 Pile poil', col: '#5ad8ff' },
 ];
 const NAME_COLORS = [
   { id: 'blanc', name: 'Blanc', price: 0, col: '#ffffff' },
@@ -1229,6 +1261,14 @@ const TITLES = [
   { id: 'kevin', name: 'Ami de Kevin', from: SHOP_FROM },
   { id: 'citrouille', name: 'Citrouille d\'or 🎃', from: SHOP_FROM },
   { id: 'pionnier', name: '🌱 Pionnier de la dune', from: SHOP_FROM },
+  { id: 'mois1', name: '🎂 Là depuis le 1er mois', gift: true },
+  { from: EGG.from, id: 'echauffement', name: 'Toujours à l\'échauffement' },
+  { from: EGG.from, id: 'leve', name: 'Lève-tôt 🌅' },
+  { from: EGG.from, id: 'hibou', name: 'Oiseau de nuit 🦉' },
+  { from: EGG.from, id: 'maniaque', name: '🎯 Le maniaque' },
+  { from: EGG.from, id: 'timide', name: '🙈 Le timide' },
+  { from: EGG.from, id: 'derniere', name: 'Jamais sans mon terrier' },
+  { from: EGG.from, id: 'vege', name: 'Régime sans verdure 🥗' },
 ];
 const RANK_TYPES = ['frame', 'color', 'title'];
 const COSMETICS = { ball: SKINS, hat: HATS, outfit: OUTFITS, trail: TRAILS, theme: THEMES, frame: FRAMES, color: NAME_COLORS, title: TITLES };
@@ -1291,7 +1331,21 @@ const UNLOCKS = {
   'frame:pionnier': { text: 'Avoir joué pendant la toute première semaine de Bousier', prog: p => [isPioneer(p) ? 1 : 0, 1] },
   'title:pionnier': { text: 'Avoir joué pendant la toute première semaine de Bousier', prog: p => [isPioneer(p) ? 1 : 0, 1] },
   'title:citrouille': { text: 'Avoir joué pendant la semaine Halloween 2026 🎃', prog: p => [counter(p, 'halloween'), 1] },
-  'hat:cigarette': { secret: true, prog: p => [counter(p, 'megot'), MEGOT.need] },
+  'hat:cigarette': { secret: true, how: '4 mégots avalés sur les dunes du jour', prog: p => [counter(p, 'megot'), MEGOT.need] },
+  'hat:plotHat': { secret: true, how: '25 plots avalés à l\'entraînement', prog: p => [counter(p, 'plots'), EGG.plots] },
+  'hat:sifflet': { secret: true, how: '50 parties d\'entraînement', prog: p => [p.stats.practice || 0, EGG.practice] },
+  'title:echauffement': { secret: true, how: '50 parties d\'entraînement', prog: p => [p.stats.practice || 0, EGG.practice] },
+  'hat:ferACheval': { secret: true, how: 'Le chat noir du vendredi 13 évité', prog: p => [counter(p, 'chat'), 1] },
+  'hat:plumeHat': { secret: true, how: '100 chatouilles au bousier de l\'accueil', prog: p => [counter(p, 'tickle'), EGG.tickle] },
+  'ball:lune': { secret: true, how: '13 touches d\'affilée sur la lune de l\'accueil', prog: p => [counter(p, 'lune'), 1] },
+  'title:maniaque': { secret: true, how: 'Une partie finie pile à 10,0 cm, 1,00 m, 2,00 m ou 3,00 m', prog: p => [['pp10', 'pp100', 'pp200', 'pp300'].some(k => counter(p, k)) ? 1 : 0, 1] },
+  'frame:pilepoil': { secret: true, how: 'Pile à 10,0 cm, 1,00 m, 2,00 m et 3,00 m', prog: p => [['pp10', 'pp100', 'pp200', 'pp300'].filter(k => counter(p, k)).length, 4] },
+  'title:leve': { secret: true, how: 'Une dune du jour jouée avant 7 h', prog: p => [counter(p, 'early'), 1] },
+  'title:hibou': { secret: true, how: 'Une dune du jour jouée après 23 h', prog: p => [counter(p, 'owl'), 1] },
+  'title:timide': { secret: true, how: '10 secondes collé au bord de la dune', prog: p => [counter(p, 'timide'), 1] },
+  'title:derniere': { secret: true, how: 'Le terrier au dernier essai, après avoir raté tous les autres', prog: p => [counter(p, 'lastchance'), 1] },
+  'title:vege': { secret: true, how: 'Le terrier sans avaler ni feuille ni cactus', prog: p => [counter(p, 'vege'), 1] },
+  'title:mois1': { how: 'Joué pendant le premier mois de Bousier', prog: p => [counter(p, 'mois1'), 1] },
   'hat:bandana': { text: 'Parcours 1 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 1000] },
   'trail:survivant': { text: 'Parcours 2 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 2000] },
 };
@@ -1308,6 +1362,7 @@ const SECRET_COUNT = Object.values(UNLOCKS).filter(u => u.secret).length;
 // La première entrée est la plus récente : elle s'affiche une fois sur l'accueil
 // des joueurs qui ne l'ont pas encore vue.
 const CHANGELOG = [
+  { v: 14, date: '2026-11-20', items: ['🎂 Bousier a 1 mois ! Merci à tous ceux qui roulent depuis le début : un gâteau vous attend sur la dune du jour, et un petit cadeau pour les fidèles du premier mois.'] },
   { v: 13, date: '2026-11-09', items: ['⭐ Nouveau dans 🎨 Style : la boutique de la semaine ! Chaque lundi, 3 objets introuvables ailleurs, dont un rare. Ils reviendront… un jour. Peut-être.'] },
   { v: 12, date: '2026-11-02', items: ['⚡ Du nouveau dans la dune : de nouveaux événements surprise, et chaque semaine une météo spéciale à découvrir… Ouvre l\'œil !'] },
   {
@@ -1651,7 +1706,7 @@ const REWARD_TYPE = { ball: '⚪ Boule', hat: '🎩 Chapeau', outfit: '👕 Tenu
 function rewardLine(type, item) {
   // « Cadre du podium », « Boule diamant » : le nom dit déjà le type, on ne garde que l'icône
   const [icon, word] = (REWARD_TYPE[type] || ' ').split(' '), name = type === 'title' ? `« ${item.name} »` : item.name;
-  return { txt: `${icon} ${word && !item.name.toLowerCase().startsWith(word.toLowerCase()) ? word + ' ' : ''}${name}` };
+  return { txt: `${icon} ${word && !item.name.toLowerCase().startsWith(word.toLowerCase()) ? word + ' ' : ''}${name}${item.secret ? ' 🤫' : ''}`, why: item.how || item.text || '' };
 }
 function frameCls(look) { const f = findCos('frame', look && look.frame); return f.id === 'aucun' ? '' : `fr fr-${f.id}`; }
 function podiumHtml(top, opts = {}) {
@@ -2387,11 +2442,11 @@ function previewConfig(wxId) {
 function practiceConfig() {
   const seed = (Math.random() * 1e9) >>> 0, rng = makeRng(seed);
   const weather = rng.pick(WEATHERS), legend = rng.pick(LEGENDS);
-  return { seed, weather, legend, course: generateCourse(seed, weather, legend), quests: [], mode: 'practice' };
+  return { seed, weather, legend, course: generateCourse(seed, weather, legend, dayKey(), false, true), quests: [], mode: 'practice' };
 }
 
 // --- Génération de la dune --------------------------------------------------
-function generateCourse(seed, weather, legend, day = dayKey(), daily = false) {
+function generateCourse(seed, weather, legend, day = dayKey(), daily = false, practice = false) {
   const rng = makeRng(seed);
   const len = COURSE_LEN, holeY = HOLE_Y;
   const p = [0, 0, 0, 0, 0].map(() => rng.range(0, Math.PI * 2));
@@ -2485,8 +2540,20 @@ function generateCourse(seed, weather, legend, day = dayKey(), daily = false) {
       final.sort((a, b) => a.y - b.y);
     }
   }
+  // entraînement : quelques plots, une partie sur deux (tirage à part)
+  if (practice && day >= EGG.from) {
+    const pr = makeRng((seed ^ 0x9107) >>> 0);
+    if (pr.next() < 0.5) for (let i = pr.int(1, 3); i > 0; i--) {
+      const py = Math.round(holeY * pr.range(0.15, 0.9)), px = pr.range(Lx[py] + 8, Rx[py] - 8);
+      final.push({ def: EGG.plot, x: px, x0: px, y: py, r: EGG.plot.r, sprite: 'plot', dead: false, hitT: -9, phase: 0, amp: 0, w: 0 });
+    }
+    final.sort((a, b) => a.y - b.y);
+  }
+  // 1 mois : un gâteau au bord du départ
+  if (daily && day === EGG.month1) { final.push({ deco: true, def: { id: 'gateau' }, x: Lx[230] + 14, y: 230, r: 3, sprite: 'gateau', amp: 0 }); final.sort((a, b) => a.y - b.y); }
+  const cat = daily && isFriday13(day) ? { y: Math.round(holeY * makeRng(hashStr(day + '|chat')).range(0.35, 0.6)) } : null;
   return {
-    seed, weather, legend, len, holeY, holeX, Lx, Rx, objects: final, counts,
+    seed, weather, legend, len, holeY, holeX, Lx, Rx, objects: final, counts, cat,
     windPh: [rng.range(0, 6.28), rng.range(0, 6.28)],
     events: generateEvents(seed, holeY, day),
   };
@@ -2720,6 +2787,8 @@ class Game {
     this.rec = { x: [], y: [], r: [] };
     this.t = 0; this.playTicks = 0; this.phase = 'count'; this.countT = 3.2; this.lastCount = 4;
     this.evs = (this.course.events || []).map(e => ({ ...e }));
+    this.cat = this.course.cat ? { y: this.course.cat.y, x: 0, go: false, touched: false, done: false } : null;
+    this.wallT = 0;
     this.resetEvents(); this.lastSay = -9;
     this.shake = 0; this.particles = []; this.texts = [];
     this.eatable = new Set(OBJECTS.filter(o => o.r <= this.ball.r * 0.8).map(o => o.id));
@@ -2823,9 +2892,14 @@ class Game {
 
     // bords de la dune
     const [L, R] = this.edge(b.y);
+    let touch = false;
     if (R - L < 2 * r) b.x = (L + R) / 2;
-    else if (b.x - r < L) { b.x = L + r; if (b.vx < 0) b.vx *= -0.3; this.wallHit(-1); }
-    else if (b.x + r > R) { b.x = R - r; if (b.vx > 0) b.vx *= -0.3; this.wallHit(1); }
+    else if (b.x - r < L) { b.x = L + r; if (b.vx < 0) b.vx *= -0.3; this.wallHit(-1); touch = true; }
+    else if (b.x + r > R) { b.x = R - r; if (b.vx > 0) b.vx *= -0.3; this.wallHit(1); touch = true; }
+    // le timide : 10 s collé au bord (il rougit)
+    this.wallT = touch || (b.x - r < L + 1.5) || (b.x + r > R - 1.5) ? this.wallT + TICK : 0;
+    if (this.wallT >= EGG.shy && !this.run.timide && !this.surv) { this.run.timide = true; this.floatText('...', b.x, b.y - b.r - 14, '#ff8aa8'); }
+    if (this.cat) this.stepCat(b);
 
     // objets proches
     const objs = this.objs;
@@ -2888,6 +2962,18 @@ class Game {
     return st;
   }
 
+  // Vendredi 13 : un chat noir traverse la dune devant la boule ; passer sans le toucher porte chance
+  stepCat(b) {
+    const c = this.cat;
+    if (!c.go && c.y - b.y < 150) { const [L, R] = this.edge(c.y); c.go = true; c.dir = b.x > (L + R) / 2 ? -1 : 1; c.x = c.dir > 0 ? L + 3 : R - 3; c.L = L; c.R = R; }
+    if (!c.go) return;
+    if (c.x > c.L - 20 && c.x < c.R + 20) c.x += c.dir * 48 * TICK;
+    if (!c.touched && Math.hypot(c.x - b.x, c.y - b.y) < b.r + 4) {
+      c.touched = true; b.area = Math.max(this.minArea, b.area * 0.95); this.shake = 2; Sound.play('bump');
+      this.floatText('MIAOU !', b.x, b.y - b.r - 10, '#ffffff');
+    }
+    if (!c.done && b.y > c.y + 20) { c.done = true; if (!c.touched) { this.run.chat = true; this.floatText('OUF... CHANCE !', b.x, b.y - b.r - 10, '#a8ff9a'); } }
+  }
   wallHit(side) {
     const b = this.ball;
     if (this.t - b.lastWall < 0.4) return;
@@ -2959,7 +3045,8 @@ class Game {
     } else {
       Sound.play('pop', o.r);
       this.burst(b.x + dx, b.y + dy, Math.min(10, 2 + o.r), ['#ffffff', '#fff4a8'], 40);
-      if (o.def.megot) this.floatText('UN MEGOT ?!', clamp(b.x + dx, 45, W - 45), b.y + dy - 6, '#d8d8d8');
+      if (o.def.plot) this.floatText('PLOT !', clamp(b.x + dx, 30, W - 30), b.y + dy - 6, '#ffb060');
+      else if (o.def.megot) this.floatText('UN MEGOT ?!', clamp(b.x + dx, 45, W - 45), b.y + dy - 6, '#d8d8d8');
       else if (o.r >= 5 && !this.alert && this.texts.length < 2) this.floatText(o.def.name, b.x + dx, b.y + dy - 6, '#ffffff');
       if (o.r >= 6) this.say('big', 0.5);
     }
@@ -3417,6 +3504,7 @@ class Game {
     this.drawBackground(Math.round(camY));
     ctx.save();
     ctx.translate(0, -Math.round(camY));
+    if (this.cat && this.cat.go) { const s = this.cat.dir > 0 ? SPR.chatF : SPR.chat; ctx.drawImage(s, Math.round(this.cat.x - s.width / 2), Math.round(this.cat.y - s.height / 2)); }
     for (const z of this.sands || []) {
       const zr = this.sandR(z);
       if (z.y < camY - zr * 2.5 || z.y > camY + H + zr * 2.5) continue;
@@ -3602,6 +3690,7 @@ class Game {
       if (this.outfit && this.outfit.cape) drawCape(ctx, bx, btop, this.t, this.outfit.capeCol);
       ctx.drawImage(beetle, bx - 5, btop);
       drawHat(ctx, this.hat, bx, btop);
+      if (this.wallT > 2) { ctx.fillStyle = '#ff8aa8'; ctx.fillRect(bx - 3, btop + 9, 1, 1); ctx.fillRect(bx + 3, btop + 9, 1, 1); }
     }
     // ombre
     ctx.fillStyle = 'rgba(70,35,10,0.3)';
@@ -4025,14 +4114,15 @@ const App = {
         }
       }
       await this.weeklyAwards();
-      let pioneer = false, welcome = false;
+      let pioneer = false, welcome = false, month = false;
+      if (this.today >= EGG.month1 && !p.counters.mois1 && Object.keys(p.days || {}).some(k => k < EGG.month1 && (p.days[k].runs || []).length)) { p.coins += EGG.month1Coins; p.counters.mois1 = 1; month = true; }
       if (this.today >= SHOP_FROM && !p.counters.pionnier && isPioneer(p)) { p.coins += PIONEER.coins; p.counters.pionnier = 1; pioneer = true; }
       if (this.today >= WELCOME.from && !p.counters.welcome && !isPioneer(p) && !Object.keys(p.days || {}).some(k => k < WELCOME.from && (p.days[k].runs || []).length)) {
         p.coins += WELCOME.coins; p.counters.welcome = 1; welcome = true;
       }
       p.awardsDay = this.today;
       const fresh = Store.checkUnlocks(p);
-      const lines = [...(welcome ? [{ txt: `👋 Bienvenue dans la dune ! Voici un petit présent pour bien commencer : +${WELCOME.coins} 🟡` }] : []), ...(roi ? [{ txt: '🥇 Badge « Roi Bousier »' }] : []), ...(pioneer ? [{ txt: `🌱 Merci pionnier : +${PIONEER.coins} 🟡` }] : []), ...fresh.map(f => rewardLine(f.type, f.item))];
+      const lines = [...(month ? [{ txt: `🎂 Bousier a 1 mois ! Merci d'être là depuis le début : +${EGG.month1Coins} 🟡` }] : []), ...(welcome ? [{ txt: `👋 Bienvenue dans la dune ! Voici un petit présent pour bien commencer : +${WELCOME.coins} 🟡` }] : []), ...(roi ? [{ txt: '🥇 Badge « Roi Bousier »' }] : []), ...(pioneer ? [{ txt: `🌱 Merci pionnier : +${PIONEER.coins} 🟡` }] : []), ...fresh.map(f => rewardLine(f.type, f.item))];
       if (lines.length) this.addRewards(lines);
       Store.save();
       if (lines.length) {
@@ -4188,6 +4278,8 @@ const App = {
       ideatype: () => { this.ideaType = v; for (const b of this.ui.querySelectorAll('[data-a="ideatype"]')) b.classList.toggle('on', b.dataset.v === v); },
       sendidea: () => this.sendIdea(),
       hwok: () => { safeStorageSet('bousier_hw_' + ONLINE_ENV, this.today); this.show('home'); },
+      tickle: () => this.tickle(),
+      moon: () => this.moonTap(),
       giftok: () => { this.p.inbox = []; Store.save(); this.show('home'); },
       hwteamok: () => { delete this.p.hwMsg; Store.save(); this.show('home'); },
       boostok: () => { delete this.p.boostMsg; Store.save(); this.show('home'); },
@@ -4261,7 +4353,10 @@ const App = {
     if (!ok) return this.formError('Envoi impossible (pas de connexion ?).');
     Store.data.settings.ideasSent = { day: today, n: (sent.day === today ? sent.n : 0) + 1 };
     Store.save();
-    this.toast('Merci ! Ton message est bien arrivé 💡');
+    const low = text.toLowerCase();
+    this.toast(/caca|crotte|bouse/.test(low) ? '💩 Bien reçu… et c\'est exactement le sujet du jeu !'
+      : /kevin/.test(low) ? '🦺 Kevin a lu ton message. Il cherche toujours son casque.'
+      : /bousier/.test(low) ? '🪲 Le bousier te remercie. Il roule pour toi.' : 'Merci ! Ton message est bien arrivé 💡');
     this.show('ideas');
   },
 
@@ -4323,6 +4418,33 @@ const App = {
     this.show('leaderboard');
   },
 
+  // Easter eggs de l'accueil : chatouiller le bousier, faire tomber la lune
+  tickle() {
+    if (this.today < EGG.from) return;
+    const p = this.p, el = this.ui.querySelector('.tickle'), n = p.counters.tickle = (p.counters.tickle || 0) + 1;
+    if (el) {
+      el.classList.remove('wiggle', 'roll'); void el.offsetWidth;
+      el.classList.add(n % 10 === 0 ? 'roll' : 'wiggle');
+      if (n % 10 === 5 || n % 10 === 0) {
+        const t = document.createElement('div'); t.className = 'tickle-txt'; t.textContent = n % 10 === 5 ? 'ATCHOUM !' : 'HIHIHI !';
+        t.style.top = '45%'; el.parentNode.appendChild(t); setTimeout(() => t.remove(), 1000);
+      }
+    }
+    if (n % 10 === 0) Store.save();
+    if (n === EGG.tickle) this.eggCheck();
+  },
+  moonTap() {
+    const now = Date.now(), el = this.ui.querySelector('.moon');
+    this.moonN = now - (this.moonAt || 0) < 2500 ? (this.moonN || 0) + 1 : 1; this.moonAt = now;
+    if (el) { el.classList.remove('fall'); void el.offsetWidth; el.classList.add('fall'); }
+    if (this.moonN === EGG.moon && !this.p.counters.lune) { this.p.counters.lune = 1; this.eggCheck(); }
+  },
+  eggCheck() {
+    const fresh = Store.checkUnlocks(this.p);
+    if (fresh.length) { this.addRewards(fresh.map(f => rewardLine(f.type, f.item))); Sound.play('unlock'); this.toast('🎁 Nouvelles récompenses !'); }
+    Store.save();
+    if (this.screen === 'home') setTimeout(() => this.show('home'), 700);
+  },
   addRewards(lines) { const p = this.p; p.inbox = (p.inbox || []).concat(lines).slice(-12); },
   toast(msg) {
     const t = document.getElementById('toast');
@@ -4466,6 +4588,18 @@ const App = {
       p.weathers[run.weather] = (p.weathers[run.weather] || 0) + 1;
       if (run.terrier && WEEKLY_WEATHERS.includes(run.weather)) inc('hole_' + run.weather);
       if (run.byType.megot && !d.megot) { d.megot = true; inc('megot'); }  // un seul mégot compté par jour
+      if (this.today >= EGG.from) {
+        if (run.chat) inc('chat');
+        if (now.getHours() < 7) inc('early');
+        if (now.getHours() >= 23) inc('owl');
+        const m = x => (run.score / 100).toFixed(2) === x;
+        if (Math.round(run.score * 10) === 100) ct.pp10 = 1;
+        if (m('1.00')) ct.pp100 = 1;
+        if (m('2.00')) ct.pp200 = 1;
+        if (m('3.00')) ct.pp300 = 1;
+        if (run.terrier && d.runs.length >= maxAttempts(p, this.today) && d.runs.slice(0, -1).every(x => !x.terrier)) inc('lastchance');
+        if (run.terrier && !run.byType.feuille && !run.byType.cactus) inc('vege');
+      }
       if (isHalloween(this.today)) { inc('halloween'); res.pumpkins = run.byType.citrouille || 0; d.pumpkins = (d.pumpkins || 0) + res.pumpkins; }
       if (this.today === HALLOWEEN.night && run.terrier) inc('sorciere');
       const st = p.stats;
@@ -4506,7 +4640,8 @@ const App = {
       Store.save();
       Online.submitPlayer(p);
     }
-    if (this.mode === 'practice') { p.stats.practice = (p.stats.practice || 0) + 1; Store.save(); }
+    if (this.mode === 'practice') { p.stats.practice = (p.stats.practice || 0) + 1; if (run.byType.plot) ct.plots = (ct.plots || 0) + run.byType.plot; Store.save(); }
+    if (run.timide && this.today >= EGG.from) ct.timide = (ct.timide || 0) + 1;
     if (this.mode === 'survival') {
       const sv = p.survival;
       res.dist = run.dist; res.prevBest = sv.best; res.newRecord = run.dist > sv.best;
@@ -4518,7 +4653,7 @@ const App = {
       if (res.newRecord) await Online.submitSurvival(p);
       res.top = await Online.survivalTop();
     }
-    res.unlocked = this.mode === 'practice' ? [] : Store.checkUnlocks(p);
+    res.unlocked = Store.checkUnlocks(p);
     Store.save();
     this.lastRes = res;
     setTimeout(() => this.show('results'), 200);
@@ -4781,9 +4916,11 @@ const App = {
       <div class="hero">
         <div class="title">BOUSIER</div>
         <div class="sub">Dune #${cfg.num} · ${esc(fmtDayLong(this.today))}</div>
-        <div class="mascot bob">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
+        <div class="mascot bob tickle" data-a="tickle">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
+        ${this.today >= EGG.from && cfg.weather.id === 'nuit' ? `<button class="moon" data-a="moon" aria-label="Lune">${spriteImg('luneHome', 3)}</button>` : ''}
       </div>
-      ${(p.inbox || []).length ? `<div class="banner gift"><b>🎁 Tes récompenses</b><ul class="quests">${p.inbox.map(e => `<li>${esc(e.txt)}</li>`).join('')}</ul>
+      ${(p.inbox || []).length ? `<div class="banner gift"><b>🎁 Tes récompenses</b><ul class="quests">${p.inbox.map(e => `<li>${esc(e.txt)}${e.why ? `<div class="tiny why">${esc(e.why)}</div>` : ''}</li>`).join('')}</ul>
+        <div class="tiny center">Tout s'équipe dans 🎨 Style.</div>
         <div class="gift-btns"><button class="btn ghost small" data-a="giftok">OK</button></div></div>` : ''}
       ${isHalloween(this.today) && safeStorageGet('bousier_hw_' + ONLINE_ENV) !== this.today ? `<div class="banner">🎃 <b>Semaine Halloween !</b> Citrouilles et chauves-souris dans la dune.<div class="tiny">${this.today === HALLOWEEN.night ? 'Ce soir, dune spéciale de nuit : rentre dans le terrier pour gagner le 🧙 Chapeau de sorcière !' : `Joue une dune pour gagner la 🎃 Boule citrouille. ${this.today < HALLOWEEN.night ? 'Samedi 31 : dune spéciale de nuit !' : ''}`}</div> <button class="btn ghost small" data-a="hwok">OK</button></div>` : ''}
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
@@ -4852,7 +4989,7 @@ const App = {
       </table></div>
       <div class="panel"><div class="label">Récompenses</div><div class="gold big-num">+${r.coins} 🟡</div>
         <div class="tiny">1 🟡 tous les 25 m. Objets à gagner : Bandana du survivant (1 000 m), Tempête du survivant (2 000 m).</div></div>
-      ${(r.unlocked || []).length ? `<div class="panel banner">${r.unlocked.map(u => `🎁 Débloqué : <b>${esc(u.item.name)}</b>`).join('<br>')}</div>` : ''}
+      ${(r.unlocked || []).length ? `<div class="panel banner">${r.unlocked.map(u => `🎁 Débloqué : <b>${esc(u.item.name)}</b>${u.item.secret ? ' 🤫 (secret !)' : ''}${u.item.how || u.item.text ? `<div class="tiny why">${esc(u.item.how || u.item.text)}</div>` : ''}`).join('')}<div class="tiny">À équiper dans 🎨 Style</div></div>` : ''}
       ${top.length ? `<div class="panel"><div class="label">Classement Survie</div><table class="lb">${top.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${medal(i)}</td><td>${esc(e.name)}</td><td class="r">${e.best} m</td></tr>`).join('')}</table></div>` : ''}
       <div class="col">
         <button class="btn big" data-a="survival">Rejouer</button>
@@ -4909,7 +5046,7 @@ const App = {
         ${r.pumpkins != null ? `<div class="tiny" style="margin-top:calc(var(--u)*2)">🎃 +${r.pumpkins} citrouille${r.pumpkins > 1 ? 's' : ''} pour le défi du labo</div>` : ''}
         ${disc ? `<div class="label" style="margin-top:calc(var(--u)*3)">Nouveaux objets dans la Bousipédia</div><div class="pills">${disc}</div>` : ''}
       </div>` : ''}
-      ${(r.unlocked || []).length ? `<div class="panel banner">${r.unlocked.map(u => `🎁 Débloqué : <b>${esc(u.item.name)}</b>${u.item.secret ? ' 🤫 (secret !)' : ''}`).join('<br>')}<div class="tiny">À équiper dans 🎨 Style</div></div>` : ''}
+      ${(r.unlocked || []).length ? `<div class="panel banner">${r.unlocked.map(u => `🎁 Débloqué : <b>${esc(u.item.name)}</b>${u.item.secret ? ' 🤫 (secret !)' : ''}${u.item.how || u.item.text ? `<div class="tiny why">${esc(u.item.how || u.item.text)}</div>` : ''}`).join('')}<div class="tiny">À équiper dans 🎨 Style</div></div>` : ''}
       <div class="col">
         ${daily && r.attemptsLeft > 0 ? `<button class="btn big" data-a="play">Réessayer (${r.maxAttempts - r.attemptsLeft + 1}/${r.maxAttempts})</button>` : ''}
         ${!daily ? `<button class="btn big" data-a="practice">Nouvelle dune d'entraînement</button>` : ''}
