@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.12.0 — Easter egg des mégots (23 octobre 2026)
+- À partir du 26 octobre, un mégot très discret apparaît sur la dune du jour, une fois par période de 5 jours (jour au
+  hasard), près d'un bord. Avalé : « UN MEGOT ?! ». Un seul compté par jour ; 4 mégots débloquent la Cigarette 🚬
+  (secret, compteur des secrets 0/6). Hors Bousipédia, quêtes et entraînement ; aucune dune déjà jouée ne change.
+- Admin : nombre de mégots trouvés dans la fiche joueur. La cigarette peut toujours être offerte.
+
 ## v1.11.9 — Cigarette, cadeau spécial (23 octobre 2026)
 - Nouveau chapeau caché « Cigarette 🚬 » (avec volutes de fumée) : invisible dans la boutique, il ne s'obtient que
   comme cadeau de l'organisateur depuis l'admin.
