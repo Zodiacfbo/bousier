@@ -706,6 +706,9 @@ const ROWS = {
   hautdeforme: ['..YYYYY..', '.YrrrrrY.', 'YryyyyyrY', 'YrywyyyrY', 'YryyyyyrY', '.YrrrrrY.', '..YYYYY..'],
   cigarette: ['.....twwwo', '.....ThhhO'],
   megot: ['Tww'],
+  // chat noir (tenue spéciale) : de face, les pattes sur la boule
+  chatA: ['..k.....k..', '..kk...kk..', '..kKkkkKk..', '.kkykkkykk.', 'wkkkkpkkkkw', '..kkkkkkk..', '...kkkkk...', '..kkkkkkk..', '.kkkkkkkkk.', '.kkkkkkkkkk', '.kkkkkkkk.k', '..kkkkkkk.k', '..k.k.k.kk.'],
+  chatB: ['..k.....k..', '..kk...kk..', '..kKkkkKk..', '.kkykkkykk.', 'wkkkkpkkkkw', '..kkkkkkk..', '...kkkkk...', '..kkkkkkk..', '.kkkkkkkkk.', '.kkkkkkkkk.', '.kkkkkkkkkk', '..kkkkkkk.k', '...k.k.k.k.'],
   // easter eggs
   plot: ['..o..', '.oOo.', '.www.', 'ooooo'],
   plotHat: ['...o...', '..oOo..', '..www..', '.ooooo.', 'OOOOOOO'],
@@ -906,6 +909,7 @@ function drawBallFx(ctx, skin, x, y, R, t, layer) {
 // Bousier habillé : on recolore sa carapace (+ quelques pixels en plus)
 const BEETLE_CACHE = {};
 function beetleSprite(outfit, frame) {
+  if (outfit && outfit.body) return SPR[outfit.body + (frame ? 'B' : 'A')];
   const base = frame ? 'beetleB' : 'beetleA';
   if (!outfit || !outfit.pal) return SPR[base];
   const key = outfit.id + base;
@@ -1190,6 +1194,7 @@ const OUTFITS = [
   { id: 'blouse', name: 'Blouse de labo', pal: { q: '#d6d8dc', Q: '#ffffff', u: '#9aa0a8' }, pixels: [[7, 2, '#2d6aa8'], [7, 3, '#2d6aa8'], [6, 3, '#9aa0a8']] },
   { id: 'hazmat', name: 'Combinaison anti-contamination', pal: { q: '#d9b400', Q: '#ffd84a', u: '#2c2442' }, pixels: [[4, 4, '#2c2442'], [6, 4, '#2c2442'], [5, 5, '#2c2442']] },
   { id: 'cape', name: 'Cape de super-héros', pal: { q: '#a8202a', Q: '#d8463a', u: '#ffd25a' }, cape: true },
+  { id: 'chatnoir', name: 'Chat noir', gift: true, body: 'chat' },
   { from: NEW_WX_FROM, id: 'cire', name: 'Ciré jaune', pal: { q: '#e8c020', Q: '#ffe14a', u: '#b8901a' }, pixels: [[5, 2, '#1d1416']] },
   { id: 'smoking', name: 'Smoking', pal: { q: '#1d1d24', Q: '#2c2c38', u: '#ffffff' }, pixels: [[4, 8, '#d8463a'], [6, 8, '#d8463a'], [5, 8, '#8a2a2a']] },
 ];
