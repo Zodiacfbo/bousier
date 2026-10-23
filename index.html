@@ -707,8 +707,8 @@ const ROWS = {
   cigarette: ['.....twwwo', '.....ThhhO'],
   megot: ['Tww'],
   // chat noir (tenue spéciale) : de face, les pattes sur la boule
-  chatA: ['..k.....k..', '..kk...kk..', '..kKkkkKk..', '.kkykkkykk.', 'wkkkkpkkkkw', '..kkkkkkk..', '...kkkkk...', '..kkkkkkk..', '.kkkkkkkkk.', '.kkkkkkkkkk', '.kkkkkkkk.k', '..kkkkkkk.k', '..k.k.k.kk.'],
-  chatB: ['..k.....k..', '..kk...kk..', '..kKkkkKk..', '.kkykkkykk.', 'wkkkkpkkkkw', '..kkkkkkk..', '...kkkkk...', '..kkkkkkk..', '.kkkkkkkkk.', '.kkkkkkkkk.', '.kkkkkkkkkk', '..kkkkkkk.k', '...k.k.k.k.'],
+  chatA: ['.k.........k.', '.kk.......kk.', '.kpk.....kpk.', '.kpkkkkkkkpk.', '.kkkKkkkKkkk.', 'kkyykkkkkyykk', 'kkykkkkkkkykk', 'wkkkkkpkkkkkw', '..rrrryrrrr..', '..kkkkKkkkk..', '.kkkkKKKkkkkk', '.kkkkKKKkkkkk', '.kkkkkkkkkk.k', '.kkkkkkkkkk.k', '..wwk.k.kww..'],
+  chatB: ['.k.........k.', '.kk.......kk.', '.kpk.....kpk.', '.kpkkkkkkkpk.', '.kkkKkkkKkkk.', 'kkyykkkkkyykk', 'kkykkkkkkkykk', 'wkkkkkpkkkkkw', '..rrrryrrrr..', '..kkkkKkkkk.k', '.kkkkKKKkkkk.', '.kkkkkkkkkkk.', '.kkkkkkkkkkk.', '.kkkkkkkkkk.k', '..wwk.k.kww.k'],
   // easter eggs
   plot: ['..o..', '.oOo.', '.www.', 'ooooo'],
   plotHat: ['...o...', '..oOo..', '..www..', '.ooooo.', 'OOOOOOO'],
@@ -1031,7 +1031,7 @@ function renderMascot(skin, hat, R = 9, scale = 1, outfit = null, trail = null) 
   x.fillStyle = 'rgba(60,30,10,0.3)';
   x.fillRect(bx - R + 2, by + R - 1, R * 2 - 2, 2);
   if (outfit && outfit.cape) drawCape(x, bx, by - R - 12, 0, outfit.capeCol);
-  x.drawImage(beetleSprite(outfit, 0), bx - 5, by - R - 12);
+  { const bs = beetleSprite(outfit, 0); x.drawImage(bs, bx - (bs.width >> 1), by - R - 12 - (bs.height - 12)); }
   drawHat(x, hat, bx, by - R - 12);
   drawBallFx(x, skin, bx, by, R, 1, 'back');
   const base = ballBase(skin, R);
@@ -3762,7 +3762,7 @@ class Game {
     if (this.trail && this.trail.fx === 'rainbow' && this.phase === 'play') drawRainbow(ctx, this.trailPts, b.r, this.t);
     if (this.phase !== 'hole' || this.phaseT < 1.1) {
       if (this.outfit && this.outfit.cape) drawCape(ctx, bx, btop, this.t, this.outfit.capeCol);
-      ctx.drawImage(beetle, bx - 5, btop);
+      ctx.drawImage(beetle, bx - (beetle.width >> 1), btop - (beetle.height - 12));
       drawHat(ctx, this.hat, bx, btop);
       if (this.wallT > 2) { ctx.fillStyle = '#ff8aa8'; ctx.fillRect(bx - 3, btop + 9, 1, 1); ctx.fillRect(bx + 3, btop + 9, 1, 1); }
     }
@@ -4840,7 +4840,7 @@ const App = {
       Game.prototype.drawParticles.call(st);
       const bx = Math.round(b.x), btop = Math.round(b.y - R - 11);
       if (outfit.cape) drawCape(ctx, bx, btop, st.t, outfit.capeCol);
-      ctx.drawImage(beetleSprite(outfit, Math.floor(st.t * 6) % 2), bx - 5, btop);
+      { const bs = beetleSprite(outfit, Math.floor(st.t * 6) % 2); ctx.drawImage(bs, bx - (bs.width >> 1), btop - (bs.height - 12)); }
       drawHat(ctx, hat, bx, btop);
       ctx.fillStyle = 'rgba(70,35,10,0.3)'; ctx.fillRect(bx - R + 2, b.y + R - 1, R * 2 - 1, 2);
       drawBallFx(ctx, skin, b.x, b.y, R, st.t, 'back');
