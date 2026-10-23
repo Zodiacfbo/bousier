@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.14.3 — Surprise des nouvelles météos préservée (24 octobre 2026)
+- Les 4 récompenses des nouvelles météos (Ciré jaune, Lampe frontale, Lunettes d'éclipse, Tourbillon de sable) et le
+  badge « Chasseur de tempêtes » restent cachés jusqu'au 2 novembre.
+
 ## v1.14.2 — Encadré des récompenses simplifié (24 octobre 2026)
 - L'encadré « 🎁 Tes récompenses » n'affiche plus la phrase « Tout s'équipe dans 🎨 Style ».
 

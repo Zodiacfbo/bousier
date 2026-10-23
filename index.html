@@ -1111,6 +1111,8 @@ const SUGAR_SKULL = { id: 'cranesucre', name: 'Crâne en sucre', sprite: 'cranes
 const MEGOT = { from: '2026-10-26', every: 5, need: 4, def: { id: 'megot', name: 'Mégot', sprite: 'megot', r: 1.2, megot: true } };
 // Autres easter eggs (sans news) : plots d'entraînement, chat noir du vendredi 13, chatouilles, lune, etc.
 const FIRST_SECRET_COINS = 100;
+// Nouvelles météos (2 novembre) : leurs récompenses et leur badge restent cachés jusque-là (surprise)
+const NEW_WX_FROM = '2026-11-02';
 const EGG = { from: '2026-10-26', plots: 25, practice: 50, tickle: 100, moon: 13, shy: 10, month1: '2026-11-20', month1Coins: 50,
   plot: { id: 'plot', name: 'Plot', sprite: 'plot', r: 2.5, plot: true } };
 function isFriday13(day) { return day.slice(8) === '13' && dayFromKey(day).getDay() === 5; }
@@ -1177,8 +1179,8 @@ const HATS = [
   { id: 'aimant', name: 'Aimant', sprite: 'aimant' },
   { id: 'fleurCactus', name: 'Fleur de cactus', sprite: 'fleurCactus' },
   { id: 'aureole', name: 'Auréole', sprite: 'aureole', dy: -5 },
-  { id: 'frontale', name: 'Lampe frontale', sprite: 'frontale' },
-  { id: 'lunetteseclipse', name: 'Lunettes d\'éclipse', sprite: 'lunetteseclipse' },
+  { from: NEW_WX_FROM, id: 'frontale', name: 'Lampe frontale', sprite: 'frontale' },
+  { from: NEW_WX_FROM, id: 'lunetteseclipse', name: 'Lunettes d\'éclipse', sprite: 'lunetteseclipse' },
   { id: 'sorciere', name: 'Chapeau de sorcière', sprite: 'sorciere', dy: -3, season: 'halloween' },
   { id: 'bandana', name: 'Bandana du survivant', sprite: 'bandana', survival: true },
 ];
@@ -1188,7 +1190,7 @@ const OUTFITS = [
   { id: 'blouse', name: 'Blouse de labo', pal: { q: '#d6d8dc', Q: '#ffffff', u: '#9aa0a8' }, pixels: [[7, 2, '#2d6aa8'], [7, 3, '#2d6aa8'], [6, 3, '#9aa0a8']] },
   { id: 'hazmat', name: 'Combinaison anti-contamination', pal: { q: '#d9b400', Q: '#ffd84a', u: '#2c2442' }, pixels: [[4, 4, '#2c2442'], [6, 4, '#2c2442'], [5, 5, '#2c2442']] },
   { id: 'cape', name: 'Cape de super-héros', pal: { q: '#a8202a', Q: '#d8463a', u: '#ffd25a' }, cape: true },
-  { id: 'cire', name: 'Ciré jaune', pal: { q: '#e8c020', Q: '#ffe14a', u: '#b8901a' }, pixels: [[5, 2, '#1d1416']] },
+  { from: NEW_WX_FROM, id: 'cire', name: 'Ciré jaune', pal: { q: '#e8c020', Q: '#ffe14a', u: '#b8901a' }, pixels: [[5, 2, '#1d1416']] },
   { id: 'smoking', name: 'Smoking', pal: { q: '#1d1d24', Q: '#2c2c38', u: '#ffffff' }, pixels: [[4, 8, '#d8463a'], [6, 8, '#d8463a'], [5, 8, '#8a2a2a']] },
 ];
 const TRAILS = [
@@ -1200,7 +1202,7 @@ const TRAILS = [
   { id: 'fumee', name: 'Expérience ratée', fx: 'smoke' },
   { id: 'notes', name: 'Notes de musique', fx: 'notes' },
   { id: 'binaire', name: 'Code binaire', fx: 'binary' },
-  { id: 'tourbillon', name: 'Tourbillon de sable', fx: 'swirl' },
+  { from: NEW_WX_FROM, id: 'tourbillon', name: 'Tourbillon de sable', fx: 'swirl' },
   { from: EGG.from, id: 'eclairs', name: 'Éclairs', fx: 'bolts' },
   { id: 'survivant', name: 'Tempête du survivant', fx: 'dust', survival: true },
 ];
@@ -5371,11 +5373,11 @@ const App = {
   },
 
   scr_badges() {
-    const p = this.p;
+    const p = this.p, list = BADGES.filter(b => b.id !== 'tempetes' || this.today >= NEW_WX_FROM || p.badges[b.id]);
     return `<div class="screen">
       ${this.back('Badges')}
-      <div class="tiny center">${Object.keys(p.badges).length} / ${BADGES.length} obtenus</div>
-      <div class="badges">${BADGES.map(b => `<div class="panel bdg ${p.badges[b.id] ? '' : 'locked'}">
+      <div class="tiny center">${list.filter(b => p.badges[b.id]).length} / ${list.length} obtenus</div>
+      <div class="badges">${list.map(b => `<div class="panel bdg ${p.badges[b.id] ? '' : 'locked'}">
         <div class="bico">${b.icon}</div><div><b>${esc(b.name)}</b>${b.id === 'champion' && p.counters.champion ? ` <span class="gold">×${p.counters.champion}</span>` : ''}<div class="tiny">${esc(b.desc)}</div>
         ${b.reward ? `<div class="tiny gold">Récompense : ${esc(b.reward)}</div>` : ''}</div></div>`).join('')}</div>
     </div>`;
