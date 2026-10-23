@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.11.7 — Encadré « Tes récompenses » (23 octobre 2026)
+- Ce qui se gagne hors d'une partie (titres, cadres et objets débloqués à l'ouverture, cadeau des pionniers, badge Roi
+  Bousier, cadeaux de l'organisateur) s'affiche dans un encadré « 🎁 Tes récompenses » sur l'accueil, qui reste jusqu'à
+  « OK » (au lieu d'un message de 2 secondes). Le petit message devient « 🎁 Nouvelles récompenses ! ».
+- Dev : les raccourcis du voyage dans le temps qui tombent le même jour sont regroupés et triés par date.
+
 ## v1.11.6 — Météos spéciales le lundi et le vendredi (23 octobre 2026)
 - À partir du 2 novembre, les deux météos spéciales de la semaine tombent toujours le lundi et le vendredi
   (lun. 2 : orage, ven. 6 : brouillard, lun. 9 : sables mouvants, ven. 13 : éclipse, puis on recommence).

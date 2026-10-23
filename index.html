@@ -1642,7 +1642,7 @@ const REWARD_TYPE = { ball: '⚪ Boule', hat: '🎩 Chapeau', outfit: '👕 Tenu
 function rewardLine(type, item) {
   // « Cadre du podium », « Boule diamant » : le nom dit déjà le type, on ne garde que l'icône
   const [icon, word] = (REWARD_TYPE[type] || ' ').split(' '), name = type === 'title' ? `« ${item.name} »` : item.name;
-  return { txt: `${icon} ${word && !item.name.toLowerCase().startsWith(word.toLowerCase()) ? word + ' ' : ''}${name}`, tab: RANK_TYPES.includes(type) ? 'rank' : type };
+  return { txt: `${icon} ${word && !item.name.toLowerCase().startsWith(word.toLowerCase()) ? word + ' ' : ''}${name}` };
 }
 function frameCls(look) { const f = findCos('frame', look && look.frame); return f.id === 'aucun' ? '' : `fr fr-${f.id}`; }
 function podiumHtml(top, opts = {}) {
@@ -4165,7 +4165,6 @@ const App = {
       sendidea: () => this.sendIdea(),
       hwok: () => { safeStorageSet('bousier_hw_' + ONLINE_ENV, this.today); this.show('home'); },
       giftok: () => { this.p.inbox = []; Store.save(); this.show('home'); },
-      giftgo: () => { const l = this.p.inbox || [], e = l.find(x => x.tab === 'rank') || l.find(x => x.tab); this.p.inbox = []; Store.save(); this.shopTab = e ? e.tab : 'ball'; this.shopSel = null; this.show('shop'); },
       hwteamok: () => { delete this.p.hwMsg; Store.save(); this.show('home'); },
       boostok: () => { delete this.p.boostMsg; Store.save(); this.show('home'); },
       podok: () => { safeStorageSet('bousier_pod_' + ONLINE_ENV, v); if (this.p.weekMsg) { delete this.p.weekMsg; Store.save(); } this.show('home'); },
@@ -4759,7 +4758,7 @@ const App = {
         <div class="mascot bob">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
       </div>
       ${(p.inbox || []).length ? `<div class="banner gift"><b>🎁 Tes récompenses</b><ul class="quests">${p.inbox.map(e => `<li>${esc(e.txt)}</li>`).join('')}</ul>
-        <div class="gift-btns">${p.inbox.some(e => e.tab) ? '<button class="btn small" data-a="giftgo">🎨 Aller équiper</button>' : ''}<button class="btn ghost small" data-a="giftok">OK</button></div></div>` : ''}
+        <div class="gift-btns"><button class="btn ghost small" data-a="giftok">OK</button></div></div>` : ''}
       ${isHalloween(this.today) && safeStorageGet('bousier_hw_' + ONLINE_ENV) !== this.today ? `<div class="banner">🎃 <b>Semaine Halloween !</b> Citrouilles et chauves-souris dans la dune.<div class="tiny">${this.today === HALLOWEEN.night ? 'Ce soir, dune spéciale de nuit : rentre dans le terrier pour gagner le 🧙 Chapeau de sorcière !' : `Joue une dune pour gagner la 🎃 Boule citrouille. ${this.today < HALLOWEEN.night ? 'Samedi 31 : dune spéciale de nuit !' : ''}`}</div> <button class="btn ghost small" data-a="hwok">OK</button></div>` : ''}
       ${annText ? `<div class="banner">📣 ${esc(annText)} <button class="btn ghost small" data-a="annok" data-v="${ann.at}">OK</button></div>` : ''}
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
@@ -5157,8 +5156,14 @@ const App = {
     const marks = [['2026-10-26', '🎃 26 oct. Halloween, Style, pionniers'], ['2026-10-31', '🧙 31 oct. nuit d\'Halloween'], ['2026-11-02', '⚡ 2 nov. événements'], ['2026-11-09', '⭐ 9 nov. boutique de la semaine']];
     for (const id of WEEKLY_WEATHERS) {
       const w = ALL_WEATHERS.find(x => x.id === id);
-      for (let k = WX_ROTATION_FROM; k < '2027'; k = addDays(k, 1)) if (weeklyWeather(k) >= 0 && ALL_WEATHERS[weeklyWeather(k)].id === id) { marks.push([k, `${w.icon} ${+k.slice(8)}/${k.slice(5, 7)} ${w.name}`]); break; }
+      for (let k = WX_ROTATION_FROM; k < '2027'; k = addDays(k, 1)) if (weeklyWeather(k) >= 0 && ALL_WEATHERS[weeklyWeather(k)].id === id) {
+        // même jour qu'un autre raccourci : on regroupe
+        const m = marks.find(x => x[0] === k);
+        if (m) m[1] += ` + ${w.icon} ${w.name.toLowerCase()}`; else marks.push([k, `${w.icon} ${+k.slice(8)}/${k.slice(5, 7)} ${w.name}`]);
+        break;
+      }
     }
+    marks.sort((x, y) => x[0] < y[0] ? -1 : 1);
     return `<div class="panel"><div class="label">🕰️ Voyage dans le temps <span class="tiny">(dev seulement)</span></div>
       <div class="tiny">${TIME_SHIFT ? `Date simulée : <b>${esc(fmtDayLong(TIME_SHIFT))}</b>` : 'Date réelle.'} Le site officiel et ta progression de main ne sont jamais touchés. En date simulée, les scores en ligne peuvent être refusés.</div>
       <div class="pills">${marks.map(([k, l]) => `<button class="pill ${TIME_SHIFT === k ? 'on' : ''}" data-a="timeshift" data-v="${k}">${esc(l)}</button>`).join('')}</div>
