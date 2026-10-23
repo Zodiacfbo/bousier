@@ -227,6 +227,11 @@ table { width: 100%; border-collapse: collapse; }
 .pill.on { box-shadow: inset 0 0 0 var(--u) var(--gold); }
 .pill.sel2 { box-shadow: inset 0 0 0 var(--u) #fff; }
 .pill.lock { opacity: .6; }
+.pills.rank { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 2); }
+.pills.rank .pill { font-size: .8em; padding: calc(var(--u) * 3) calc(var(--u) * 2.5); text-align: left; display: flex; flex-direction: column; gap: var(--u); }
+.pills.rank .pill .tiny { font-size: .8em; }
+.pills.rank .pill.earn { background: rgba(60, 44, 20, 0.92); }
+.pills.rank .pill .sw { width: calc(var(--u) * 6); height: calc(var(--u) * 6); }
 .sw { display: inline-block; width: calc(var(--u) * 5); height: calc(var(--u) * 5); border: var(--u) solid var(--line); vertical-align: middle; }
 .lb tr.fr td { border-top: var(--u) solid var(--frc); border-bottom: var(--u) solid var(--frc); background: var(--frb); }
 .lb tr.fr td:first-child { border-left: var(--u) solid var(--frc); }
@@ -5049,13 +5054,14 @@ const App = {
       const look = {}; for (const t of RANK_TYPES) look[t] = (type === t && prev ? prev : eq(t)).id;
       top = `<div class="panel"><div class="tiny center">Aperçu de ta ligne au classement</div>
         <table class="lb"><tr class="${frameCls(look)}"><td>🥇</td><td>${nameHtml(p.name, look)}</td><td class="r">${fmtSize(p.stats.best || 0)}</td></tr></table></div>`;
-      const pill = (t, it) => `<button class="pill ${p.equip[t] === it.id ? 'on' : ''} ${this.shopSel === it.id && type === t ? 'sel2' : ''} ${Store.owns(p, t, it) ? '' : 'lock'}" data-a="rankitem" data-v="${t}:${it.id}">${t === 'color' ? `<span class="sw ${it.rainbow ? 'rainbow-bg' : ''}" style="${it.col ? 'background:' + it.col : ''}"></span> ` : t === 'frame' && it.col ? `<span class="sw" style="background:${it.col}"></span> ` : ''}${t === 'title' && it.id !== 'aucun' ? `« ${esc(it.name)} »` : esc(it.name)}<br><span class="tiny">${status(it, t)}</span></button>`;
-      const group = (t, earned) => COSMETICS[t].filter(it => shown(t, it) && !!it.prog === earned).map(it => pill(t, it)).join('');
-      body = `<div class="label">🖼️ Cadre</div><div class="pills">${group('frame', false)}</div>
-        <div class="label">🎨 Couleur du pseudo</div><div class="pills">${group('color', false)}</div>
-        <div class="label">🏷️ Titre sous le pseudo</div><div class="pills">${group('title', false)}</div>
-        <div class="label">🏅 À gagner <span class="tiny">(ne s'achètent pas)</span></div><div class="pills">${group('frame', true)}${group('title', true)}</div>
-        <div class="tiny center">Visible par tout le monde dans les classements.</div>`;
+      // chaque catégorie : d'abord ce qui s'achète, puis ce qui se gagne (🏅)
+      const rstatus = (t, it) => !Store.owns(p, t, it) && it.prog ? `🏅 À gagner · ${Math.min(...it.prog(p))}/${it.prog(p)[1]}` : `${it.prog ? '🏅 ' : ''}${status(it, t)}`;
+      const pill = (t, it) => `<button class="pill ${p.equip[t] === it.id ? 'on' : ''} ${this.shopSel === it.id && type === t ? 'sel2' : ''} ${Store.owns(p, t, it) ? '' : 'lock'} ${it.prog ? 'earn' : ''}" data-a="rankitem" data-v="${t}:${it.id}"><span class="pn">${t === 'color' ? `<span class="sw ${it.rainbow ? 'rainbow-bg' : ''}" style="${it.col ? 'background:' + it.col : ''}"></span> ` : t === 'frame' && it.col ? `<span class="sw" style="background:${it.col}"></span> ` : ''}${t === 'title' && it.id !== 'aucun' ? `« ${esc(it.name)} »` : esc(it.name)}</span><span class="tiny">${rstatus(t, it)}</span></button>`;
+      const group = t => { const l = COSMETICS[t].filter(it => shown(t, it)); return l.filter(it => !it.prog).concat(l.filter(it => it.prog)).map(it => pill(t, it)).join(''); };
+      body = `<div class="label">🖼️ Cadres</div><div class="pills rank">${group('frame')}</div>
+        <div class="label">🎨 Couleurs du pseudo</div><div class="pills rank">${group('color')}</div>
+        <div class="label">🏷️ Titres sous le pseudo</div><div class="pills rank">${group('title')}</div>
+        <div class="tiny center">🏅 = ne s'achète pas, se gagne. Visible par tout le monde dans les classements.</div>`;
     } else {
       top = `<div class="mascot">${tab === 'theme' ? swatch(prev || eq('theme'), 3) : '<canvas id="preview" width="64" height="84" class="pix" style="width:calc(var(--u)*96);height:calc(var(--u)*126)"></canvas>'}</div>`;
       body = `<div class="grid three">${items.map(it => tile(it)).join('')}</div>
