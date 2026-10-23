@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.13.2 — Détail de la semaine (23 octobre 2026)
+- Classement de la semaine : sous chaque pseudo, un mini-calendrier (L à D) avec le score de chaque jour joué au
+  centimètre ; les 3 jours comptés sont entourés en doré, un score barré = sans terrier, le jour actuel est souligné.
+
 ## v1.13.1 — Prime du premier découvreur (23 octobre 2026)
 - Le premier joueur du labo à trouver un secret (easter eggs et cigarette) gagne 100 🟡 (« 🥇 Premier du labo à trouver
   ce secret »). Une seule fois par secret ; une cigarette offerte compte comme secret trouvé mais pas comme découverte.
