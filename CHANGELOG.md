@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.11.9 — Cigarette, cadeau spécial (23 octobre 2026)
+- Nouveau chapeau caché « Cigarette 🚬 » (avec volutes de fumée) : invisible dans la boutique, il ne s'obtient que
+  comme cadeau de l'organisateur depuis l'admin.
+
 ## v1.11.8 — Cadeau de bienvenue (23 octobre 2026)
 - À partir du 26 octobre, chaque joueur qui n'a pas joué avant (nouveau, ou inscrit sans avoir joué) reçoit une fois
   100 🟡 dans l'encadré « 🎁 Tes récompenses » : « 👋 Bienvenue dans la dune ! Voici un petit présent pour bien
