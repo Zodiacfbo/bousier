@@ -256,7 +256,6 @@ table { width: 100%; border-collapse: collapse; }
 .fr-podium { --frc: #c87aff; --frb: rgba(200,122,255,.15); }
 .fr-pionnier { --frc: #5fae4a; --frb: rgba(95,174,74,.16); }
 .fr-pilepoil { --frc: #5ad8ff; --frb: rgba(90,216,255,.14); }
-/* nouveaux cadres (à l'essai sur dev) */
 .fr-menthe { --frc: #6ad8a8; --frb: rgba(106,216,168,.13); }
 .fr-ocean { --frc: #3a7ac8; --frb: rgba(45,106,168,.18); }
 .fr-sakura { --frc: #f5b0c8; --frb: rgba(245,176,200,.13); }
@@ -1164,7 +1163,7 @@ const OBJECTS = [
 // Semaine Halloween : objets et trésor qui n'existent que ces jours-là
 const HALLOWEEN = { from: '2026-10-26', to: '2026-11-01', night: '2026-10-31' };
 const isHalloween = day => day >= HALLOWEEN.from && day <= HALLOWEEN.to;
-// Défi du labo d'Halloween : citrouilles avalées par tous les joueurs pendant la semaine
+// Défi communautaire d'Halloween : citrouilles avalées par tous les joueurs pendant la semaine
 const HW_GOAL = 666, HW_REWARD = 150;
 const SEASON_OBJECTS = [
   { id: 'citrouille', name: 'Citrouille', sprite: 'citrouille', r: 4.5, w: 0.9, tp: 0.4, s: 0.35, glow: true, season: 'halloween', desc: 'Semaine Halloween 2026. Elle brille encore un peu.' },
@@ -1327,20 +1326,19 @@ const FRAMES = [
   { id: 'podium', name: 'Cadre du podium', col: '#c87aff', from: SHOP_FROM },
   { id: 'pionnier', name: '🌱 Pionnier', col: '#5fae4a', from: SHOP_FROM },
   { from: EGG.from, id: 'pilepoil', name: '🎯 Pile poil', col: '#5ad8ff' },
-  // à l'essai sur dev : nouveaux cadres (invisibles sur le site officiel)
-  { devOnly: true, id: 'menthe', name: 'Menthe', price: 300, col: '#6ad8a8' },
-  { devOnly: true, id: 'ocean', name: 'Océan', price: 300, col: '#2d6aa8' },
-  { devOnly: true, id: 'sakura', name: 'Sakura', price: 300, col: '#f5b0c8' },
-  { devOnly: true, id: 'amethyste', name: 'Améthyste', price: 400, col: '#9a5ac8' },
-  { devOnly: true, id: 'brique', name: 'Brique', price: 400, col: '#c8603a' },
-  { devOnly: true, id: 'onyx', name: 'Onyx', price: 500, col: '#6a6570' },
-  { devOnly: true, id: 'neon', name: '⚡ Néon', price: 800, col: '#8a7aff' },
-  { devOnly: true, id: 'sunset', name: '🌅 Coucher de soleil', price: 1000, col: '#ff8a5a' },
-  { devOnly: true, id: 'scarabee', name: '🪲 Scarabée', price: 1200, col: '#2fa8a0' },
-  { devOnly: true, id: 'arcenfr', name: '🌈 Arc-en-ciel', price: 2000, col: '#ff5a5a', prestige: true },
-  { devOnly: true, id: 'diamantfr', name: '💎 Diamant', price: 2500, col: '#c8f0ff', prestige: true },
-  { devOnly: true, id: 'champfr', name: '👑 Champion', col: '#ffb82a', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
-  { devOnly: true, id: 'fidelefr', name: '🔥 Fidèle', col: '#ff9a3a', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
+  { from: SHOP_FROM, id: 'menthe', name: 'Menthe', price: 300, col: '#6ad8a8' },
+  { from: SHOP_FROM, id: 'ocean', name: 'Océan', price: 300, col: '#2d6aa8' },
+  { from: SHOP_FROM, id: 'sakura', name: 'Sakura', price: 300, col: '#f5b0c8' },
+  { from: SHOP_FROM, id: 'amethyste', name: 'Améthyste', price: 400, col: '#9a5ac8' },
+  { from: SHOP_FROM, id: 'brique', name: 'Brique', price: 400, col: '#c8603a' },
+  { from: SHOP_FROM, id: 'onyx', name: 'Onyx', price: 500, col: '#6a6570' },
+  { from: SHOP_FROM, id: 'neon', name: '⚡ Néon', price: 800, col: '#8a7aff' },
+  { from: SHOP_FROM, id: 'sunset', name: '🌅 Coucher de soleil', price: 1000, col: '#ff8a5a' },
+  { from: SHOP_FROM, id: 'scarabee', name: '🪲 Scarabée', price: 1200, col: '#2fa8a0' },
+  { from: SHOP_FROM, id: 'arcenfr', name: '🌈 Arc-en-ciel', price: 2000, col: '#ff5a5a', prestige: true },
+  { from: SHOP_FROM, id: 'diamantfr', name: '💎 Diamant', price: 2500, col: '#c8f0ff', prestige: true },
+  { from: SHOP_FROM, id: 'champfr', name: '👑 Champion', col: '#ffb82a', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
+  { from: SHOP_FROM, id: 'fidelefr', name: '🔥 Fidèle', col: '#ff9a3a', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
 ];
 const NAME_COLORS = [
   { id: 'blanc', name: 'Blanc', price: 0, col: '#ffffff' },
@@ -1349,22 +1347,22 @@ const NAME_COLORS = [
   { id: 'vert', name: 'Vert', price: 250, col: '#6ad86a', from: SHOP_FROM },
   { id: 'violet', name: 'Violet', price: 250, col: '#c87aff', from: SHOP_FROM },
   { id: 'arcenciel', name: 'Arc-en-ciel', price: 1500, rainbow: true, prestige: true, from: SHOP_FROM },
-  // à l'essai sur dev : nouvelles couleurs (invisibles sur le site officiel) ; fx = classe nc-<id>
-  { devOnly: true, id: 'orange', name: 'Orange', price: 250, col: '#ffa03a' },
-  { devOnly: true, id: 'rose', name: 'Rose', price: 250, col: '#ff8ac8' },
-  { devOnly: true, id: 'citron', name: 'Jaune citron', price: 250, col: '#e8f05a' },
-  { devOnly: true, id: 'sable', name: 'Sable', price: 300, col: '#e0c08a' },
-  { devOnly: true, id: 'acier', name: 'Gris acier', price: 300, col: '#9aa8b8' },
-  { devOnly: true, id: 'ordore', name: '✨ Or', price: 800, col: '#ffd25a', fx: 'grad' },
-  { devOnly: true, id: 'braise', name: '🔥 Braise', price: 900, col: '#ff6a2a', fx: 'grad' },
-  { devOnly: true, id: 'oceanps', name: '🌊 Océan', price: 900, col: '#3a8ae8', fx: 'grad' },
-  { devOnly: true, id: 'sunsetps', name: '🌅 Coucher de soleil', price: 1000, col: '#ff6a8a', fx: 'grad' },
-  { devOnly: true, id: 'scarabps', name: '🪲 Scarabée', price: 1200, col: '#2fc8b0', fx: 'grad' },
-  { devOnly: true, id: 'neonps', name: '⚡ Néon', price: 800, col: '#8a7aff', fx: 'fx' },
-  { devOnly: true, id: 'diamps', name: '💎 Diamant', price: 2500, col: '#c8f0ff', fx: 'grad', prestige: true },
-  { devOnly: true, id: 'galaxie', name: '🌌 Galaxie', price: 2500, col: '#8a5aff', fx: 'grad', prestige: true },
-  { devOnly: true, id: 'champps', name: '👑 Champion', col: '#ffc83a', fx: 'fx', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
-  { devOnly: true, id: 'fantome', name: '👻 Fantôme', col: '#ece8ff', fx: 'fx', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
+  // fx = classe nc-<id> (dégradé animé si 'grad')
+  { from: SHOP_FROM, id: 'orange', name: 'Orange', price: 250, col: '#ffa03a' },
+  { from: SHOP_FROM, id: 'rose', name: 'Rose', price: 250, col: '#ff8ac8' },
+  { from: SHOP_FROM, id: 'citron', name: 'Jaune citron', price: 250, col: '#e8f05a' },
+  { from: SHOP_FROM, id: 'sable', name: 'Sable', price: 300, col: '#e0c08a' },
+  { from: SHOP_FROM, id: 'acier', name: 'Gris acier', price: 300, col: '#9aa8b8' },
+  { from: SHOP_FROM, id: 'ordore', name: '✨ Or', price: 800, col: '#ffd25a', fx: 'grad' },
+  { from: SHOP_FROM, id: 'braise', name: '🔥 Braise', price: 900, col: '#ff6a2a', fx: 'grad' },
+  { from: SHOP_FROM, id: 'oceanps', name: '🌊 Océan', price: 900, col: '#3a8ae8', fx: 'grad' },
+  { from: SHOP_FROM, id: 'sunsetps', name: '🌅 Coucher de soleil', price: 1000, col: '#ff6a8a', fx: 'grad' },
+  { from: SHOP_FROM, id: 'scarabps', name: '🪲 Scarabée', price: 1200, col: '#2fc8b0', fx: 'grad' },
+  { from: SHOP_FROM, id: 'neonps', name: '⚡ Néon', price: 800, col: '#8a7aff', fx: 'fx' },
+  { from: SHOP_FROM, id: 'diamps', name: '💎 Diamant', price: 2500, col: '#c8f0ff', fx: 'grad', prestige: true },
+  { from: SHOP_FROM, id: 'galaxie', name: '🌌 Galaxie', price: 2500, col: '#8a5aff', fx: 'grad', prestige: true },
+  { from: SHOP_FROM, id: 'champps', name: '👑 Champion', col: '#ffc83a', fx: 'fx', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
+  { from: SHOP_FROM, id: 'fantome', name: '👻 Fantôme', col: '#ece8ff', fx: 'fx', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
 ];
 const TITLES = [
   { id: 'aucun', name: 'Aucun', price: 0 },
@@ -1501,10 +1499,14 @@ const CHANGELOG = [
       '🎃 Semaine Halloween jusqu\'au 1er novembre : citrouilles et chauves-souris dans la dune, et des nuits plus fréquentes',
       '🎃 Joue une dune du jour cette semaine pour gagner la Boule citrouille',
       '🧙 Samedi 31 : dune spéciale de nuit avec le trésor « Crâne en sucre ». Rentre dans le terrier pour gagner le Chapeau de sorcière !',
-      '🎃 Défi du labo : avalez 666 citrouilles à vous tous et chacun gagne 150 🟡 !',
     ],
   },
-  { v: 10, date: '2026-10-26', items: ['💎 Dans 🎨 Style : des objets de prestige pour les grosses économies, et un onglet Classement pour décorer ta ligne (cadre, couleur du pseudo, titre). Certains titres ne s\'achètent pas : ils se méritent…'] },
+  {
+    v: 10, date: '2026-10-26', items: [
+      '🏆 Nouvel onglet Classement dans 🎨 Style : décore ta ligne avec 13 cadres, 15 couleurs de pseudo et des titres. Certains ne s\'achètent pas : ils se méritent… 👑',
+      '💎 Des objets de prestige font leur entrée dans 🎨 Style, pour les grosses économies.',
+    ],
+  },
   { v: 9, date: '2026-10-26', only: isPioneer, items: ['🌱 Merci aux pionniers ! Tu as joué pendant la toute première semaine de Bousier : voici 150 🟡, le titre « Pionnier de la dune » et son cadre, à équiper dans 🎨 Style > Classement.'] },
   {
     v: 8, date: '2026-10-21', items: [
@@ -2438,7 +2440,7 @@ const Leaderboard = {
     for (let wk = addDays(weekKey(today), -7); wk >= FIRST_WEEK; wk = addDays(wk, -7)) weeks.push(wk);
     return (await Promise.all(weeks.map(wk => this.podium(wk)))).filter(w => w && w.top.length);
   },
-  // Défi du labo d'Halloween : total des citrouilles de tous les joueurs (null hors connexion)
+  // Défi communautaire d'Halloween : total des citrouilles de tous les joueurs (null hors connexion)
   async hwTotal() {
     const days = [];
     for (let k = HALLOWEEN.from; k <= HALLOWEEN.to && k <= dayKey(); k = addDays(k, 1)) days.push(k);
@@ -4330,7 +4332,7 @@ const App = {
       if (i === 0 && !p.badges.champion) p.badges.champion = this.today;
     }
     p.counters.champion = Object.values(p.weeks).filter(v => v === 1).length;
-    // défi du labo d'Halloween : récompense pour tous ceux qui ont joué pendant la semaine
+    // défi communautaire d'Halloween : récompense pour tous ceux qui ont joué pendant la semaine
     if (this.today > HALLOWEEN.to && counter(p, 'halloween') > 0 && !p.counters.hwTeam) {
       const total = await Leaderboard.hwTotal();
       if (total != null) {
@@ -5132,7 +5134,7 @@ const App = {
       ${annList.map(a => `<div class="banner">📣 ${esc(a.text)} <button class="btn ghost small" data-a="annok" data-v="${a.at}">OK</button></div>`).join('')}
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
-      ${p.hwMsg ? `<div class="banner">🎃 <b>Défi du labo réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b> <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}
+      ${p.hwMsg ? `<div class="banner">🎃 <b>Défi communautaire réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b> <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}
       ${p.boostMsg === weekKey(this.today) ? `<div class="banner">🚀 <b>Coup de pouce de la semaine</b> : 4 essais par jour et +${BOOST_COINS} 🟡. Merci d'avoir joué jusqu'au bout la semaine dernière ! <button class="btn ghost small" data-a="boostok">OK</button></div>` : ''}
       ${podShow || mine ? `<div class="banner">${podShow ? `👑 <b>Podium de la semaine dernière</b> — bravo ${esc(pod.top[0].name)} !${podiumHtml(pod.top)}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
@@ -5157,7 +5159,7 @@ const App = {
         <ul class="quests">${quests}</ul>
       </div>
       ${hwTotal != null ? `<div class="panel">
-        <div class="label">🎃 Défi du labo <span class="tiny">(tous ensemble, jusqu'à dimanche soir)</span></div>
+        <div class="label">🎃 Défi communautaire <span class="tiny">(tous ensemble, jusqu'à dimanche soir)</span></div>
         <div>Avalez <b>${HW_GOAL} citrouilles</b> à vous tous : <b>+${HW_REWARD} 🟡</b> pour chaque joueur de la semaine !</div>
         <div class="hwbar"><div style="width:${Math.min(100, hwTotal * 100 / HW_GOAL)}%"></div><span>${Math.min(hwTotal, HW_GOAL)} / ${HW_GOAL}</span></div>
         ${hwTotal >= HW_GOAL ? '<div class="good tiny">🎉 Défi réussi ! La récompense arrive lundi 2 novembre.</div>' : ''}
@@ -5249,7 +5251,7 @@ const App = {
         <div class="gold big-num">+<span id="coinsum">${(r.parts || []).length ? 0 : r.coins}</span> 🟡</div>
         ${(r.parts || []).map(([ico, label, n], i) => `<div class="rw reveal ${ico === '✅' || ico === '🌟' ? 'good' : ''}" style="animation-delay:${0.4 + i * 0.5}s"><span>${ico} ${esc(label)}</span><span class="gold">+${n} 🟡</span></div>`).join('')}
         ${r.badges.map((b, i) => `<div class="good reveal" style="animation-delay:${0.4 + ((r.parts || []).length + i) * 0.5}s">🎖️ Badge : ${b.icon} ${esc(b.name)}${b.reward ? ` → débloque <b>${esc(b.reward)}</b>` : ''}</div>`).join('')}
-        ${r.pumpkins != null ? `<div class="tiny" style="margin-top:calc(var(--u)*2)">🎃 +${r.pumpkins} citrouille${r.pumpkins > 1 ? 's' : ''} pour le défi du labo</div>` : ''}
+        ${r.pumpkins != null ? `<div class="tiny" style="margin-top:calc(var(--u)*2)">🎃 +${r.pumpkins} citrouille${r.pumpkins > 1 ? 's' : ''} pour le défi communautaire</div>` : ''}
         ${disc ? `<div class="label" style="margin-top:calc(var(--u)*3)">Nouveaux objets dans la Bousipédia</div><div class="pills">${disc}</div>` : ''}
       </div>` : ''}
       ${(r.unlocked || []).length ? `<div class="panel banner">${r.unlocked.map(u => `🎁 Débloqué : <b>${esc(u.item.name)}</b>${u.item.secret ? ' 🤫 (secret !)' : ''}${u.item.how || u.item.text ? `<div class="tiny why">${esc(u.item.how || u.item.text)}</div>` : ''}`).join('')}<div class="tiny">À équiper dans 🎨 Style</div></div>` : ''}

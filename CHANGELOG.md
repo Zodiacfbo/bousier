@@ -7,6 +7,17 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.15.0 — Cadres et couleurs de pseudo (programmé pour le 26 octobre 2026)
+- Onglet Classement de 🎨 Style : 13 nouveaux cadres (Menthe, Océan, Sakura, Améthyste, Brique, Onyx, Néon, Coucher de
+  soleil, Scarabée ; prestige Arc-en-ciel et Diamant ; à gagner Champion et Fidèle) et 15 nouvelles couleurs de pseudo
+  (Orange, Rose, Jaune citron, Sable, Gris acier, Or, Braise, Océan, Coucher de soleil, Scarabée, Néon ; prestige
+  Diamant et Galaxie ; à gagner Champion et Fantôme).
+- Champion (cadre et couleur) : gardé à vie dès qu'on a été champion de la semaine ; le champion en titre a en plus un
+  reflet qui traverse sa ligne.
+- Fidèle : série de 30 jours. Fantôme : dépasser 10 fois le fantôme du meilleur (une fois par partie du jour).
+- « Défi du labo » renommé « Défi communautaire » ; sa ligne retirée de la news Halloween.
+- News de la boutique coupée en deux (onglet Classement, objets de prestige).
+
 ## v1.14.3 — Surprise des nouvelles météos préservée (24 octobre 2026)
 - Les 4 récompenses des nouvelles météos (Ciré jaune, Lampe frontale, Lunettes d'éclipse, Tourbillon de sable) et le
   badge « Chasseur de tempêtes » restent cachés jusqu'au 2 novembre.
