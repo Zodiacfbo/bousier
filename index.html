@@ -1803,12 +1803,9 @@ const runsBrief = runs => (runs || []).map(r => ({ terrier: !!r.terrier, holeOff
 
 // Fantômes à affronter : le premier du jour et le rival (juste au-dessus de moi,
 // ou le dernier du classement si je n'ai pas encore de score)
+// Un seul fantôme : celui du 1er du jour (si c'est moi, mon propre record)
 function pickGhostTargets(lb, me) {
-  const i = lb.findIndex(e => e.name === me), out = [];
-  if (lb.length && i !== 0) out.push({ ...lb[0], role: 'leader' });
-  const rival = i > 1 ? lb[i - 1] : i < 0 && lb.length > 1 ? lb[lb.length - 1] : null;
-  if (rival) out.push({ ...rival, role: 'rival' });
-  return out;
+  return lb.length && lb[0].name !== me ? [{ ...lb[0], role: 'leader' }] : [];
 }
 
 // Regroupe le total de la semaine par équipe (moyenne des joueurs qui ont joué)
@@ -2301,12 +2298,12 @@ const Leaderboard = {
   async week(wk) { return (await Online.week(wk)) || LocalBoard.week(wk); },
   async teams(wk) { return teamBoard(await this.week(wk)); },
   async records() { return (await Online.records()) || LocalBoard.records(); },
-  // Le premier, le rival et mon propre record du jour
+  // Un seul fantôme : le 1er du jour, ou mon propre record si c'est moi le 1er
   async ghosts(day, p) {
     const lb = await this.day(day), targets = pickGhostTargets(lb, p.name);
     const list = targets.length ? (lb.online ? await Online.ghosts(day, targets) : await LocalBoard.ghosts(day, targets)) || [] : [];
     const mine = Store.dayPeek(p, day).ghost;
-    if (mine) list.push({ name: p.name, role: 'self', ghost: mine });
+    if (mine && !targets.length) list.push({ name: p.name, role: 'self', ghost: mine });
     return list;
   },
   // Podium d'une semaine terminée (3 premiers, 2 joueurs min.), gardé sur l'appareil

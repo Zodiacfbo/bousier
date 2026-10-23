@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.13.8 — Un seul fantôme (23 octobre 2026)
+- Pendant la dune du jour, un seul fantôme : celui du 1er du jour (ou ton propre record si c'est toi le 1er).
+  Plus de fantôme « rival » ni de ton record en plus.
+
 ## v1.13.7 — Classement du jour au format de la semaine (23 octobre 2026)
 - Les cases des essais du jour reprennent le format du mini-calendrier de la semaine (numérotées 1, 2, 3) ; la colonne
   d'icônes disparaît (terrier lisible dans les cases, ✨ trésor devant le score).
