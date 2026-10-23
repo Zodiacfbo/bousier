@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.11.4 — Onglet Classement plus lisible (23 octobre 2026)
+- Grandes cases (2 par ligne) ; les cadres et titres à gagner sont rangés dans leur catégorie, repérés par un fond doré
+  et « 🏅 À gagner » avec la progression.
+
 ## v1.11.3 — Voyage dans le temps sur dev (23 octobre 2026)
 - Sur le site de test (dev) uniquement : réglage « 🕰️ Voyage dans le temps » dans le profil pour simuler une date
   (raccourcis : 26 oct., 31 oct., 2 nov., 9 nov. et le premier jour de chaque météo spéciale) et tester le contenu à
