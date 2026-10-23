@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.13.1 — Prime du premier découvreur (23 octobre 2026)
+- Le premier joueur du labo à trouver un secret (easter eggs et cigarette) gagne 100 🟡 (« 🥇 Premier du labo à trouver
+  ce secret »). Une seule fois par secret ; une cigarette offerte compte comme secret trouvé mais pas comme découverte.
+- Nouvelle règle Firestore `envs/{env}/firsts` (le premier document créé ne peut plus être modifié) : à coller dans la
+  console. Tant qu'elle n'y est pas, les tentatives sont gardées et réessayées.
+
 ## v1.13.0 — Easter eggs (23 octobre 2026)
 - À partir du 26 octobre, sans news : plots en entraînement (25 → Plot de chantier), 50 entraînements (Sifflet du coach
   + titre), chat noir du vendredi 13 (Fer à cheval), chatouilles au bousier de l'accueil (100 → Plume), lune de l'accueil

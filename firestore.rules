@@ -105,6 +105,15 @@ service cloud.firestore {
       allow create, update: if okEnv(env) && isAdmin();
     }
 
+    // Premiers découvreurs des secrets : le premier qui crée le document gagne (jamais modifié ensuite)
+    match /envs/{env}/firsts/{key} {
+      allow read: if openEnv(env);
+      allow create: if okEnv(env) && signedIn() && request.resource.data.uid == request.auth.uid
+        && ownsName(request.resource.data) && request.resource.data.at is int
+        && key.matches('[a-z]+_[A-Za-z0-9]+');
+      allow delete: if isAdmin();
+    }
+
     // Boîte à idées : chacun envoie et relit les siennes ; l'organisateur lit tout et change l'état
     match /envs/{env}/suggestions/{id} {
       allow read: if isAdmin() || (openEnv(env) && signedIn() && resource.data.uid == request.auth.uid);

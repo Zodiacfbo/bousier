@@ -1091,6 +1091,7 @@ const SUGAR_SKULL = { id: 'cranesucre', name: 'Crâne en sucre', sprite: 'cranes
 // 4 mégots avalés débloquent la Cigarette (secret). Ni Bousipédia, ni quêtes, ni indice.
 const MEGOT = { from: '2026-10-26', every: 5, need: 4, def: { id: 'megot', name: 'Mégot', sprite: 'megot', r: 1.2, megot: true } };
 // Autres easter eggs (sans news) : plots d'entraînement, chat noir du vendredi 13, chatouilles, lune, etc.
+const FIRST_SECRET_COINS = 100;
 const EGG = { from: '2026-10-26', plots: 25, practice: 50, tickle: 100, moon: 13, shy: 10, month1: '2026-11-20', month1Coins: 50,
   plot: { id: 'plot', name: 'Plot', sprite: 'plot', r: 2.5, plot: true } };
 function isFriday13(day) { return day.slice(8) === '13' && dayFromKey(day).getDay() === 5; }
@@ -2025,6 +2026,16 @@ const Online = {
       }
       await c.fb.deleteDoc(ref);
       return g;
+    }, 8000);
+  },
+  // Premier découvreur d'un secret : le premier qui crée le document gagne (null = hors ligne, on réessaiera)
+  claimFirst(p, key) {
+    return this.run(async c => {
+      if (!await this.ready(c, p)) return null;
+      const ref = this.ref(c, 'firsts', key), snap = await c.fb.getDoc(ref);
+      if (snap.exists()) return { first: false, name: snap.data().name };
+      await c.fb.setDoc(ref, { name: p.name, uid: this.uid(c), at: Date.now() });
+      return { first: true };
     }, 8000);
   },
   // La Grande Fuite : record de distance
@@ -4044,6 +4055,7 @@ const App = {
     if (r && r.local) { this.loadDay(); if (this.screen === 'home') this.show('home'); }
     if ((r && r.cloud) || Store.dirty) { Store.dirty = false; Store.save(); }
     this.dailyAwards();  // titres et récompenses de la semaine : seulement une fois la progression à jour
+    this.claimFirsts();  // secrets trouvés hors connexion : on tente d'être le premier
     await this.repairBest(p);
     if (p.account && p.stats.runs) Online.submitPlayer(p);  // record et apparence à jour pour les autres
     const g = p && await Online.claimGifts(p);
@@ -4122,6 +4134,7 @@ const App = {
       }
       p.awardsDay = this.today;
       const fresh = Store.checkUnlocks(p);
+      this.queueFirsts(fresh);
       const lines = [...(month ? [{ txt: `🎂 Bousier a 1 mois ! Merci d'être là depuis le début : +${EGG.month1Coins} 🟡` }] : []), ...(welcome ? [{ txt: `👋 Bienvenue dans la dune ! Voici un petit présent pour bien commencer : +${WELCOME.coins} 🟡` }] : []), ...(roi ? [{ txt: '🥇 Badge « Roi Bousier »' }] : []), ...(pioneer ? [{ txt: `🌱 Merci pionnier : +${PIONEER.coins} 🟡` }] : []), ...fresh.map(f => rewardLine(f.type, f.item))];
       if (lines.length) this.addRewards(lines);
       Store.save();
@@ -4441,9 +4454,37 @@ const App = {
   },
   eggCheck() {
     const fresh = Store.checkUnlocks(this.p);
+    this.queueFirsts(fresh);
     if (fresh.length) { this.addRewards(fresh.map(f => rewardLine(f.type, f.item))); Sound.play('unlock'); this.toast('🎁 Nouvelles récompenses !'); }
     Store.save();
     if (this.screen === 'home') setTimeout(() => this.show('home'), 700);
+  },
+  // Secrets (easter eggs) : le premier du labo à en trouver un gagne 100 🟡
+  queueFirsts(fresh) {
+    const p = this.p, keys = fresh.filter(f => f.item.secret && f.item.how).map(f => f.type + '_' + f.item.id);
+    if (!keys.length) return;
+    p.firstPending = [...new Set([...(p.firstPending || []), ...keys])]; Store.save();
+    this.claimFirsts();
+  },
+  async claimFirsts() {
+    const p = this.p;
+    if (!p || !p.account || !(p.firstPending || []).length || this.claiming) return;
+    this.claiming = true;
+    try {
+      for (const key of p.firstPending.slice()) {
+        const r = await Online.claimFirst(p, key);
+        if (!r) break;  // hors ligne : on réessaiera
+        p.firstPending = p.firstPending.filter(k => k !== key);
+        if (r.first) {
+          const [t, id] = key.split('_'), item = findCos(t, id);
+          p.coins += FIRST_SECRET_COINS;
+          this.addRewards([{ txt: `🥇 Premier du labo à trouver ce secret : +${FIRST_SECRET_COINS} 🟡`, why: item.name }]);
+          Sound.play('unlock'); this.toast('🥇 Premier à trouver ce secret !');
+        }
+        Store.save();
+      }
+      if (this.screen === 'home') this.show('home');
+    } finally { this.claiming = false; }
   },
   addRewards(lines) { const p = this.p; p.inbox = (p.inbox || []).concat(lines).slice(-12); },
   toast(msg) {
@@ -4654,6 +4695,7 @@ const App = {
       res.top = await Online.survivalTop();
     }
     res.unlocked = Store.checkUnlocks(p);
+    this.queueFirsts(res.unlocked);
     Store.save();
     this.lastRes = res;
     setTimeout(() => this.show('results'), 200);
