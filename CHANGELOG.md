@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.13.9 — Réactions désactivées (23 octobre 2026)
+- Les réactions 👏 😂 💩 🔥 du classement du jour sont désactivées pour l'instant (interrupteur REACTIONS_ON ; les
+  réactions déjà envoyées sont gardées et réapparaîtront si on les réactive).
+
 ## v1.13.8 — Un seul fantôme (23 octobre 2026)
 - Pendant la dune du jour, un seul fantôme : celui du 1er du jour (ou ton propre record si c'est toi le 1er).
   Plus de fantôme « rival » ni de ton record en plus.

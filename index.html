@@ -1515,6 +1515,8 @@ const DEV_LOCKED = ONLINE_ENV === 'dev';
 const SURVIVAL_ON = ONLINE_ENV === 'dev';
 // Équipes : onglet du classement et choix dans le profil masqués pour l'instant
 const TEAMS_ON = false;
+// Réactions 👏 😂 💩 🔥 sur les scores du jour : désactivées pour l'instant (mettre true pour les remettre)
+const REACTIONS_ON = false;
 const ADMIN_UID = 'iYDurji9CuUbdV04FBIM1d2nLiH2';
 // Clé de site reCAPTCHA v3 pour App Check (Firebase vérifie que les demandes
 // viennent bien du jeu et pas d'un script). null = App Check désactivé.
@@ -5163,7 +5165,7 @@ const App = {
     let body = '', extra = '';
     if (tab === 'day') {
       const lb = await Leaderboard.day(this.today);
-      const rx = lb.online ? await Online.reactions(this.today) : null;
+      const rx = REACTIONS_ON && lb.online ? await Online.reactions(this.today) : null;
       const rxTxt = id => { const c = rx && rx.counts[id]; return c ? `<span class="rx">${REACTIONS.filter(e => c[e]).map(e => e + c[e]).join(' ')}</span>` : ''; };
       body = lb.length ? lb.map((e, i) => {
         const pick = rx && e.name !== me;
