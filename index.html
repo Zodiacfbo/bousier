@@ -5022,7 +5022,6 @@ const App = {
         ${this.today >= EGG.from && cfg.weather.id === 'nuit' ? `<button class="moon" data-a="moon" aria-label="Lune">${spriteImg('luneHome', 3)}</button>` : ''}
       </div>
       ${(p.inbox || []).length ? `<div class="banner gift"><b>🎁 Tes récompenses</b><ul class="quests">${p.inbox.map(e => `<li>${esc(e.txt)}${e.why ? `<div class="tiny why">${esc(e.why)}</div>` : ''}</li>`).join('')}</ul>
-        <div class="tiny center">Tout s'équipe dans 🎨 Style.</div>
         <div class="gift-btns"><button class="btn ghost small" data-a="giftok">OK</button></div></div>` : ''}
       ${isHalloween(this.today) && safeStorageGet('bousier_hw_' + ONLINE_ENV) !== this.today ? `<div class="banner">🎃 <b>Semaine Halloween !</b> Citrouilles et chauves-souris dans la dune.<div class="tiny">${this.today === HALLOWEEN.night ? 'Ce soir, dune spéciale de nuit : rentre dans le terrier pour gagner le 🧙 Chapeau de sorcière !' : `Joue une dune pour gagner la 🎃 Boule citrouille. ${this.today < HALLOWEEN.night ? 'Samedi 31 : dune spéciale de nuit !' : ''}`}</div> <button class="btn ghost small" data-a="hwok">OK</button></div>` : ''}
       ${annList.map(a => `<div class="banner">📣 ${esc(a.text)} <button class="btn ghost small" data-a="annok" data-v="${a.at}">OK</button></div>`).join('')}

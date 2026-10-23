@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.14.2 — Encadré des récompenses simplifié (24 octobre 2026)
+- L'encadré « 🎁 Tes récompenses » n'affiche plus la phrase « Tout s'équipe dans 🎨 Style ».
+
 ## v1.14.1 — Classement du jour en grandes cases (23 octobre 2026)
 - Les essais du jour s'affichent en 3 grandes cases sur toute la largeur, avec seulement le score (meilleur entouré et
   en doré, barré = sans terrier, « · » = pas encore joué).
