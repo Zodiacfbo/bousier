@@ -339,7 +339,14 @@ const lerp = (a, b, t) => a + (b - a) * t;
 // --- Dates (jour local) ----------------------------------------------------
 const LAUNCH_DAY = '2026-10-20';
 
-function dayKey(d = new Date()) {
+// Dev seulement : « voyage dans le temps » pour tester le contenu à venir (jamais sur le site officiel)
+const TIME_SHIFT_KEY = 'bousier_dev_timeshift';
+const TIME_SHIFT = (() => {
+  if (!location.pathname.includes('/dev/')) return null;
+  try { const k = localStorage.getItem(TIME_SHIFT_KEY); return /^\d{4}-\d{2}-\d{2}$/.test(k || '') ? k : null; } catch (e) { return null; }
+})();
+function simNow() { const n = new Date(); if (TIME_SHIFT) { const [y, m, d] = TIME_SHIFT.split('-').map(Number); n.setFullYear(y, m - 1, d); } return n; }
+function dayKey(d = simNow()) {
   const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${dd}`;
 }
@@ -4112,6 +4119,12 @@ const App = {
       lbtab: () => { this.lbTab = v; this.show('leaderboard'); },
       shoptab: () => { this.shopTab = v; this.shopSel = null; this.show('shop'); },
       shopitem: () => this.shopItem(v),
+      timeshift: () => {
+        if (ONLINE_ENV !== 'dev') return;
+        const k = v === 'pick' ? (document.getElementById('tsdate') || {}).value : v;
+        try { if (k) localStorage.setItem(TIME_SHIFT_KEY, k); else localStorage.removeItem(TIME_SHIFT_KEY); } catch (e) { }
+        location.reload();
+      },
       rankitem: () => { const [t, id] = v.split(':'); if (this.rankType !== t) this.shopSel = null; this.rankType = t; this.shopItem(id); },
       wkitem: () => { const [t, id] = v.split(':'); if (this.shopTab !== t) this.shopSel = null; this.shopTab = t; this.shopItem(id); },
       buy: () => this.buy(),
@@ -4548,6 +4561,7 @@ const App = {
     const p = this.p;
     return `<div class="topbar">
       <button class="chip" data-a="go" data-v="profile">${p.account ? '🔒' : '👤'} ${esc(p.name)}${this.champ === p.name ? ' 👑' : ''}</button>
+      ${TIME_SHIFT ? `<button class="chip off" data-a="go" data-v="profile">🕰️ ${TIME_SHIFT.slice(8)}/${TIME_SHIFT.slice(5, 7)}</button>` : ''}
       <button class="chip notif" data-a="go" data-v="ideas" aria-label="Boîte à idées">💡${this.ideasBadge ? `<span class="pill-n">${this.ideasBadge}</span>` : ''}</button>
       <button class="chip notif" data-a="go" data-v="changelog" aria-label="Nouveautés">📰${unreadNews() ? `<span class="pill-n">${unreadNews()}</span>` : ''}</button>
       <button class="chip" data-a="go" data-v="tuto" aria-label="Comment jouer">❓</button>
@@ -5104,7 +5118,21 @@ const App = {
         <div class="tiny">Commandes : glisse ton doigt (ou la souris) à gauche/droite. Clavier : ← → ou Q/D. Pause : Échap.</div>
       </div>
       ${p.account ? '<button class="btn ghost" data-a="logout">🚪 Se déconnecter</button>' : ''}
+      ${ONLINE_ENV === 'dev' ? this.timeShiftPanel() : ''}
     </div>`;
+  },
+  // Dev seulement : choisir la date simulée (raccourcis vers les nouveautés et chaque météo spéciale)
+  timeShiftPanel() {
+    const marks = [['2026-10-26', '🎃 26 oct. Halloween, Style, pionniers'], ['2026-10-31', '🧙 31 oct. nuit d\'Halloween'], ['2026-11-02', '⚡ 2 nov. événements'], ['2026-11-09', '⭐ 9 nov. boutique de la semaine']];
+    for (const id of WEEKLY_WEATHERS) {
+      const w = ALL_WEATHERS.find(x => x.id === id);
+      for (let k = WX_ROTATION_FROM; k < '2027'; k = addDays(k, 1)) if (weeklyWeather(k) >= 0 && ALL_WEATHERS[weeklyWeather(k)].id === id) { marks.push([k, `${w.icon} ${+k.slice(8)}/${k.slice(5, 7)} ${w.name}`]); break; }
+    }
+    return `<div class="panel"><div class="label">🕰️ Voyage dans le temps <span class="tiny">(dev seulement)</span></div>
+      <div class="tiny">${TIME_SHIFT ? `Date simulée : <b>${esc(fmtDayLong(TIME_SHIFT))}</b>` : 'Date réelle.'} Le site officiel et ta progression de main ne sont jamais touchés. En date simulée, les scores en ligne peuvent être refusés.</div>
+      <div class="pills">${marks.map(([k, l]) => `<button class="pill ${TIME_SHIFT === k ? 'on' : ''}" data-a="timeshift" data-v="${k}">${esc(l)}</button>`).join('')}</div>
+      <div style="display:flex;gap:calc(var(--u)*2);align-items:center"><input id="tsdate" type="date" value="${TIME_SHIFT || ''}"><button class="btn ghost small" data-a="timeshift" data-v="pick">Aller à cette date</button></div>
+      ${TIME_SHIFT ? '<button class="btn" data-a="timeshift" data-v="">⏪ Revenir à aujourd\'hui</button>' : ''}</div>`;
   },
 };
 

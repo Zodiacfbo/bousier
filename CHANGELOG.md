@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.11.3 — Voyage dans le temps sur dev (23 octobre 2026)
+- Sur le site de test (dev) uniquement : réglage « 🕰️ Voyage dans le temps » dans le profil pour simuler une date
+  (raccourcis : 26 oct., 31 oct., 2 nov., 9 nov. et le premier jour de chaque météo spéciale) et tester le contenu à
+  venir. Inactif sur le site officiel ; sauvegarde et données en ligne de dev séparées de celles du site officiel.
+
 ## v1.11.2 — Nouveau calendrier et cadeau des pionniers (23 octobre 2026)
 - Prestige et onglet Classement avancés au lundi 26 octobre ; boutique de la semaine avancée au lundi 9 novembre.
 - Pionniers (au moins une dune du jour entre le 20 et le 25 octobre) : titre « 🌱 Pionnier de la dune », cadre
