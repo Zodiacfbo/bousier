@@ -1449,9 +1449,9 @@ const UNLOCKS = {
   'ball:atome': { price: 500 },
   'ball:uranium': { text: 'Rentre 10 fois dans le terrier', prog: p => [p.stats.terriers, 10] },
   'hat:parapluie': { text: 'Joue 5 parties du jour sous la pluie', prog: p => [counter(p, 'rain'), 5] },
-  'hat:lunettes': { secret: true, flag: 'presque' },
+  'hat:lunettes': { secret: true, flag: 'presque', got: 'Le terrier raté de 3 cm ou moins' },
   'hat:charlotte': { price: 200 },
-  'hat:casqueKevin': { mystery: 'Il paraît que Kevin a perdu quelque chose…', flag: 'kevin' },
+  'hat:casqueKevin': { mystery: 'Il paraît que Kevin a perdu quelque chose…', flag: 'kevin', got: 'Percuté par Kevin et sa trottinette' },
   'trail:eclairs': { text: 'Sois 3 fois « Le sprinteur » du jour', prog: p => [counter(p, 't_sprint'), 3] },
   'hat:bandeau': { text: 'Sois 3 fois « Le zen » du jour', prog: p => [counter(p, 't_zen'), 3] },
   'ball:trefle': { text: 'Sois 3 fois « Le miraculé » du jour', prog: p => [counter(p, 't_miracle'), 3] },
@@ -1460,11 +1460,11 @@ const UNLOCKS = {
   'hat:pansement': { text: 'Sois 3 fois « Roi des chocs » du jour', prog: p => [counter(p, 't_bumps'), 3] },
   'hat:aimant': { text: 'Sois 3 fois « L\'aspirateur » du jour', prog: p => [counter(p, 't_vacuum'), 3] },
   'hat:fleurCactus': { text: 'Sois 3 fois « L\'ami des cactus » du jour', prog: p => [counter(p, 't_cactus'), 3] },
-  'hat:aureole': { secret: true, flag: 'parfait' },
+  'hat:aureole': { secret: true, flag: 'parfait', got: 'Le terrier sans aucun choc, ni objet ni bord' },
   'outfit:blouse': { price: 400 },
   'outfit:hazmat': { text: 'Fais une série de 14 jours', prog: p => [p.bestStreak, 14] },
   'outfit:cape': { price: 600 },
-  'outfit:smoking': { mystery: 'Les meilleurs s\'habillent chic…', prog: p => [counter(p, 'firsts'), 3] },
+  'outfit:smoking': { mystery: 'Les meilleurs s\'habillent chic…', got: '3 fois 1er du classement final du jour', prog: p => [counter(p, 'firsts'), 3] },
   'trail:arcenciel': { text: 'Sois champion de la semaine 👑', prog: p => [counter(p, 'champion'), 1] },
   'trail:etincelles': { price: 250 },
   'outfit:cire': { text: 'Rentre dans le terrier un jour d\'orage ⛈️', prog: p => [counter(p, 'hole_orage'), 1] },
@@ -1476,9 +1476,9 @@ const UNLOCKS = {
   'hat:sorciere': { text: 'Rentre dans le terrier sur la dune d\'Halloween, le samedi 31 octobre 🎃', prog: p => [counter(p, 'sorciere'), 1] },
   'trail:bulles': { price: 300 },
   'trail:flammes': { text: 'Rentre 5 fois dans le terrier sous la canicule', prog: p => [counter(p, 'heat'), 5] },
-  'trail:fumee': { secret: true, flag: 'ratee' },
-  'trail:notes': { secret: true, flag: 'silence' },
-  'trail:binaire': { secret: true, flag: 'leet' },
+  'trail:fumee': { secret: true, flag: 'ratee', got: 'Une partie finie avec moins de 5 objets avalés' },
+  'trail:notes': { secret: true, flag: 'silence', got: 'Une partie jouée le son coupé' },
+  'trail:binaire': { secret: true, flag: 'leet', got: 'Une dune du jour jouée à 13 h 37' },
   'frame:podium': { text: 'Finis sur le podium d\'une semaine', prog: p => [Object.values(p.weeks || {}).filter(v => v >= 1 && v <= 3).length, 1] },
   'title:exchamp': { text: 'Sois champion de la semaine 👑', prog: p => [counter(p, 'champion'), 1] },
   'title:encyclo': { text: 'Complète la Bousipédia', prog: p => [Store.discovered(p), OBJECTS.filter(o => !o.bonus).length + LEGENDS.length] },
@@ -4930,8 +4930,8 @@ const App = {
       p.equip[type] = id; Store.save();
       if (type === 'theme') this.game.showAttract(this.cfg, item);
       else { clearTimeout(this.lookT); this.lookT = setTimeout(() => Online.submitPlayer(this.p), 4000); }  // apparence visible sur le podium
-      this.shopSel = null;
-    } else this.shopSel = id;
+    }
+    this.shopSel = id;
     this.show('shop');
   },
   buy() {
@@ -5469,7 +5469,12 @@ const App = {
       return `<button class="tile shop ${it.prestige ? 'prestige' : ''} ${p.equip[t] === it.id ? 'sel' : ''} ${owned ? '' : 'locked-soft'} ${sel ? 'sel2' : ''}" data-a="${act}" data-v="${v}">${it.rare ? '<span class="tag rare">RARE</span>' : ''}${tileImg(it, t)}<span>${esc(it.name)}</span><span class="tiny">${status(it, t)}</span></button>`;
     };
     let bar = '';
-    if (prev) {
+    if (prev && Store.owns(p, type, prev)) {
+      // déjà obtenu : rappel de comment on l'a eu (rien pour un objet simplement acheté)
+      const b = prev.badge && BADGES.find(x => x.id === prev.badge);
+      const why = prev.got || prev.how || prev.text || (b ? `badge ${b.icon} ${b.name}` : '');
+      if (why) bar = `<div class="panel tiny">${prev.secret ? '🤫' : '✅'} <b>${esc(prev.name)}</b> : ${esc(why)}</div>`;
+    } else if (prev) {
       if (prev.badge) { const b = BADGES.find(x => x.id === prev.badge); bar = `<div class="panel tiny">🔒 Se débloque avec le badge ${b.icon} <b>${esc(b.name)}</b> : ${esc(b.desc)}</div>`; }
       else if (prev.price) bar = `<button class="btn big" data-a="buy" ${p.coins < prev.price ? 'disabled' : ''}>Acheter ${esc(prev.name)} — ${prev.price} 🟡</button>${p.coins < prev.price ? `<div class="tiny center">Il te manque ${prev.price - p.coins} 🟡</div>` : ''}`;
       else if (prev.mystery) bar = `<div class="panel tiny">❓ <b>${esc(prev.name)}</b> : comment l'obtenir ? Mystère… Un indice : <i>${esc(prev.mystery)}</i></div>`;
