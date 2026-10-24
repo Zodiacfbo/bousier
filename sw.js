@@ -4,7 +4,7 @@
 // redemandés au serveur à chaque ouverture (« no-cache » : simple vérification,
 // sans attendre la fin de la copie de 10 minutes de GitHub Pages).
 const CACHE = 'bousier-' + new URL(self.registration.scope).pathname;
-const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'vendor/firebase.js?v=6', 'fonts/vt323-latin.woff2'];
+const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'vendor/firebase.js?v=7', 'fonts/vt323-latin.woff2'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));

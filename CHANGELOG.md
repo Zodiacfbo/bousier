@@ -7,6 +7,19 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.16.0 — Accès sur invitation (en test sur dev)
+- Sans profil sur l'appareil, le jeu n'affiche plus que « 🎟️ Bousier se joue sur invitation » (ni dune, ni classement) ;
+  « me connecter » reste possible pour les joueurs existants.
+- Lien d'invitation à usage unique (`?invite=CODE`) : « 🪲 Florent t'invite à jouer à Bousier ! », puis création du
+  profil. Lien déjà servi ou annulé : message clair.
+- Admin : onglet 🎟️ Invitations (créer un lien avec une étiquette, copier/partager, annuler, suivi « utilisé par »,
+  compteur des cartes de membre).
+- Règles Firestore : un pseudo ne se réserve qu'avec une invitation valable, consommée au même moment ; liste des
+  pseudos et des invitations réservée à l'organisateur ; cartes de membre (`members`) créées à l'inscription ou au
+  premier lancement des anciens joueurs. Étape 2 prévue : lecture du classement réservée aux membres (`readOk`).
+- « Premier du labo » devient « Premier joueur » (secrets).
+- SDK Firebase reconstruit avec `writeBatch` (VENDOR_VERSION 7).
+
 ## v1.15.5 — « Comment je l'ai eu » (24 octobre 2026)
 - 🎨 Style : toucher un objet déjà obtenu l'équipe et rappelle, sur une ligne, comment on l'a eu (✅ condition, 🤫 pour
   un secret, badge associé, mystère révélé). Rien pour un objet simplement acheté.

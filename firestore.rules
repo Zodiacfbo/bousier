@@ -1,7 +1,9 @@
 rules_version = '2';
 
 // Règles du classement en ligne de Bousier.
-// Tout le monde peut lire les classements ; chacun n'écrit que ses propres
+// Le jeu se joue sur invitation : un nouveau pseudo ne peut être réservé qu'avec un lien
+// d'invitation valable (créé par l'organisateur), consommé au même moment.
+// Chacun n'écrit que ses propres
 // documents (id « uid_pseudo »), sous un pseudo qui lui appartient, avec des
 // valeurs plausibles. À copier dans la console Firebase : Firestore Database > Règles.
 service cloud.firestore {
@@ -31,7 +33,27 @@ service cloud.firestore {
       return env == 'prod' || (env == 'dev' && isAdmin());
     }
     function openEnv(env) {
-      return env == 'prod' || isAdmin();
+      return (env == 'prod' && readOk()) || isAdmin();
+    }
+    // Lecture des classements. Étape 1 (en attendant que tous les joueurs aient leur carte
+    // de membre) : ouverte. Étape 2 : remplacer « true » par « isMember() » pour la réserver
+    // aux joueurs inscrits.
+    function readOk() {
+      return true;
+    }
+    // Joueur inscrit : carte de membre créée à l'inscription (ou au premier lancement pour les anciens)
+    function isMember() {
+      return signedIn() && exists(/databases/$(database)/documents/members/$(request.auth.uid));
+    }
+    function invitePath(code) {
+      return /databases/$(database)/documents/invites/$(code);
+    }
+    // Invitation encore libre avant l'écriture, et utilisée par ce compte dans la même écriture
+    function invited(d) {
+      return d.invite is string
+        && !('uid' in get(invitePath(d.invite)).data) && get(invitePath(d.invite)).data.get('cancelled', false) != true
+        && getAfter(invitePath(d.invite)).data.uid == request.auth.uid
+        && getAfter(invitePath(d.invite)).data.usedBy == d.name;
     }
     // Score en cm : 25 m maximum (largement au-delà d'une vraie partie)
     function okScore(v) {
@@ -50,13 +72,37 @@ service cloud.firestore {
         && request.time < t + duration.value(38, 'h');
     }
 
-    // Réservation des pseudos (en minuscules) : premier arrivé, premier servi
+    // Réservation des pseudos (en minuscules) : premier arrivé, premier servi, et seulement
+    // avec une invitation (l'organisateur peut s'en passer). La liste complète : organisateur seul.
     match /names/{key} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if isAdmin();
       allow create: if signedIn() && okName(request.resource.data)
         && key == request.resource.data.name.lower()
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.uid == request.auth.uid
+        && (isAdmin() || invited(request.resource.data));
       allow delete: if isAdmin();
+    }
+
+    // Liens d'invitation (créés et annulés par l'organisateur). Un nouveau joueur l'utilise une
+    // seule fois, en même temps qu'il réserve son pseudo.
+    match /invites/{code} {
+      allow get: if true;
+      allow list, create, delete: if isAdmin();
+      allow update: if isAdmin() || (signedIn()
+        && !('uid' in resource.data) && resource.data.get('cancelled', false) != true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid', 'usedBy', 'usedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.usedBy is string
+        && getAfter(/databases/$(database)/documents/names/$(request.resource.data.usedBy.lower())).data.uid == request.auth.uid);
+    }
+
+    // Cartes de membre (une par compte) : on ne la crée que pour un pseudo qui est le sien
+    match /members/{uid} {
+      allow get: if (signedIn() && request.auth.uid == uid) || isAdmin();
+      allow list, delete: if isAdmin();
+      allow create, update: if signedIn() && request.auth.uid == uid && okName(request.resource.data)
+        && getAfter(/databases/$(database)/documents/names/$(request.resource.data.name.lower())).data.uid == uid;
     }
 
     match /envs/{env}/days/{day}/scores/{id} {

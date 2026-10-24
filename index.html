@@ -37,6 +37,8 @@ body {
   touch-action: none;
   background: radial-gradient(ellipse at 50% 30%, #3a1f3a 0%, #120a16 70%);
 }
+#app.gate #screen { visibility: hidden; }
+#app.gate { background: #120a16; }
 #app { position: relative; overflow: hidden; box-shadow: 0 0 0 calc(var(--u)) #000, 0 0 40px rgba(0,0,0,.6); }
 #screen { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
 img.pix, canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; display: inline-block; vertical-align: middle; }
@@ -1645,7 +1647,18 @@ const FIREBASE_CONFIG = {
 const ONLINE_ENV = location.pathname.includes('/dev/') ? 'dev' : 'prod';
 // Lien partagé avec les résultats : toujours la version officielle
 const GAME_URL = 'https://zodiacfbo.github.io/bousier/';
-const VENDOR_VERSION = 6;
+// Accès sur invitation : sans profil sur l'appareil, il faut un lien « ?invite=CODE » créé dans l'admin.
+// Le code est gardé sur l'appareil jusqu'à la création du profil (et retiré de l'adresse).
+const INVITE_KEY = 'bousier_invite';
+let INVITE_CODE = (() => {
+  try {
+    const k = new URLSearchParams(location.search).get('invite');
+    if (k && /^[A-Za-z0-9]{4,12}$/.test(k)) { localStorage.setItem(INVITE_KEY, k.toUpperCase()); history.replaceState(null, '', location.pathname); }
+    return localStorage.getItem(INVITE_KEY);
+  } catch (e) { return null; }
+})();
+function clearInvite() { INVITE_CODE = null; try { localStorage.removeItem(INVITE_KEY); } catch (e) { } }
+const VENDOR_VERSION = 7;
 // La version de test (/dev/) est réservée à l'organisateur (compte Florent) :
 // verrouillée ici et, surtout, dans les règles Firestore (okEnv / openEnv).
 const DEV_LOCKED = ONLINE_ENV === 'dev';
@@ -2104,12 +2117,32 @@ const Online = {
     if (!uid) return false;
     if (!p.uid) { p.uid = uid; Store.save(); }
     if (p.uid !== uid) return false;
-    if (p.nameOk === uid) return true;
-    const snap = await c.fb.getDoc(this.nameRef(c, p.name));
-    if (snap.exists() && snap.data().uid !== uid) { p.nameTaken = true; return false; }
-    if (!snap.exists()) await c.fb.setDoc(this.nameRef(c, p.name), { uid, name: p.name, at: Date.now() });
-    p.nameOk = uid; p.nameTaken = false;
+    if (p.nameOk !== uid) {
+      const snap = await c.fb.getDoc(this.nameRef(c, p.name));
+      if (snap.exists() && snap.data().uid !== uid) { p.nameTaken = true; return false; }
+      if (!snap.exists()) await c.fb.setDoc(this.nameRef(c, p.name), { uid, name: p.name, at: Date.now() });
+      p.nameOk = uid; p.nameTaken = false;
+    }
+    await this.member(c, p);
     return true;
+  },
+  // Carte de membre (members/{uid}) : elle ouvre la lecture du classement aux seuls joueurs inscrits.
+  // Les anciens joueurs la reçoivent ici, au premier passage (une tentative par ouverture du jeu).
+  async member(c, p) {
+    const uid = this.uid(c);
+    if (p.memberOk === uid || this.memberTried) return;
+    this.memberTried = true;
+    try { await c.fb.setDoc(c.fb.doc(c.db, 'members', uid), { name: p.name, at: Date.now() }); p.memberOk = uid; Store.save(); }
+    catch (e) { console.warn('Carte de membre', e); }
+  },
+  // Invitation : { by, ok } si utilisable, { ok: false } si déjà servie, annulée ou inconnue ; null hors ligne
+  invite(code) {
+    return this.run(async c => {
+      const snap = await c.fb.getDoc(c.fb.doc(c.db, 'invites', code));
+      if (!snap.exists()) return { ok: false };
+      const d = snap.data();
+      return { ok: !d.uid && !d.cancelled, by: d.by || 'L\'organisateur' };
+    }, 8000);
   },
 
   // --- Lectures ---
@@ -2334,7 +2367,7 @@ const Online = {
 
   // Création de profil : crée le compte si le pseudo est libre, ou protège un
   // ancien profil sans mot de passe de cet appareil
-  async create(name, password) {
+  async create(name, password, invite) {
     name = name.trim();
     try {
       const c = await withTimeout(this.connect(), 8000);
@@ -2352,6 +2385,9 @@ const Online = {
         return { name: p.name, isNew: false };
       }
       if (owner.exists()) return { error: 'Ce pseudo existe déjà. Si c\'est le tien, connecte-toi.' };
+      // invitation vérifiée avant de créer le compte (elle est consommée plus bas, avec le pseudo)
+      const inv = invite ? await withTimeout(fb.getDoc(fb.doc(c.db, 'invites', invite)), 8000) : null;
+      if (!inv || !inv.exists() || inv.data().uid || inv.data().cancelled) return { error: 'Ton lien d\'invitation n\'est plus valable : demande-en un nouveau à l\'organisateur.' };
       try {
         if (user.isAnonymous) await withTimeout(fb.linkWithCredential(user, cred()), 10000);
         else await withTimeout(fb.createUserWithEmailAndPassword(auth, accountEmail(name), password), 10000);
@@ -2360,9 +2396,12 @@ const Online = {
         if (String(e.code).includes('already-in-use')) return { error: 'Ce pseudo existe déjà. Si c\'est le tien, connecte-toi.' };
         throw e;
       }
-      const uid = this.uid(c);
-      await withTimeout(fb.setDoc(this.nameRef(c, name), { uid, name, at: Date.now() }), 8000);
-      const p = Object.assign(Store.newProfile(name), { uid, account: true, nameOk: uid });
+      const uid = this.uid(c), at = Date.now(), batch = fb.writeBatch(c.db);
+      batch.set(this.nameRef(c, name), { uid, name, at, invite });
+      batch.update(fb.doc(c.db, 'invites', invite), { uid, usedBy: name, usedAt: at });
+      batch.set(fb.doc(c.db, 'members', uid), { name, at });
+      await withTimeout(batch.commit(), 8000);
+      const p = Object.assign(Store.newProfile(name), { uid, account: true, nameOk: uid, memberOk: uid });
       Store.data.profiles[name] = p; Store.data.current = name; Store.save();
       this.live = true;
       return { name, isNew: true };
@@ -2406,7 +2445,10 @@ const Online = {
       if (DEV_LOCKED && uid !== ADMIN_UID) return { error: 'Version de test réservée à l\'organisateur.' };
       const owner = await c.fb.getDoc(this.nameRef(c, name));
       const realName = owner.exists() ? owner.data().name : name.trim();
-      if (!owner.exists()) await c.fb.setDoc(this.nameRef(c, name), { uid, name: realName, at: Date.now() });
+      if (!owner.exists()) {
+        try { await c.fb.setDoc(this.nameRef(c, name), { uid, name: realName, at: Date.now() }); }
+        catch (e) { return { error: 'Ce pseudo n\'est plus réservé : demande un lien d\'invitation à l\'organisateur.' }; }
+      }
       const snap = await c.fb.getDoc(this.ref(c, 'profiles', uid + '_' + encodeURIComponent(nameKey(realName))));
       // progression déjà présente sur cet appareil : fusionnée avec celle en ligne
       const mine = Store.data.profiles[realName];
@@ -2419,6 +2461,7 @@ const Online = {
       Store.data.profiles[realName] = p;
       Store.data.current = realName;
       Store.save();
+      this.memberTried = false; await this.member(c, p);
       this.live = true;
       return { name: realName };
     } catch (e) { return { error: this.authError(e) }; }
@@ -4203,7 +4246,7 @@ const App = {
     this.wasOffline = false;
     this.ui.addEventListener('click', e => this.onClick(e));
     setInterval(() => this.tick(), 1000);
-    if (!Store.profile() || this.devRefused(Store.profile())) this.show('name'); else this.show('home');
+    if (!Store.profile() || this.devRefused(Store.profile())) { this.show('name'); this.checkInvite(); } else this.show('home');
     this.syncOnStart();
   },
 
@@ -4421,6 +4464,7 @@ const App = {
   async show(name, arg) {
     this.screen = name;
     this.halloweenDeco(name);
+    this.appEl.classList.toggle('gate', ['name', 'create', 'login'].includes(name) && !Store.profile());
     const tok = this.showTok = (this.showTok || 0) + 1;
     const html = await this['scr_' + name](arg);
     if (tok !== this.showTok) return;  // un autre écran a été demandé entre-temps
@@ -4536,8 +4580,13 @@ const App = {
     if (pw.length < 6) return this.formError('Mot de passe : 6 caractères minimum.');
     if (pw !== pw2) return this.formError('Les deux mots de passe ne sont pas identiques.');
     this.formError('Un instant…');
-    const r = await Online.create(name, pw);
+    const r = await Online.create(name, pw, INVITE_CODE);
     if (r.error) return this.formError(r.error);
+    clearInvite(); this.invite = null;
+    if (this.devRefused(this.p)) {
+      delete Store.data.profiles[this.p.name]; Store.data.current = null; Store.save();
+      return this.formError('✅ Compte créé ! (Sur la version de test, seul l\'organisateur peut jouer : le compte servira sur le vrai jeu.)');
+    }
     Store.data.settings.seenVersion = visibleNews()[0].v;
     this.loadDay();
     Online.submitPlayer(this.p);
@@ -4683,7 +4732,7 @@ const App = {
         if (r.first) {
           const [t, id] = key.split('_'), item = findCos(t, id);
           p.coins += FIRST_SECRET_COINS;
-          this.addRewards([{ txt: `🥇 Premier du labo à trouver ce secret : +${FIRST_SECRET_COINS} 🟡`, why: item.name }]);
+          this.addRewards([{ txt: `🥇 Premier joueur à trouver ce secret : +${FIRST_SECRET_COINS} 🟡`, why: item.name }]);
           Sound.play('unlock'); this.toast('🥇 Premier à trouver ce secret !');
         }
         Store.save();
@@ -5013,17 +5062,34 @@ const App = {
 
   scr_none() { return ''; },
 
+  // Accueil sans profil : le jeu se joue sur invitation (lien « ?invite=CODE » créé dans l'admin)
   scr_name() {
     const back = this.p ? `<div class="head"><button class="btn ghost small" data-a="go" data-v="profile">◀</button><h2>Joueur</h2></div>` : '';
+    const inv = this.invite, ok = inv && inv.ok;
+    const banner = (main, sub) => `<div class="banner">${main}<br><span class="tiny">${sub}</span></div>`;
+    const msg = ok ? banner(`🪲 <b>${esc(inv.by)}</b> t'invite à jouer à Bousier !`, 'Une dune par jour, 3 essais, et un classement.')
+      : inv && inv.loading ? banner('🎟️ Vérification de ton invitation…', 'Un instant.')
+      : inv && inv.offline ? banner('📶 <b>Pas de connexion internet.</b>', 'Il en faut une pour utiliser ton invitation.')
+      : inv ? banner('😕 <b>Ce lien d\'invitation a déjà servi</b> (ou a été annulé).', 'Demande un nouveau lien à l\'organisateur du jeu.')
+      : DEV_LOCKED ? banner('🔒 Version de test réservée à l\'organisateur.', `Le jeu, c'est par ici : ${GAME_URL}`)
+      : banner('🎟️ <b>Bousier se joue sur invitation.</b>', 'Demande un lien à l\'organisateur du jeu.');
     return `<div class="screen center">
       ${back}
       <div class="title">BOUSIER</div>
       <div class="mascot">${pix(mascotUrl(SKINS[0], HATS[0], 12), 80, 84)}</div>
-      ${DEV_LOCKED ? `<div class="banner">🔒 Version de test réservée à l'organisateur.<br><span class="tiny">Le jeu, c'est par ici : ${GAME_URL}</span></div>
-      <button class="btn big" data-a="go" data-v="login">Me connecter</button>` : `<button class="btn big" data-a="go" data-v="create">Créer mon profil</button>
-      <button class="btn ghost" data-a="go" data-v="login">J'ai déjà un profil : me connecter</button>`}
+      ${msg}
+      ${ok ? '<button class="btn big" data-a="go" data-v="create">Créer mon profil</button>' : ''}
+      <button class="btn ghost" data-a="go" data-v="login">J'ai déjà un profil : me connecter</button>
       ${COPYRIGHT}
     </div>`;
+  },
+  // Vérifie le lien d'invitation reçu (une fois), puis rafraîchit l'écran d'accueil
+  async checkInvite() {
+    if (!INVITE_CODE) { this.invite = null; return; }
+    this.invite = { loading: true };
+    const r = await Online.invite(INVITE_CODE);
+    this.invite = r ? r : { offline: true };
+    if (this.screen === 'name') this.show('name');
   },
 
   // Formulaire pseudo + mot de passe (+ confirmation à la création)
@@ -5043,7 +5109,7 @@ const App = {
     </div>`;
   },
   scr_create() {
-    if (DEV_LOCKED) return this.scr_name();
+    if (!(this.invite && this.invite.ok)) return this.scr_name();
     return this.authForm('Nouveau profil', 'create', 'Créer et jouer !', true, '', 'Retiens bien ton mot de passe : il te permet de retrouver ta progression sur n\'importe quel téléphone.');
   },
   scr_login(prefill = '') {

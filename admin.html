@@ -75,6 +75,7 @@ svg text { fill: var(--muted); font-size: 10px; }
       <button data-tab="dunes">⚖️ Dunes & équilibrage</button>
       <button data-tab="ideas">💡 Suggestions <span id="inew"></span></button>
       <button data-tab="scores">🧹 Scores du jour</button>
+      <button data-tab="invites">🎟️ Invitations</button>
       <button data-tab="announce">📣 Annonce</button>
       <button data-tab="password">🔑 Mot de passe oublié</button>
     </div>
@@ -156,6 +157,17 @@ svg text { fill: var(--muted); font-size: 10px; }
       <div class="scroll"><table id="stable"></table></div>
     </section>
 
+    <section id="tab-invites" class="panel hidden">
+      <h2>Créer un lien d'invitation</h2>
+      <p class="muted">Chaque lien ne sert qu'une fois (communs aux 2 versions). Sans lien, le jeu n'affiche que « Bousier se joue sur invitation ». Les joueurs déjà inscrits ne sont pas concernés.</p>
+      <div class="row"><input id="ilabel" maxlength="40" placeholder="Pour qui ? (ex. Marc, stagiaire)" style="flex:1"><button class="main" id="icreate">Créer le lien</button></div>
+      <div id="idone" class="panel hidden" style="margin:10px 0 0"></div>
+      <h2 style="margin-top:16px">Mes invitations</h2>
+      <p class="muted" id="isum"></p>
+      <div class="scroll"><table id="ilist"></table></div>
+      <p class="muted" id="imembers"></p>
+    </section>
+
     <section id="tab-announce" class="panel hidden">
       <h2>Annonces sur l'accueil</h2>
       <p class="muted">Affichées en haut de l'accueil de tous les joueurs, chacune jusqu'à ce qu'ils appuient sur OK. Tu peux en préparer plusieurs à l'avance avec leurs dates.</p>
@@ -175,7 +187,7 @@ svg text { fill: var(--muted); font-size: 10px; }
         <ol>
           <li>Dans la console Firebase, <a id="flink" target="_blank" rel="noopener" style="color:var(--gold)">Authentication → Users</a>, cherche <code id="femail"></code>, puis <b>⋮ → Supprimer le compte</b>.</li>
           <li><button class="danger" id="ffree">Libérer le pseudo</button> <span class="muted">(supprime la réservation et l'ancienne ligne des records ; la progression est gardée de côté)</span></li>
-          <li>Le joueur fait <b>Créer mon profil</b> avec le même pseudo et un nouveau mot de passe.</li>
+          <li>Envoie-lui un lien d'invitation (onglet 🎟️ Invitations) : il fait <b>Créer mon profil</b> avec le même pseudo et un nouveau mot de passe.</li>
           <li><button class="main" id="frestore">Restaurer sa progression</button> <span class="muted">(à faire après l'étape 3 : il la retrouve à sa prochaine ouverture du jeu)</span></li>
         </ol>
         <p id="fmsg"></p>
@@ -189,7 +201,7 @@ svg text { fill: var(--muted); font-size: 10px; }
 <script type="module">
 // Page réservée à l'organisateur : les règles Firestore n'autorisent ces
 // opérations qu'au compte administrateur (voir isAdmin dans firestore.rules).
-import * as fb from './vendor/firebase.js?v=6';  // même numéro que VENDOR_VERSION dans index.html
+import * as fb from './vendor/firebase.js?v=7';  // même numéro que VENDOR_VERSION dans index.html
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAE8Mi5r9A656BEBCfHPjpL0bKrkis7ero',
@@ -301,7 +313,61 @@ async function refresh() {
   const ann = await fb.getDoc(envRef('config', 'announce'));
   announces = annList(ann.exists() ? ann.data() : {});
   renderAnnounces();
+  await loadInvites(names);
 }
+
+// --- invitations : liens à usage unique (collection « invites », commune aux 2 versions) ---
+let invites = [], members = 0, accounts = 0;
+const INVITE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';  // sans 0/O ni 1/I/L, faciles à confondre
+const newCode = () => [...crypto.getRandomValues(new Uint8Array(6))].map(b => INVITE_ABC[b % INVITE_ABC.length]).join('');
+const inviteUrl = code => `https://zodiacfbo.github.io/bousier/${env === 'dev' ? 'dev/' : ''}?invite=${code}`;
+async function loadInvites(names) {
+  try {
+    invites = (await fb.getDocs(fb.query(fb.collection(db, 'invites'), fb.orderBy('at', 'desc'), fb.limit(300)))).docs.map(d => ({ code: d.id, ...d.data() }));
+    members = (await all(fb.collection(db, 'members'))).length;
+  } catch (e) { invites = null; }
+  accounts = names.length;
+  renderInvites();
+}
+function renderInvites() {
+  if (!invites) {
+    $('isum').innerHTML = '<span class="warn">Invitations indisponibles : colle d\'abord les nouvelles règles Firestore dans la console.</span>';
+    $('ilist').innerHTML = ''; return;
+  }
+  const used = invites.filter(i => i.uid).length, open = invites.filter(i => !i.uid && !i.cancelled).length;
+  $('isum').innerHTML = `${invites.length} créée${invites.length > 1 ? 's' : ''} · <span class="good">${used} utilisée${used > 1 ? 's' : ''}</span> · ${open} en attente`;
+  $('ilist').innerHTML = '<tr><th>Pour</th><th>Créé</th><th>État</th><th></th></tr>' + invites.map(i => `<tr>
+    <td>${esc(i.label || '—')}</td><td class="muted">${fmtDate(i.at)}</td>
+    <td>${i.uid ? `<span class="good">✅ Utilisé par <b>${esc(i.usedBy)}</b></span>` : i.cancelled ? '<span class="muted">✖ Annulé</span>' : '<span class="warn">⏳ En attente</span>'}</td>
+    <td class="r">${!i.uid && !i.cancelled ? `<button data-icopy="${i.code}" title="Copier le lien">📋</button> <button class="danger" data-icancel="${i.code}">Annuler</button>` : ''}</td></tr>`).join('');
+  $('imembers').textContent = `Cartes de membre : ${members} / ${accounts} comptes (quand presque tous l'ont, on pourra réserver la lecture du classement aux inscrits).`;
+}
+function showInvite(i) {
+  const url = inviteUrl(i.code);
+  $('idone').innerHTML = `✅ Lien créé pour <b>${esc(i.label || '—')}</b> :<br><code>${esc(url)}</code>
+    <div class="row" style="margin-top:8px"><button class="main" data-icopy="${i.code}">📋 Copier</button>${navigator.share ? `<button data-ishare="${i.code}">📤 Partager</button>` : ''}</div>`;
+  $('idone').classList.remove('hidden');
+}
+$('icreate').onclick = async () => {
+  const label = $('ilabel').value.trim();
+  if (!label) return toast('Écris pour qui est le lien.');
+  const me = players.find(p => p.uid === auth.currentUser.uid);
+  const i = { code: newCode(), label, by: me ? me.name : 'L\'organisateur', at: Date.now() };
+  try { await fb.setDoc(fb.doc(db, 'invites', i.code), { label: i.label, by: i.by, at: i.at }); }
+  catch (e) { return toast('Impossible : colle d\'abord les nouvelles règles Firestore.'); }
+  invites.unshift(i); $('ilabel').value = ''; renderInvites(); showInvite(i);
+};
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-icopy],[data-ishare],[data-icancel]'); if (!b) return;
+  if (b.dataset.icopy) { try { await navigator.clipboard.writeText(inviteUrl(b.dataset.icopy)); toast('Lien copié !'); } catch (err) { prompt('Copie ce lien :', inviteUrl(b.dataset.icopy)); } }
+  if (b.dataset.ishare) navigator.share({ title: 'Bousier', text: 'Je t\'invite à jouer à Bousier 🪲', url: inviteUrl(b.dataset.ishare) }).catch(() => {});
+  if (b.dataset.icancel) {
+    if (!confirm('Annuler ce lien ? Il ne pourra plus servir.')) return;
+    await fb.setDoc(fb.doc(db, 'invites', b.dataset.icancel), { cancelled: true }, { merge: true });
+    const i = invites.find(x => x.code === b.dataset.icancel); if (i) i.cancelled = true;
+    renderInvites();
+  }
+});
 
 function renderPlayers() {
   const q = nameKey($('search').value || '');
