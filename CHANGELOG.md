@@ -7,6 +7,13 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.15.1 — Semaine Halloween plus fournie (programmé pour le 26 octobre 2026)
+- 3 nouveaux objets pendant la semaine Halloween : Bonbon (petit, début de dune), Araignée (monte et descend au bout de
+  son fil), Os (fin de dune). Autant de citrouilles qu'avant par dune (environ 20, vérifié sur 300 dunes) pour le défi
+  communautaire.
+- Nouvelle traînée « Chauves-souris » : avaler 20 chauves-souris pendant la semaine Halloween.
+- Événement Fantômes : 7 s au lieu de 4, deux vagues de fantômes et deux « BOUH ! ».
+
 ## v1.15.0 — Cadres et couleurs de pseudo (programmé pour le 26 octobre 2026)
 - Onglet Classement de 🎨 Style : 13 nouveaux cadres (Menthe, Océan, Sakura, Améthyste, Brique, Onyx, Néon, Coucher de
   soleil, Scarabée ; prestige Arc-en-ciel et Diamant ; à gagner Champion et Fidèle) et 15 nouvelles couleurs de pseudo
