@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.15.2 — Citrouille du titre sans ombre (24 octobre 2026)
+- Semaine Halloween : la citrouille à côté du titre BOUSIER ne reçoit plus l'ombre du titre (une tache brune qui
+  semblait superposée, surtout visible sur ordinateur).
+
 ## v1.15.1 — Semaine Halloween plus fournie (programmé pour le 26 octobre 2026)
 - 3 nouveaux objets pendant la semaine Halloween : Bonbon (petit, début de dune), Araignée (monte et descend au bout de
   son fil), Os (fin de dune). Autant de citrouilles qu'avant par dune (environ 20, vérifié sur 300 dunes) pour le défi
