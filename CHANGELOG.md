@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.15.3 — Boule citrouille redessinée (programmé pour le 26 octobre 2026)
+- La Boule citrouille ne ressemble plus à un ballon de basket : côtes orange plus douces, contour moins noir, petite
+  tige verte sur le côté (sur l'axe de roulement) et visage lumineux de citrouille d'Halloween qui passe à chaque tour.
+
 ## v1.15.2 — Citrouille du titre sans ombre (24 octobre 2026)
 - Semaine Halloween : la citrouille à côté du titre BOUSIER ne reçoit plus l'ombre du titre (une tache brune qui
   semblait superposée, surtout visible sur ordinateur).
