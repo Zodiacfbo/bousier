@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.16.1 — News de l'accès sur invitation (24 octobre 2026)
+- News : « Bousier passe sur invitation… » (numéro 8.5, entre les news du 21 et du 26 octobre).
+
 ## v1.16.0 — Accès sur invitation (24 octobre 2026)
 - Sans profil sur l'appareil, le jeu n'affiche plus que « 🎟️ Bousier se joue sur invitation » (ni dune, ni classement) ;
   « me connecter » reste possible pour les joueurs existants.
