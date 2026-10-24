@@ -18,6 +18,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   pseudos et des invitations réservée à l'organisateur ; cartes de membre (`members`) créées à l'inscription ou au
   premier lancement des anciens joueurs. Étape 2 prévue : lecture du classement réservée aux membres (`readOk`).
 - « Premier du labo » devient « Premier joueur » (secrets).
+- Rattrapage (une fois par joueur) des badges effacés par l'ancien bug de synchronisation (avant la v1.10.7, 22 oct.) :
+  relit la meilleure partie de chaque jour au classement en ligne (taille, terrier, trésor, sans choc, nuit, tempête,
+  météos) et redonne les badges manquants, avec un message dans « Tes récompenses ».
 - SDK Firebase reconstruit avec `writeBatch` (VENDOR_VERSION 7).
 
 ## v1.15.5 — « Comment je l'ai eu » (24 octobre 2026)

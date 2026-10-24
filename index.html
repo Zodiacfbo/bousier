@@ -4354,11 +4354,13 @@ const App = {
   // Une fois par jour : titres et 1re place d'hier, champion de la semaine passée
   async dailyAwards() {
     const p = this.p;
-    if (!p || !Store.checked || p.awardsDay === this.today || this.awarding) return;
+    if (!p || !Store.checked || this.awarding || (p.awardsDay === this.today && p.counters.badgefix)) return;
     this.awarding = true;
     try {
       // un autre appareil a peut-être déjà distribué les récompenses d'aujourd'hui
-      if (FIREBASE_CONFIG) { const r = await Online.pullProfile(p); if (r && r.cloud) Store.save(); if (p.awardsDay === this.today) return; }
+      if (FIREBASE_CONFIG) { const r = await Online.pullProfile(p); if (r && r.cloud) Store.save(); }
+      if (!p.counters.badgefix) await this.repairBadges();
+      if (p.awardsDay === this.today) return;
       // awardsDay = premier jour pas encore compté : on reprend chaque journée terminée depuis la dernière visite
       // (7 jours au plus), une seule fois chacune, d'après son classement final
       const ct = p.counters, inc = k => { ct[k] = (ct[k] || 0) + 1; };
@@ -4391,6 +4393,33 @@ const App = {
         if (this.screen === 'home') this.show('home');
       }
     } finally { this.awarding = false; }
+  },
+
+  // Rattrapage (une seule fois) des badges effacés par l'ancien bug de synchronisation (avant
+  // le 22 oct., v1.10.7), d'après la meilleure partie de chaque jour gardée au classement en ligne
+  async repairBadges() {
+    const p = this.p, got = [];
+    for (let d = LAUNCH_DAY; d <= this.today; d = addDays(d, 1)) {
+      const lb = await Online.day(d);
+      if (!lb) return;  // hors ligne : on réessaiera à la prochaine ouverture
+      const e = lb.find(x => x.name === p.name), r = e && e.run;
+      if (!r) continue;
+      if (r.weather && !p.weathers[r.weather]) p.weathers[r.weather] = 1;
+      const cond = {
+        premier: true, terrier: r.terrier, metre: r.sizeCm >= 100, geant: r.sizeCm >= 200, titan: r.sizeCm >= 300,
+        legende: r.legend, intouchable: r.bumps === 0 && r.wallHits === 0,
+        tempete: r.terrier && r.weather === 'tempete', nuit: r.terrier && r.weather === 'nuit',
+      };
+      for (const id in cond) if (cond[id] && !p.badges[id]) { p.badges[id] = d; got.push(id); }
+    }
+    if (WEATHERS.every(w => p.weathers[w.id]) && !p.badges.meteo) { p.badges.meteo = this.today; got.push('meteo'); }
+    p.counters.badgefix = 1;
+    if (got.length) {
+      this.addRewards(got.map(id => { const b = BADGES.find(x => x.id === id); return { txt: `${b.icon} Badge « ${b.name} » récupéré`, why: b.desc }; }));
+      this.toast('🎁 Badges récupérés !');
+    }
+    Store.save();
+    if (got.length && this.screen === 'home') this.show('home');
   },
 
   // Podium des semaines terminées : pièces, titres de champion, message à l'accueil
