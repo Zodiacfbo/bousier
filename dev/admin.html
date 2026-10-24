@@ -1,0 +1,841 @@
+<!doctype html>
+<!-- Bousier · © 2026 zodiacfbo · Tous droits réservés (voir LICENSE) -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Bousier — Admin</title>
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family: 'Chiffres'; src: url(fonts/vt323-latin.woff2) format('woff2'); unicode-range: U+0030-0039; size-adjust: 125%; }
+:root { --bg: #120a16; --panel: #2b1c33; --panel2: #4a3258; --ink: #fff6e6; --muted: #cdb8cf; --gold: #ffd25a; --accent: #f2a33a; --good: #9be27a; --bad: #ff8a7a; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Chiffres', 'Pixelify Sans', ui-monospace, monospace; font-size: 15px; }
+main { max-width: 980px; margin: 0 auto; padding: 16px; }
+h1 { color: var(--gold); margin: 0 0 4px; font-size: 26px; }
+h2 { color: var(--gold); font-size: 18px; margin: 0 0 10px; }
+.panel { background: var(--panel); border: 2px solid #000; box-shadow: inset 0 0 0 2px var(--panel2); padding: 14px; margin: 14px 0; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.muted { color: var(--muted); font-size: 13px; }
+.good { color: var(--good); } .bad { color: var(--bad); }
+input, select, textarea, button { font: inherit; color: var(--ink); background: #1a1020; border: 2px solid #000; box-shadow: inset 0 0 0 2px var(--panel2); padding: 7px 9px; }
+textarea { width: 100%; min-height: 60px; }
+button { cursor: pointer; background: var(--panel2); }
+button.main { background: var(--accent); color: #2a1408; font-weight: 700; }
+button.danger { background: #6a2030; }
+button:disabled { opacity: .5; cursor: default; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #ffffff14; vertical-align: middle; }
+th { color: var(--gold); font-size: 13px; }
+td.r, th.r { text-align: right; }
+.scroll { overflow-x: auto; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat { background: #1a1020; padding: 10px; text-align: center; }
+.stat b { display: block; font-size: 28px; color: var(--gold); }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 14px; }
+.tabs button.on { background: var(--accent); color: #2a1408; font-weight: 700; }
+code { background: #1a1020; padding: 2px 6px; user-select: all; }
+.hidden { display: none !important; }
+#toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--gold); color: #2a1408; font-weight: 700; padding: 10px 16px; border: 2px solid #000; display: none; max-width: 90%; }
+ol li { margin: 8px 0; }
+.link { background: none; border: 0; box-shadow: none; padding: 0; color: var(--ink); text-decoration: underline dotted; font-weight: 700; }
+#fiche { position: fixed; inset: 0; background: rgba(0,0,0,.7); overflow-y: auto; padding: 20px 10px; z-index: 10; }
+#fiche > .panel { max-width: 900px; margin: 0 auto; }
+.warn { color: #ffb84a; }
+svg text { fill: var(--muted); font-size: 10px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🪲 Bousier — Admin</h1>
+  <div class="row">
+    <span class="muted" id="who">Connexion…</span>
+    <label class="muted">Version :
+      <select id="env"><option value="prod">Officielle (main)</option><option value="dev">Test (dev)</option></select>
+    </label>
+  </div>
+
+  <div id="login" class="panel hidden">
+    <h2>Connexion organisateur</h2>
+    <div class="row">
+      <input id="lname" placeholder="Pseudo" autocomplete="username">
+      <input id="lpass" type="password" placeholder="Mot de passe" autocomplete="current-password">
+      <button class="main" id="lgo">Se connecter</button>
+    </div>
+    <p class="bad" id="lerr"></p>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="tabs" id="tabs">
+      <button data-tab="dash" class="on">📈 Tableau de bord</button>
+      <button data-tab="players">👥 Joueurs</button>
+      <button data-tab="pstats">📊 Stats</button>
+      <button data-tab="dunes">⚖️ Dunes & équilibrage</button>
+      <button data-tab="ideas">💡 Suggestions <span id="inew"></span></button>
+      <button data-tab="scores">🧹 Scores du jour</button>
+      <button data-tab="invites">🎟️ Invitations</button>
+      <button data-tab="announce">📣 Annonce</button>
+      <button data-tab="password">🔑 Mot de passe oublié</button>
+    </div>
+
+    <section id="tab-dash" class="panel">
+      <h2>📊 Aujourd'hui</h2>
+      <div class="stats" id="stats"></div>
+      <p class="muted">Comptes = pseudos réservés, communs à la version officielle et à la version de test. Les autres chiffres concernent la version choisie en haut.</p>
+      <h2>📈 Activité jour par jour</h2>
+      <div id="chart"></div>
+      <details><summary class="muted">Voir le tableau jour par jour</summary><div class="scroll"><table id="atable"></table></div></details>
+      <h2>😴 Joueurs qui décrochent</h2>
+      <p class="muted">Pas de dune du jour depuis 3 jours ou plus (d'après leur progression).</p>
+      <div class="scroll"><table id="dtable"></table></div>
+      <h2>🚨 Scores suspects</h2>
+      <p class="muted">Score plus de 2 fois au-dessus des autres jours du joueur, terrier en moins de 40 s, ou grosse boule avec très peu d'objets avalés. À vérifier avant de supprimer.</p>
+      <div class="scroll"><table id="xtable"></table></div>
+      <h2>🔥 Consommation Firebase (estimation)</h2>
+      <div class="stats" id="quota"></div>
+      <p class="muted">Estimation d'après l'activité du jour ; les vrais chiffres sont dans la
+        <a href="https://console.firebase.google.com/project/bousier-9f615/firestore/usage" target="_blank" rel="noopener">console Firebase (Utilisation)</a>.
+        Au-delà de la limite gratuite, le classement en ligne s'arrête jusqu'au lendemain (aucun frais en offre Spark).</p>
+    </section>
+
+    <section id="tab-players" class="panel hidden">
+      <h2>Joueurs</h2>
+      <div class="row" style="margin-bottom:10px"><input id="search" placeholder="Rechercher un pseudo ou une équipe…" style="flex:1"><button id="giftall">🎁 Cadeau à tout le monde</button></div>
+      <p class="muted">Touche un pseudo pour ouvrir sa fiche.</p>
+      <div class="scroll"><table id="ptable"></table></div>
+      <div id="gift" class="panel hidden">
+        <h2>🎁 Cadeau pour <span id="gname"></span></h2>
+        <div class="row">
+          <label>Pièces <input id="gcoins" type="number" min="0" max="5000" value="0" style="width:100px"></label>
+          <label>Objet <select id="gitem"><option value="">— aucun —</option></select></label>
+        </div>
+        <p><input id="gmsg" maxlength="80" placeholder="Petit mot (facultatif), ex. « Bravo pour le concours ! »" style="width:100%"></p>
+        <div class="row"><button class="main" id="gsend">Envoyer</button><button id="gcancel">Annuler</button></div>
+        <p class="muted">Le joueur le reçoit à sa prochaine ouverture du jeu, avec un message.</p>
+      </div>
+    </section>
+
+    <section id="tab-pstats" class="panel hidden">
+      <p class="muted">D'après la progression de chaque joueur (version choisie en haut), dunes du jour seulement.
+        « Jours joués » est compté à partir du 22 octobre 2026, « Entraînement » à partir du 22 octobre 2026.</p>
+      <h2>🌍 Total</h2>
+      <div class="stats" id="gstats"></div>
+      <h2>🏅 Records</h2>
+      <div class="scroll"><table id="rtable"></table></div>
+      <h2>👤 Par joueur</h2>
+      <div class="row"><button class="main" id="csv">⬇️ Télécharger en tableur (CSV)</button></div>
+      <div class="scroll"><table id="pstable"></table></div>
+    </section>
+
+    <section id="tab-dunes" class="panel hidden">
+      <h2>🌦️ Calendrier des dunes</h2>
+      <p class="muted">Météo et trésor de chaque dune, aujourd'hui et les 30 prochains jours (identiques pour tous les joueurs).</p>
+      <div class="scroll"><table id="mtable"></table></div>
+      <h2>⚖️ Difficulté par météo</h2>
+      <div class="scroll"><table id="wtable"></table></div>
+      <h2>📜 Réussite des quêtes</h2>
+      <p class="muted">Part des joueurs qui ont réussi la quête les jours où elle était proposée (au moins une partie jouée ce jour-là).</p>
+      <div class="scroll"><table id="qtable"></table></div>
+      <p class="muted">D'après les parties gardées par chaque joueur (30 derniers jours).</p>
+    </section>
+
+    <section id="tab-ideas" class="panel hidden">
+      <h2>Suggestions</h2>
+      <div class="row" style="margin-bottom:10px">
+        <select id="ifilter"><option value="">Tout</option><option value="idee">💡 Idées</option><option value="bug">🐞 Bugs</option><option value="autre">💬 Autres</option></select>
+        <select id="isfilter"><option value="">Tous les états</option><option value="new">⏳ Reçues</option><option value="retained">👍 Retenues</option><option value="done">✅ Faites</option><option value="declined">❌ Pas pour l'instant</option></select>
+      </div>
+      <p class="muted">Le joueur voit l'état de ses messages dans sa boîte à idées.</p>
+      <div class="scroll"><table id="itable"></table></div>
+    </section>
+
+    <section id="tab-scores" class="panel hidden">
+      <h2>Scores du jour</h2>
+      <p class="muted">Supprimer un score retire aussi son fantôme. Le joueur pourra rejouer s'il lui reste des essais.</p>
+      <div class="scroll"><table id="stable"></table></div>
+    </section>
+
+    <section id="tab-invites" class="panel hidden">
+      <h2>Créer un lien d'invitation</h2>
+      <p class="muted">Chaque lien ne sert qu'une fois (communs aux 2 versions). Sans lien, le jeu n'affiche que « Bousier se joue sur invitation ». Les joueurs déjà inscrits ne sont pas concernés.</p>
+      <div class="row"><input id="ilabel" maxlength="40" placeholder="Pour qui ? (ex. Marc, stagiaire)" style="flex:1"><button class="main" id="icreate">Créer le lien</button></div>
+      <div id="idone" class="panel hidden" style="margin:10px 0 0"></div>
+      <h2 style="margin-top:16px">Mes invitations</h2>
+      <p class="muted" id="isum"></p>
+      <div class="scroll"><table id="ilist"></table></div>
+      <p class="muted" id="imembers"></p>
+    </section>
+
+    <section id="tab-announce" class="panel hidden">
+      <h2>Annonces sur l'accueil</h2>
+      <p class="muted">Affichées en haut de l'accueil de tous les joueurs, chacune jusqu'à ce qu'ils appuient sur OK. Tu peux en préparer plusieurs à l'avance avec leurs dates.</p>
+      <textarea id="atext" maxlength="200" placeholder="Ex. : Fin de la saison 1 vendredi ! Bravo à…"></textarea>
+      <div class="row"><label class="muted">Du <input id="afrom" type="date"></label><label class="muted">au <input id="ato" type="date"></label>
+        <span class="muted">(facultatif : vide = tout de suite et sans fin)</span></div>
+      <div class="row"><button class="main" id="asend">Ajouter l'annonce</button></div>
+      <h2>Annonces prévues</h2>
+      <div class="scroll"><table id="alist"></table></div>
+    </section>
+
+    <section id="tab-password" class="panel hidden">
+      <h2>Mot de passe oublié</h2>
+      <p class="muted">Un mot de passe ne peut pas être changé depuis une page web : on supprime le compte, le joueur recrée son profil avec le même pseudo, puis on lui rend sa progression.</p>
+      <div class="row"><input id="fname" placeholder="Pseudo du joueur"><button id="fcheck">Préparer</button></div>
+      <div id="fsteps" class="hidden">
+        <ol>
+          <li>Dans la console Firebase, <a id="flink" target="_blank" rel="noopener" style="color:var(--gold)">Authentication → Users</a>, cherche <code id="femail"></code>, puis <b>⋮ → Supprimer le compte</b>.</li>
+          <li><button class="danger" id="ffree">Libérer le pseudo</button> <span class="muted">(supprime la réservation et l'ancienne ligne des records ; la progression est gardée de côté)</span></li>
+          <li>Envoie-lui un lien d'invitation (onglet 🎟️ Invitations) : il fait <b>Créer mon profil</b> avec le même pseudo et un nouveau mot de passe.</li>
+          <li><button class="main" id="frestore">Restaurer sa progression</button> <span class="muted">(à faire après l'étape 3 : il la retrouve à sa prochaine ouverture du jeu)</span></li>
+        </ol>
+        <p id="fmsg"></p>
+      </div>
+    </section>
+  </div>
+</main>
+<div id="fiche" class="hidden"></div>
+<div id="toast"></div>
+
+<script type="module">
+// Page réservée à l'organisateur : les règles Firestore n'autorisent ces
+// opérations qu'au compte administrateur (voir isAdmin dans firestore.rules).
+import * as fb from './vendor/firebase.js?v=7';  // même numéro que VENDOR_VERSION dans index.html
+
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyAE8Mi5r9A656BEBCfHPjpL0bKrkis7ero',
+  authDomain: 'bousier-9f615.firebaseapp.com',
+  projectId: 'bousier-9f615',
+  storageBucket: 'bousier-9f615.firebasestorage.app',
+  messagingSenderId: '136018034492',
+  appId: '1:136018034492:web:2eb28da7a4547a4b7ae839',
+};
+const ADMIN_UIDS = ['iYDurji9CuUbdV04FBIM1d2nLiH2'];
+// Objets qu'on peut offrir (identiques à ceux du jeu)
+const GIFTABLE = {
+  ball: { sable: 'Boule de sable', neige: 'Boule de neige', pasteque: 'Pastèque', lave: 'Boule de lave', planete: 'Petite planète', disco: 'Boule disco', saturne: 'Saturne', atome: 'Atome', uranium: 'Uranium', or: 'Boule d\'or', citrouille: 'Boule citrouille', diamant: 'Boule diamant 💎', lune: 'Boule Lune 🤫', trefle: 'Boule trèfle', menthe: 'Boule menthe ⭐', cookie: 'Boule cookie ⭐', bowling: 'Boule de bowling ⭐', tube: 'Boule tube à essai ⭐' },
+  hat: { casquette: 'Casquette', chantier: 'Casque de chantier', bob: 'Bob de touriste', fez: 'Fez', sombrero: 'Sombrero', couronne: 'Couronne de géant', nemes: 'Némès du pharaon', parapluie: 'Parapluie', lunettes: 'Lunettes de protection', charlotte: 'Charlotte de labo', casqueKevin: 'Casque de Kevin', coquille: 'Coquille d\'escargot', pansement: 'Pansement', aimant: 'Aimant', fleurCactus: 'Fleur de cactus', aureole: 'Auréole', sorciere: 'Chapeau de sorcière', frontale: 'Lampe frontale', lunetteseclipse: 'Lunettes d\'éclipse', hautdeforme: 'Haut-de-forme en or 💎', cigarette: 'Cigarette 🚬 (cadeau spécial, caché)', plotHat: 'Plot de chantier 🤫', sifflet: 'Sifflet du coach 🤫', ferACheval: 'Fer à cheval 🤫', plumeHat: 'Plume 🤫', bandeau: 'Bandeau de méditation', beret: 'Béret ⭐', bonnet: 'Bonnet de laine ⭐', chantierFluo: 'Casque de chantier fluo ⭐', toque: 'Toque de chef cuisinier ⭐' },
+  outfit: { cire: 'Ciré jaune', blouse: 'Blouse de labo', hazmat: 'Combinaison anti-contamination', cape: 'Cape de super-héros', smoking: 'Smoking', capeor: 'Cape dorée 💎', jogging: 'Tenue de sport ⭐' },
+  trail: { arcenciel: 'Arc-en-ciel', etincelles: 'Étincelles', bulles: 'Bulles', flammes: 'Flammes', fumee: 'Expérience ratée', notes: 'Notes de musique', binaire: 'Code binaire', tourbillon: 'Tourbillon de sable', comete: 'Traînée comète 💎', eclairs: 'Éclairs', coeurs: 'Petits cœurs ⭐', confettis: 'Confettis ⭐' },
+  theme: { rose: 'Dune rose', lunaire: 'Dune lunaire', noire: 'Sable volcanique', bleue: 'Dune bleue ⭐' },
+  frame: { bois: 'Bois', argent: 'Argent', or: 'Or', flammes: 'Flammes 💎', podium: 'Cadre du podium', pionnier: 'Pionnier 🌱', pilepoil: 'Pile poil 🤫' },
+  color: { rouge: 'Rouge', bleu: 'Bleu', vert: 'Vert', violet: 'Violet', arcenciel: 'Arc-en-ciel 💎' },
+  title: { roi: 'Roi du sable', crottin: 'Amateur de crottin', retard: 'Toujours en retard', cafe: 'En pause café', stagiaire: 'Stagiaire éternel', pousseur: 'Pousseur pro', terrier: 'Pro du terrier', legende: 'Légende de la dune', exchamp: '👑 Ex-champion', encyclo: 'Encyclopédiste', fidele: 'Fidèle au poste', chasseur: 'Chasseur de trésors', kevin: 'Ami de Kevin', citrouille: 'Citrouille d\'or 🎃', pionnier: 'Pionnier de la dune 🌱', mois1: 'Là depuis le 1er mois 🎂', abattu: 'Jamais abattu', echauffement: 'Toujours à l\'échauffement 🤫', leve: 'Lève-tôt 🤫', hibou: 'Oiseau de nuit 🤫', maniaque: 'Le maniaque 🤫', timide: 'Le timide 🤫', derniere: 'Jamais sans mon terrier 🤫', vege: 'Régime sans verdure 🤫' },
+};
+const TYPE_LABEL = { ball: 'Boule', hat: 'Chapeau', outfit: 'Tenue', trail: 'Traînée', theme: 'Décor', frame: 'Cadre', color: 'Couleur du pseudo', title: 'Titre' };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nameKey = n => n.trim().toLowerCase();
+const accountEmail = n => 'u' + [...new TextEncoder().encode(nameKey(n))].map(b => b.toString(16).padStart(2, '0')).join('') + '@bousier.game';
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const addDays = (k, n) => { const [y, m, d] = k.split('-').map(Number); return dayKey(new Date(y, m - 1, d + n)); };
+const fmtSize = cm => cm >= 100 ? (cm / 100).toFixed(2).replace('.', ',') + ' m' : (+cm).toFixed(1).replace('.', ',') + ' cm';
+const fmtDate = ms => ms ? new Date(ms).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+let toastT;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 3000); }
+
+const APPCHECK_SITE_KEY = null;  // même clé que dans index.html
+const app = fb.initializeApp(FIREBASE_CONFIG);
+if (APPCHECK_SITE_KEY && !window.BOUSIER_EMULATOR)
+  fb.initializeAppCheck(app, { provider: new fb.ReCaptchaV3Provider(APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+const auth = fb.getAuth(app), db = fb.getFirestore(app);
+if (window.BOUSIER_EMULATOR) {
+  fb.connectAuthEmulator(auth, 'http://' + BOUSIER_EMULATOR.auth, { disableWarnings: true });
+  const [h, p] = BOUSIER_EMULATOR.firestore.split(':'); fb.connectFirestoreEmulator(db, h, +p);
+  if (BOUSIER_EMULATOR.admin) ADMIN_UIDS.push(BOUSIER_EMULATOR.admin);
+}
+let env = 'prod', players = [], selected = null, ideas = [], pstats = [], profiles = [], activity = [];
+const IDEA_TYPE = { idee: '💡', bug: '🐞', autre: '💬' };
+const IDEA_STATUS = { new: '⏳ Reçue', retained: '👍 Retenue', done: '✅ Faite', declined: '❌ Pas pour l\'instant' };
+const envRef = (...path) => fb.doc(db, 'envs', env, ...path);
+const envCol = (...path) => fb.collection(db, 'envs', env, ...path);
+const all = async (col, n = 1000) => (await fb.getDocs(fb.query(col, fb.limit(n)))).docs.map(d => ({ id: d.id, ...d.data() }));
+
+// --- connexion ---
+async function start() {
+  await auth.authStateReady();
+  const u = auth.currentUser;
+  if (!u || !ADMIN_UIDS.includes(u.uid)) {
+    $('who').textContent = u && !u.isAnonymous ? 'Ce compte n\'est pas organisateur.' : 'Non connecté.';
+    $('login').classList.remove('hidden'); $('app').classList.add('hidden');
+    return;
+  }
+  $('who').textContent = '✅ Connecté en organisateur';
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+  await refresh();
+}
+$('lgo').onclick = async () => {
+  $('lerr').textContent = 'Connexion…';
+  try { await fb.signInWithEmailAndPassword(auth, accountEmail($('lname').value), $('lpass').value); $('lerr').textContent = ''; start(); }
+  catch (e) { $('lerr').textContent = 'Pseudo ou mot de passe incorrect.'; }
+};
+$('env').onchange = () => { env = $('env').value; refresh(); };
+
+// --- onglets ---
+$('tabs').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  for (const x of $('tabs').children) x.classList.toggle('on', x === b);
+  for (const s of document.querySelectorAll('section')) s.classList.toggle('hidden', s.id !== 'tab-' + b.dataset.tab);
+};
+
+// --- chargement des données ---
+async function refresh() {
+  const today = dayKey();
+  const [names, recs, scores] = await Promise.all([
+    all(fb.collection(db, 'names')), all(envCol('players')), all(envCol('days', today, 'scores')),
+  ]);
+  const week = await Promise.all([1, 2, 3, 4, 5, 6].map(i => all(envCol('days', addDays(today, -i), 'scores'))));
+  const recBy = Object.fromEntries(recs.map(r => [nameKey(r.name), r]));
+  players = names.map(n => ({ key: n.id, name: n.name, uid: n.uid, rec: recBy[n.id] || null }))
+    .sort((a, b) => ((b.rec && b.rec.at) || 0) - ((a.rec && a.rec.at) || 0));
+  const activeWeek = new Set([...scores, ...week.flat()].map(s => nameKey(s.name)));
+  // parties jouées : d'après la progression complète de chaque joueur (lisible par l'organisateur)
+  const profs = await all(envCol('profiles'));
+  profiles = profs.map(d => { try { const p = JSON.parse(d.data); p._at = d.at; return p; } catch (e) { return null; } }).filter(Boolean);
+  pstats = profiles.map(p => statRow(p, p._at)).sort((a, b) => b.runs - a.runs);
+  renderDropouts(); renderBalance();
+  const runs = pstats.reduce((n, r) => n + r.runs, 0);
+  renderStats();
+  renderActivity();
+  $('stats').innerHTML = [
+    ['Comptes (communs aux 2 versions)', names.length], ['Joueurs de cette version', recs.length], ['Actifs aujourd\'hui', scores.length], ['Actifs sur 7 jours', activeWeek.size],
+    ['Parties jouées', runs || '—'],
+  ].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('');
+  renderPlayers();
+  $('stable').innerHTML = '<tr><th>Joueur</th><th class="r">Score</th><th class="r">Temps</th><th></th></tr>' + (scores.sort((a, b) => b.score - a.score).map(s =>
+    `<tr><td>${esc(s.name)}</td><td class="r">${fmtSize(s.score)}</td><td class="r">${s.time != null ? Math.round(s.time) + ' s' : '—'}</td><td class="r"><button class="danger" data-del="${esc(s.id)}">Supprimer</button></td></tr>`).join('') || '<tr><td colspan="4" class="muted">Aucun score aujourd\'hui.</td></tr>');
+  ideas = (await fb.getDocs(fb.query(envCol('suggestions'), fb.orderBy('at', 'desc'), fb.limit(300)))).docs.map(d => ({ id: d.id, ...d.data() }));
+  const fresh = ideas.filter(i => i.status === 'new').length;
+  $('inew').textContent = fresh ? `(${fresh})` : '';
+  renderIdeas();
+  const ann = await fb.getDoc(envRef('config', 'announce'));
+  announces = annList(ann.exists() ? ann.data() : {});
+  renderAnnounces();
+  await loadInvites(names);
+}
+
+// --- invitations : liens à usage unique (collection « invites », commune aux 2 versions) ---
+let invites = [], members = 0, accounts = 0;
+const INVITE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';  // sans 0/O ni 1/I/L, faciles à confondre
+const newCode = () => [...crypto.getRandomValues(new Uint8Array(6))].map(b => INVITE_ABC[b % INVITE_ABC.length]).join('');
+const inviteUrl = code => `https://zodiacfbo.github.io/bousier/${env === 'dev' ? 'dev/' : ''}?invite=${code}`;
+async function loadInvites(names) {
+  try {
+    invites = (await fb.getDocs(fb.query(fb.collection(db, 'invites'), fb.orderBy('at', 'desc'), fb.limit(300)))).docs.map(d => ({ code: d.id, ...d.data() }));
+    members = (await all(fb.collection(db, 'members'))).length;
+  } catch (e) { invites = null; }
+  accounts = names.length;
+  renderInvites();
+}
+function renderInvites() {
+  if (!invites) {
+    $('isum').innerHTML = '<span class="warn">Invitations indisponibles : colle d\'abord les nouvelles règles Firestore dans la console.</span>';
+    $('ilist').innerHTML = ''; return;
+  }
+  const used = invites.filter(i => i.uid).length, open = invites.filter(i => !i.uid && !i.cancelled).length;
+  $('isum').innerHTML = `${invites.length} créée${invites.length > 1 ? 's' : ''} · <span class="good">${used} utilisée${used > 1 ? 's' : ''}</span> · ${open} en attente`;
+  $('ilist').innerHTML = '<tr><th>Pour</th><th>Créé</th><th>État</th><th></th></tr>' + invites.map(i => `<tr>
+    <td>${esc(i.label || '—')}</td><td class="muted">${fmtDate(i.at)}</td>
+    <td>${i.uid ? `<span class="good">✅ Utilisé par <b>${esc(i.usedBy)}</b></span>` : i.cancelled ? '<span class="muted">✖ Annulé</span>' : '<span class="warn">⏳ En attente</span>'}</td>
+    <td class="r">${!i.uid && !i.cancelled ? `<button data-icopy="${i.code}" title="Copier le lien">📋</button> <button class="danger" data-icancel="${i.code}">Annuler</button>` : ''}</td></tr>`).join('');
+  $('imembers').textContent = `Cartes de membre : ${members} / ${accounts} comptes (quand presque tous l'ont, on pourra réserver la lecture du classement aux inscrits).`;
+}
+function showInvite(i) {
+  const url = inviteUrl(i.code);
+  $('idone').innerHTML = `✅ Lien créé pour <b>${esc(i.label || '—')}</b> :<br><code>${esc(url)}</code>
+    <div class="row" style="margin-top:8px"><button class="main" data-icopy="${i.code}">📋 Copier</button>${navigator.share ? `<button data-ishare="${i.code}">📤 Partager</button>` : ''}</div>`;
+  $('idone').classList.remove('hidden');
+}
+$('icreate').onclick = async () => {
+  const label = $('ilabel').value.trim();
+  if (!label) return toast('Écris pour qui est le lien.');
+  const me = players.find(p => p.uid === auth.currentUser.uid);
+  const i = { code: newCode(), label, by: me ? me.name : 'L\'organisateur', at: Date.now() };
+  try { await fb.setDoc(fb.doc(db, 'invites', i.code), { label: i.label, by: i.by, at: i.at }); }
+  catch (e) { return toast('Impossible : colle d\'abord les nouvelles règles Firestore.'); }
+  invites.unshift(i); $('ilabel').value = ''; renderInvites(); showInvite(i);
+};
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-icopy],[data-ishare],[data-icancel]'); if (!b) return;
+  if (b.dataset.icopy) { try { await navigator.clipboard.writeText(inviteUrl(b.dataset.icopy)); toast('Lien copié !'); } catch (err) { prompt('Copie ce lien :', inviteUrl(b.dataset.icopy)); } }
+  if (b.dataset.ishare) navigator.share({ title: 'Bousier', text: 'Je t\'invite à jouer à Bousier 🪲', url: inviteUrl(b.dataset.ishare) }).catch(() => {});
+  if (b.dataset.icancel) {
+    if (!confirm('Annuler ce lien ? Il ne pourra plus servir.')) return;
+    await fb.setDoc(fb.doc(db, 'invites', b.dataset.icancel), { cancelled: true }, { merge: true });
+    const i = invites.find(x => x.code === b.dataset.icancel); if (i) i.cancelled = true;
+    renderInvites();
+  }
+});
+
+function renderPlayers() {
+  const q = nameKey($('search').value || '');
+  const list = players.filter(p => (env === 'prod' || p.rec) && (!q || p.key.includes(q) || (p.rec && (p.rec.team || '').toLowerCase().includes(q))));
+  $('ptable').innerHTML = '<tr><th>Pseudo</th><th>Équipe</th><th class="r">Record</th><th class="r">Série</th><th>Dernière activité</th><th></th></tr>' + list.map(p => {
+    const r = p.rec;
+    return `<tr><td><button class="link" data-fiche="${esc(p.name)}">${esc(p.name)}</button></td><td>${esc(r && r.team || '')}</td><td class="r">${r ? fmtSize(r.best) : '—'}</td><td class="r">${r ? '🔥' + r.bestStreak : ''}</td>
+      <td class="muted">${fmtDate(r && r.at)}</td>
+      <td class="r"><button data-gift="${esc(p.key)}">🎁</button> <button data-forgot="${esc(p.key)}" title="Mot de passe oublié">🔑</button> <button class="danger" data-free="${esc(p.key)}" title="Libérer ce pseudo">🗑️</button></td></tr>`;
+  }).join('');
+}
+$('search').oninput = renderPlayers;
+
+// --- calendrier des dunes : copie exacte du tirage de index.html (météo, trésor) ---
+const LAUNCH_DAY = '2026-10-20';
+const WEATHERS = [['☀️', 'Grand calme'], ['🌪️', 'Tempête de sable'], ['🌙', 'Nuit étoilée'], ['🌧️', 'Averse'], ['🔥', 'Canicule'], ['💨', 'Vent arrière']];
+// nouvelles météos (même ordre que dans le jeu) ; la neige est réservée à Noël
+const ALL_WEATHERS = WEATHERS.concat([['⛈️', 'Orage'], ['🌫️', 'Brouillard'], ['❄️', 'Neige'], ['🌀', 'Sables mouvants'], ['🌘', 'Éclipse']]);
+const WEEKLY_IDX = [6, 7, 9, 10];  // orage, brouillard, sables mouvants, éclipse
+const LEGENDS = ['Couronne du pharaon', 'Scarabée d\'or', 'Le téléphone de Kevin', 'Lampe magique', 'Le mug du bureau', 'Ankh sacré'];
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hashStr(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+const rnd = key => mulberry32(hashStr(key))();
+const baseWeatherIdx = day => Math.floor(rnd(day + '|meteo') * WEATHERS.length);
+function rerollWeather(day, prev) {
+  const wi = baseWeatherIdx(day);
+  return wi !== prev ? wi : (wi + 1 + Math.floor(rnd(day + '|m2') * (WEATHERS.length - 1))) % WEATHERS.length;
+}
+// semaine Halloween : nuits fréquentes, nuit et trésor spécial le 31
+const HALLOWEEN = { from: '2026-10-26', to: '2026-11-01', night: '2026-10-31' }, NIGHT_IDX = 2;
+const isHalloween = day => day >= HALLOWEEN.from && day <= HALLOWEEN.to;
+// à partir du 2 novembre 2026 : roulement par blocs de 6 jours (comme dans le jeu)
+const WX_ROTATION_FROM = '2026-11-02';
+function weatherBlock(b) {
+  const r = mulberry32(hashStr('wxbag|' + b)), a = WEATHERS.map((_, i) => i);
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const CLASSIC_N = {};
+function classicCount(day) {
+  if (CLASSIC_N[day] != null) return CLASSIC_N[day];
+  let n = 0;
+  for (let d = WX_ROTATION_FROM; d < day; d = addDays(d, 1)) if (weeklyWeather(d) < 0) n++;
+  return (CLASSIC_N[day] = n);
+}
+function rotatedWeather(day) {
+  const n = classicCount(day), b = Math.floor(n / WEATHERS.length);
+  const bag = weatherBlock(b), before = b > 0 ? weatherBlock(b - 1)[WEATHERS.length - 1] : weatherIdx(addDays(WX_ROTATION_FROM, -1));
+  if (bag[0] === before) [bag[0], bag[1]] = [bag[1], bag[0]];
+  return bag[n % WEATHERS.length];
+}
+const weekKeyOf = k => { const d = new Date(k + 'T12:00'); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return dayKey(d); };
+function weeklyWeather(day) {
+  if (day < WX_ROTATION_FROM) return -1;
+  const wk = weekKeyOf(day), n = Math.round((new Date(wk + 'T12:00') - new Date(WX_ROTATION_FROM + 'T12:00')) / (7 * 86400000));
+  // toujours le lundi et le vendredi (comme dans le jeu)
+  const i = wk === day ? 0 : addDays(wk, 4) === day ? 1 : -1;
+  return i < 0 ? -1 : WEEKLY_IDX[(2 * n + i) % WEEKLY_IDX.length];
+}
+function dayWeather(day, prev) {
+  const special = weeklyWeather(day);
+  if (special >= 0) return special;
+  if (day >= WX_ROTATION_FROM) return rotatedWeather(day);
+  const wi = rerollWeather(day, prev);
+  if (!isHalloween(day)) return wi;
+  if (day === HALLOWEEN.night) return NIGHT_IDX;
+  if (addDays(day, 1) === HALLOWEEN.night || prev === NIGHT_IDX) {
+    if (wi !== NIGHT_IDX) return wi;
+    const others = WEATHERS.map((_, i) => i).filter(i => i !== NIGHT_IDX && i !== prev);
+    return others[Math.floor(rnd(day + '|hw2') * others.length)];
+  }
+  return rnd(day + '|hw') < 0.75 ? NIGHT_IDX : wi;
+}
+function weatherIdx(day) {
+  let d = LAUNCH_DAY, prev = rerollWeather(d, baseWeatherIdx(addDays(d, -1)));
+  while (d < day) { d = addDays(d, 1); prev = dayWeather(d, prev); }
+  return prev;
+}
+// trésor : roulement par blocs de 6 jours à partir du 23 octobre 2026 (comme dans le jeu)
+const LEGEND_ROTATION_FROM = '2026-10-23';
+function legendBlock(b) {
+  const r = mulberry32(hashStr('legbag|' + b)), a = LEGENDS.map((_, i) => i);
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function legendIdx(day) {
+  if (day < LEGEND_ROTATION_FROM) return Math.floor(rnd(day + '|legend') * LEGENDS.length);
+  const n = Math.round((new Date(day + 'T12:00') - new Date(LEGEND_ROTATION_FROM + 'T12:00')) / 86400000), b = Math.floor(n / LEGENDS.length);
+  const bag = legendBlock(b);
+  const before = b > 0 ? legendBlock(b - 1)[LEGENDS.length - 1] : Math.floor(rnd(addDays(LEGEND_ROTATION_FROM, -1) + '|legend') * LEGENDS.length);
+  if (bag[0] === before) [bag[0], bag[1]] = [bag[1], bag[0]];
+  return bag[n % LEGENDS.length];
+}
+const legendOf = day => day === HALLOWEEN.night ? 'Crâne en sucre 🎃' : LEGENDS[legendIdx(day)];
+const dayNumber = k => Math.round((new Date(k + 'T12:00') - new Date(LAUNCH_DAY + 'T12:00')) / 86400000) + 1;
+function renderMeteo() {
+  const today = dayKey(), rows = [];
+  for (let i = 0; i <= 30; i++) {
+    const day = addDays(today, i), [icon, name] = ALL_WEATHERS[weatherIdx(day)];
+    const date = new Date(day + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+    rows.push(`<tr${i === 0 ? ' style="font-weight:700"' : ''}><td>${date}${i === 0 ? ' (aujourd\'hui)' : ''}</td><td class="r">#${dayNumber(day)}</td><td>${icon} ${name}</td><td class="muted">${esc(legendOf(day))}${isHalloween(day) ? ' · 🎃' : ''}</td></tr>`);
+  }
+  $('mtable').innerHTML = '<tr><th>Jour</th><th class="r">Dune</th><th>Météo</th><th>Trésor</th></tr>' + rows.join('');
+}
+renderMeteo();
+
+// --- stats par joueur ---
+// noms des objets (identiques à ceux du jeu)
+const OBJ_NAMES = { grain: 'Graine', caillou: 'Caillou', crottin: 'Crottin', capsule: 'Capsule', feuille: 'Feuille', coquillage: 'Coquillage', brindille: 'Brindille', os: 'Os', sandale: 'Tong', lezard: 'Lézard', scorpion: 'Scorpion', cactus: 'Cactus', crane: 'Crâne', amphore: 'Amphore', valise: 'Valise', tente: 'Tente', chameau: 'Chameau', palmier: 'Palmier', rocher: 'Rocher', tortue: 'Tortue', cerfvolant: 'Cerf-volant', etoile: 'Étoile tombée', grenouille: 'Grenouille', parasol: 'Parasol', plume: 'Plume', citrouille: 'Citrouille', chauvesouris: 'Chauve-souris', eclair: 'Éclair en bouteille', lanterne: 'Lanterne perdue', momie: 'Momie', fragmentlune: 'Fragment de lune' };
+// colonnes du tableau par joueur ; kind : m = taille (cm), t = durée (s), p = pourcentage, d = date
+const STAT_COLS = [
+  ['name', 'Pseudo'], ['created', 'Inscrit le'], ['runs', 'Parties'], ['days', 'Jours joués'], ['best', 'Record', 'm'],
+  ['size', 'Taille cumulée', 'm'], ['avg', 'Taille moyenne', 'm'], ['absorbed', 'Objets avalés'], ['time', 'Temps à rouler', 't'],
+  ['terriers', 'Terriers'], ['fails', 'Terriers ratés'], ['rate', 'Réussite', 'p'], ['legends', 'Trésors'], ['bumps', 'Chocs'], ['pricks', 'Piqûres'], ['walls', 'Bords touchés'],
+  ['camels', 'Chameaux'], ['fav', 'Objet préféré'], ['practice', 'Entraînement'], ['bestStreak', 'Série max'], ['coins', 'Pièces'], ['badges', 'Badges'],
+  ['bousipedia', 'Bousipédia'], ['champion', '👑 Champion'], ['podiums', 'Podiums'], ['boosts', '🚀 Coups de pouce'], ['team', 'Équipe'], ['saved', 'Dernière sauvegarde', 'd'],
+];
+// cumuls et records : ceux du jeu s'ils existent, sinon recalculés d'après les parties gardées jour par jour
+function runTotals(p) {
+  const st = p.stats || {};
+  if (st.tot) return { tot: st.tot, rec: st.rec || {} };
+  const tot = { size: 0, time: 0, bumps: 0, pricks: 0, walls: 0, fails: 0 }, rec = {};
+  const up = (k, v, day, lower) => { if (v != null && (!rec[k] || (lower ? v < rec[k].v : v > rec[k].v))) rec[k] = { v, day }; };
+  for (const day of Object.keys(p.days || {}).sort()) for (const r of p.days[day].runs || []) {
+    tot.size += r.sizeCm || 0; tot.time += r.time || 0; tot.bumps += r.bumps || 0; tot.pricks += r.pricks || 0; tot.walls += r.wallHits || 0;
+    if (!r.terrier) tot.fails++;
+    up('size', r.sizeCm, day); up('absorbed', r.absorbed, day); up('bumps', r.bumps, day); up('long', r.time, day);
+    if (r.terrier) up('fast', r.time, day, true);
+  }
+  return { tot, rec };
+}
+function statRow(p, at) {
+  const st = p.stats || {}, weeks = Object.values(p.weeks || {}), { tot, rec } = runTotals(p);
+  const col = p.collection || {}, favId = Object.keys(col).sort((a, b) => col[b] - col[a])[0];
+  const runs = st.runs || 0, terriers = st.terriers || 0;
+  return {
+    name: p.name, created: p.created || '', runs, days: st.days || 0, best: st.best || 0,
+    size: tot.size, avg: runs ? tot.size / runs : 0, absorbed: st.absorbed || 0, time: tot.time,
+    terriers, fails: tot.fails, rate: terriers + tot.fails ? terriers / (terriers + tot.fails) : 0,
+    legends: Object.values(p.legends || {}).reduce((n, v) => n + v, 0), bumps: tot.bumps, pricks: tot.pricks, walls: tot.walls,
+    camels: st.camels || 0, fav: favId ? `${OBJ_NAMES[favId] || favId} (${col[favId]})` : '', practice: st.practice || 0,
+    bestStreak: p.bestStreak || 0, coins: p.coins || 0, badges: Object.keys(p.badges || {}).length,
+    bousipedia: Object.keys(col).length, champion: weeks.filter(v => v === 1).length, podiums: weeks.filter(v => v > 0).length,
+    boosts: p.boosts || 0, team: p.team || '', saved: at || 0, rec,
+  };
+}
+const fmtDur = s => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? `${h} h ${String(m).padStart(2, '0')} min` : m ? `${m} min ${String(s % 60).padStart(2, '0')} s` : `${s} s`; };
+const fmtDay = k => k ? new Date(k + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+const statCell = (kind, v) => kind === 'm' ? fmtSize(v) : kind === 't' ? fmtDur(v) : kind === 'p' ? Math.round(v * 100) + ' %' : kind === 'd' ? fmtDate(v) : v;
+function renderStats() {
+  $('pstable').innerHTML = '<tr>' + STAT_COLS.map(([, l]) => `<th>${l}</th>`).join('') + '</tr>'
+    + (pstats.map(r => '<tr>' + STAT_COLS.map(([k, , kind]) => k === 'name' ? `<td><button class="link" data-fiche="${esc(r.name)}">${esc(r.name)}</button></td>` : `<td>${esc(statCell(kind, r[k]))}</td>`).join('') + '</tr>').join('') || '<tr><td class="muted">Aucun joueur.</td></tr>');
+  // total de tous les joueurs
+  const sum = k => pstats.reduce((n, r) => n + (r[k] || 0), 0);
+  const runs = sum('runs'), ok = sum('terriers'), ko = sum('fails');
+  $('gstats').innerHTML = [
+    ['Parties jouées', runs], ['Jours joués (cumul)', sum('days')], ['Taille de boule cumulée', fmtSize(sum('size'))],
+    ['Taille moyenne par partie', fmtSize(runs ? sum('size') / runs : 0)], ['Objets avalés', sum('absorbed').toLocaleString('fr-FR')],
+    ['Temps passé à rouler', fmtDur(sum('time'))], ['Terriers réussis', `${ok} (${ok + ko ? Math.round(ok * 100 / (ok + ko)) : 0} %)`], ['Terriers ratés', ko],
+    ['Trésors trouvés', sum('legends')], ['Chocs', sum('bumps')], ['Piqûres de cactus', sum('pricks')], ['Bords touchés', sum('walls')],
+    ['Chameaux avalés', sum('camels')], ['Parties d\'entraînement', sum('practice')], ['Pièces en poche', sum('coins').toLocaleString('fr-FR')],
+  ].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('');
+  // records, avec le pseudo de leur détenteur
+  const best = (get, lower) => pstats.filter(r => get(r) != null && get(r) !== 0).sort((a, b) => lower ? get(a) - get(b) : get(b) - get(a))[0];
+  const recs = [
+    ['🏆 Meilleur score', r => r.best, v => fmtSize(v)],
+    ['🪲 Plus grosse boule', r => r.rec.size && r.rec.size.v, v => fmtSize(v), r => r.rec.size.day],
+    ['🍽️ Plus d\'objets en une partie', r => r.rec.absorbed && r.rec.absorbed.v, v => v, r => r.rec.absorbed.day],
+    ['⚡ Terrier le plus rapide', r => r.rec.fast && r.rec.fast.v, v => fmtDur(v), r => r.rec.fast.day, true],
+    ['🐢 Partie la plus longue', r => r.rec.long && r.rec.long.v, v => fmtDur(v), r => r.rec.long.day],
+    ['💥 Plus de chocs en une partie', r => r.rec.bumps && r.rec.bumps.v, v => v, r => r.rec.bumps.day],
+    ['🔥 Plus longue série', r => r.bestStreak, v => v + ' jours'],
+    ['🎮 Plus de parties', r => r.runs, v => v],
+    ['⏱️ Plus de temps à rouler', r => r.time, v => fmtDur(v)],
+    ['🪲 Plus grosse taille cumulée', r => r.size, v => fmtSize(v)],
+    ['✨ Plus de trésors', r => r.legends, v => v],
+    ['🐪 Plus de chameaux', r => r.camels, v => v],
+    ['🌵 Plus de piqûres', r => r.pricks, v => v],
+    ['🏜️ Plus d\'entraînement', r => r.practice, v => v],
+  ];
+  $('rtable').innerHTML = '<tr><th>Record</th><th class="r">Valeur</th><th>Pseudo</th><th>Le</th></tr>' + recs.map(([label, get, fmt, day, lower]) => {
+    const r = best(get, lower);
+    return `<tr><td>${label}</td><td class="r">${r ? esc(fmt(get(r))) : '—'}</td><td><b>${r ? esc(r.name) : ''}</b></td><td class="muted">${r && day ? fmtDay(day(r)) : ''}</td></tr>`;
+  }).join('');
+}
+// activité jour par jour depuis le lancement (scores enregistrés en ligne)
+async function renderActivity() {
+  const days = [];
+  for (let d = dayKey(); d >= LAUNCH_DAY; d = addDays(d, -1)) days.push(d);
+  const lists = await Promise.all(days.map(d => all(envCol('days', d, 'scores'))));
+  activity = days.map((d, i) => ({ day: d, list: lists[i], players: lists[i].length, runs: lists[i].reduce((n, s) => n + ((s.runs && s.runs.length) || 1), 0) }));
+  renderChart(); renderSuspects(); renderQuota();
+  $('atable').innerHTML = '<tr><th>Jour</th><th class="r">Joueurs</th><th class="r">Parties</th><th class="r">Terriers</th><th class="r">Meilleur score</th><th>Par</th></tr>' + days.map((d, i) => {
+    const l = lists[i], runs = l.reduce((n, s) => n + ((s.runs && s.runs.length) || 1), 0), ok = l.reduce((n, s) => n + (s.runs || []).filter(r => r.terrier).length, 0);
+    const top = l.slice().sort((a, b) => b.score - a.score)[0];
+    return `<tr><td>${fmtDay(d)}</td><td class="r">${l.length}</td><td class="r">${l.length ? runs : 0}</td><td class="r">${ok}</td><td class="r">${top ? fmtSize(top.score) : '—'}</td><td>${top ? esc(top.name) : ''}</td></tr>`;
+  }).join('');
+}
+// --- suivi : courbe d'activité ---
+function renderChart() {
+  const data = activity.slice().reverse(), n = data.length, max = Math.max(1, ...data.map(d => d.runs));
+  const bw = 34, H = 140, W = Math.max(n * bw, 300);
+  const bars = data.map((d, i) => {
+    const x = i * bw + 4, hr = Math.round(d.runs / max * (H - 30)), hp = Math.round(d.players / max * (H - 30));
+    return `<rect x="${x}" y="${H - 18 - hr}" width="13" height="${hr}" fill="#f2a33a"><title>${d.runs} parties</title></rect>
+      <rect x="${x + 14}" y="${H - 18 - hp}" width="13" height="${hp}" fill="#9be27a"><title>${d.players} joueurs</title></rect>
+      <text x="${x + 13}" y="${H - 20 - Math.max(hr, hp)}" text-anchor="middle">${d.runs}</text>
+      <text x="${x + 13}" y="${H - 5}" text-anchor="middle">${d.day.slice(8)}/${d.day.slice(5, 7)}</text>`;
+  }).join('');
+  $('chart').innerHTML = `<div class="scroll"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${bars}</svg></div>
+    <p class="muted"><span style="color:#f2a33a">■</span> parties · <span style="color:#9be27a">■</span> joueurs, chaque jour</p>`;
+}
+// --- suivi : joueurs qui décrochent ---
+function renderDropouts() {
+  const today = dayKey(), gap = k => Math.round((new Date(today + 'T12:00') - new Date(k + 'T12:00')) / 86400000);
+  const list = profiles.map(p => ({ p, off: p.lastDay ? gap(p.lastDay) : null })).filter(e => e.off == null || e.off >= 3)
+    .sort((a, b) => (b.off == null ? 1e9 : b.off) - (a.off == null ? 1e9 : a.off));
+  $('dtable').innerHTML = '<tr><th>Pseudo</th><th>Dernière dune</th><th class="r">Depuis</th><th class="r">Parties</th><th class="r">Série max</th></tr>' + (list.map(({ p, off }) =>
+    `<tr><td><button class="link" data-fiche="${esc(p.name)}">${esc(p.name)}</button></td><td>${p.lastDay ? fmtDay(p.lastDay) : 'jamais joué'}</td><td class="r ${off >= 7 ? 'bad' : 'warn'}">${off == null ? '—' : off + ' jours'}</td>
+      <td class="r">${(p.stats || {}).runs || 0}</td><td class="r">🔥${p.bestStreak || 0}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Tout le monde a joué ces 3 derniers jours 🎉</td></tr>');
+}
+// --- suivi : scores suspects ---
+function renderSuspects() {
+  const byName = {};
+  for (const a of activity) for (const s of a.list) (byName[s.name] = byName[s.name] || []).push({ day: a.day, s });
+  const out = [];
+  for (const a of activity) for (const s of a.list) {
+    const why = [], others = byName[s.name].filter(o => o.day !== a.day).map(o => o.s.score), run = s.run || {};
+    if (others.length && s.score >= 150 && s.score > 2 * Math.max(...others)) why.push(`×${(s.score / Math.max(...others)).toFixed(1)} par rapport à ses autres jours`);
+    if (run.terrier && s.time != null && s.time < 40) why.push(`terrier en ${Math.round(s.time)} s`);
+    if (s.score >= 100 && run.absorbed != null && run.absorbed < 12) why.push(`${run.absorbed} objets avalés seulement`);
+    if (why.length) out.push({ day: a.day, s, why });
+  }
+  $('xtable').innerHTML = '<tr><th>Jour</th><th>Pseudo</th><th class="r">Score</th><th>Pourquoi</th><th></th></tr>' + (out.map(({ day, s, why }) =>
+    `<tr><td>${fmtDay(day)}</td><td><button class="link" data-fiche="${esc(s.name)}">${esc(s.name)}</button></td><td class="r">${fmtSize(s.score)}</td><td class="warn">${esc(why.join(' · '))}</td>
+      <td class="r"><button class="danger" data-xdel="${esc(day)}|${esc(s.id)}">Supprimer</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted">Rien de suspect 👍</td></tr>');
+}
+$('xtable').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.fiche) return openFiche(b.dataset.fiche);
+  const [day, id] = (b.dataset.xdel || '').split('|'); if (!id || !confirm('Supprimer ce score (et son fantôme) ?')) return;
+  await fb.deleteDoc(envRef('days', day, 'scores', id));
+  await fb.deleteDoc(envRef('days', day, 'ghosts', id)).catch(() => { });
+  toast('Score supprimé'); refresh();
+};
+$('dtable').onclick = $('pstable').onclick = e => { const b = e.target.closest('[data-fiche]'); if (b) openFiche(b.dataset.fiche); };
+// --- suivi : consommation Firebase (estimation grossière) ---
+function renderQuota() {
+  const t = activity[0] || { players: 0, runs: 0 }, P = Math.max(t.players, 1), R = t.runs;
+  // ouvertures ≈ 1,5 par partie ; chacune lit le classement du jour, les réactions, l'annonce, le profil…
+  const reads = Math.round(R * 1.5 * (2 * P + 25) + P * 40), writes = Math.round(R * 4 + P * 6);
+  const pct = (v, lim) => Math.round(v * 100 / lim);
+  const cls = v => v >= 80 ? 'bad' : v >= 50 ? 'warn' : 'good';
+  $('quota').innerHTML = [['Lectures aujourd\'hui', reads, 50000], ['Écritures aujourd\'hui', writes, 20000]].map(([l, v, lim]) =>
+    `<div class="stat"><b class="${cls(pct(v, lim))}">≈ ${v.toLocaleString('fr-FR')}</b>${l}<br><span class="muted">${pct(v, lim)} % de la limite gratuite (${lim.toLocaleString('fr-FR')}/jour)</span></div>`).join('')
+    + `<div class="stat"><b>${t.players}</b>joueurs aujourd'hui<br><span class="muted">${R} parties</span></div>`;
+}
+// --- équilibrage : météo et quêtes ---
+const WX = { calme: '☀️ Grand calme', tempete: '🌪️ Tempête de sable', nuit: '🌙 Nuit étoilée', pluie: '🌧️ Averse', canicule: '🔥 Canicule', ventarriere: '💨 Vent arrière', orage: '⛈️ Orage', brouillard: '🌫️ Brouillard', neige: '❄️ Neige', sablesmouvants: '🌀 Sables mouvants', eclipse: '🌘 Éclipse' };
+const QUEST_TYPES = { fast: 'Terrier en moins de N s', eat: 'Avaler N objets', type: 'Avaler un gros objet', nowall: 'Ne jamais toucher les bords', hole: 'Rentrer dans le terrier',
+  size: 'Atteindre une taille', nopique: 'Ne jamais se faire piquer', legend: 'Trouver le trésor', wx: 'Avaler 2 objets de la météo', fewbumps: 'Maximum 2 chocs' };
+const questType = id => id.replace(/_.*$/, '').replace(/\d+$/, '');
+function renderBalance() {
+  const wx = {}, qt = {}, qv = {};
+  for (const p of profiles) for (const [day, d] of Object.entries(p.days || {})) {
+    for (const r of d.runs || []) {
+      const w = wx[r.weather] || (wx[r.weather] = { runs: 0, size: 0, ok: 0, score: 0 });
+      w.runs++; w.size += r.sizeCm || 0; w.score += r.score || 0; if (r.terrier) w.ok++;
+    }
+    if (!d.qs || !(d.runs || []).length) continue;
+    for (const id of d.qs) {
+      const t = qt[questType(id)] || (qt[questType(id)] = { offered: 0, done: 0 }), v = qv[id] || (qv[id] = { offered: 0, done: 0 });
+      t.offered++; v.offered++; if (d.quests && d.quests[id]) { t.done++; v.done++; }
+    }
+  }
+  const pc = (a, b) => b ? Math.round(a * 100 / b) + ' %' : '—';
+  $('wtable').innerHTML = '<tr><th>Météo</th><th class="r">Parties</th><th class="r">Taille moyenne</th><th class="r">Score moyen</th><th class="r">Terriers réussis</th></tr>'
+    + (Object.entries(wx).sort((a, b) => b[1].runs - a[1].runs).map(([k, w]) => `<tr><td>${WX[k] || esc(k)}</td><td class="r">${w.runs}</td><td class="r">${fmtSize(w.size / w.runs)}</td><td class="r">${fmtSize(w.score / w.runs)}</td><td class="r">${pc(w.ok, w.runs)}</td></tr>`).join('')
+      || '<tr><td colspan="5" class="muted">Pas encore de parties.</td></tr>');
+  $('qtable').innerHTML = '<tr><th>Quête</th><th class="r">Proposée</th><th class="r">Réussie</th><th class="r">Taux</th><th>Détail</th></tr>'
+    + (Object.entries(qt).sort((a, b) => a[1].done / a[1].offered - b[1].done / b[1].offered).map(([k, t]) => {
+      const detail = Object.entries(qv).filter(([id]) => questType(id) === k && id !== k).map(([id, v]) => `${esc(id.replace(/^\D+_?/, ''))} : ${pc(v.done, v.offered)}`).join(' · ');
+      const rate = t.done / t.offered;
+      return `<tr><td>${QUEST_TYPES[k] || esc(k)}</td><td class="r">${t.offered}</td><td class="r">${t.done}</td><td class="r ${rate < 0.15 ? 'bad' : rate > 0.85 ? 'warn' : 'good'}">${pc(t.done, t.offered)}</td><td class="muted">${detail}</td></tr>`;
+    }).join('') || '<tr><td colspan="5" class="muted">Pas encore de données : elles arrivent quand les joueurs rouvrent le jeu.</td></tr>');
+}
+// --- fiche joueur ---
+const BADGE_NAMES = { premier: '🪲 Premier roulé', terrier: '🕳️ Premier terrier', metre: '📏 Mètre étalon', geant: '🏔️ Boule de géant', titan: '🌋 Titan des sables', legende: '✨ Chasseur de trésor', archeo: '🏺 Archéologue', intouchable: '🛡️ Intouchable', serie3: '🔥 Assidu', serie7: '📅 Accro', serie30: '🏆 Légende vivante', meteo: '🌦️ Météorologue', tempete: '🌪️ Œil du cyclone', nuit: '🌙 Nyctalope', chameaux: '🐪 Dompteur', collection: '📖 Encyclopédiste', parfait: '🌟 Journée parfaite', roi: '🥇 Roi Bousier', champion: '👑 Champion de la semaine', tempetes: '⛈️ Chasseur de tempêtes' };
+const WX_ICON = { calme: '☀️', tempete: '🌪️', nuit: '🌙', pluie: '🌧️', canicule: '🔥', ventarriere: '💨', orage: '⛈️', brouillard: '🌫️', neige: '❄️', sablesmouvants: '🌀', eclipse: '🌘' };
+function openFiche(name) {
+  const p = profiles.find(x => x.name === name), r = pstats.find(x => x.name === name);
+  if (!p || !r) return toast('Pas encore de progression en ligne pour ce joueur.');
+  const cos = (type, id) => (GIFTABLE[type] && GIFTABLE[type][id]) || id;
+  const owned = Object.entries(p.owned || {}).filter(([t]) => t !== 'theme').flatMap(([t, ids]) => ids.map(id => cos(t, id)));
+  const days = Object.keys(p.days || {}).sort().reverse().filter(k => (p.days[k].runs || []).length);
+  const weeks = Object.entries(p.weeks || {}).sort((a, b) => b[0].localeCompare(a[0]));
+  const place = v => v === 1 ? '👑 1er' : v === 2 ? '🥈 2e' : v === 3 ? '🥉 3e' : '—';
+  $('fiche').innerHTML = `<div class="panel">
+    <div class="row" style="justify-content:space-between"><h2>👤 ${esc(p.name)}</h2><button id="fclose">✕ Fermer</button></div>
+    <p class="muted">Inscrit le ${fmtDay(p.created)} · dernière dune ${p.lastDay ? fmtDay(p.lastDay) : '—'} · ${p.coins || 0} 🟡 · série actuelle 🔥${p.streak || 0} (max ${p.bestStreak || 0})${p.team ? ' · équipe ' + esc(p.team) : ''}</p>
+    <div class="stats">${[['Parties', r.runs], ['Jours joués', r.days], ['Record', fmtSize(r.best)], ['Taille moyenne', fmtSize(r.avg)], ['Temps à rouler', fmtDur(r.time)],
+      ['Terriers', `${r.terriers} (${Math.round(r.rate * 100)} %)`], ['Objets avalés', r.absorbed], ['Trésors', r.legends], ['Chocs', r.bumps], ['Entraînement', r.practice], ['🚬 Mégots', `${(p.counters || {}).megot || 0} / 4`]].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('')}</div>
+    <h2>📅 Jour par jour</h2>
+    <div class="scroll"><table><tr><th>Jour</th><th>Météo</th><th class="r">Essais</th><th class="r">Meilleur</th><th>Tailles des essais</th><th>Terrier</th><th class="r">Quêtes</th></tr>
+      ${days.map(k => { const d = p.days[k], runs = d.runs || []; return `<tr><td>${fmtDay(k)}</td><td>${WX_ICON[(runs[0] || {}).weather] || ''}</td><td class="r">${runs.length}</td><td class="r">${fmtSize(d.best || 0)}</td>
+        <td>${runs.map(x => fmtSize(x.sizeCm || 0)).join(' · ')}</td><td>${runs.map(x => x.terrier ? '✅' : '❌').join('')}</td><td class="r">${Object.values(d.quests || {}).filter(Boolean).length}/${(d.qs || []).length || 3}</td></tr>`; }).join('') || '<tr><td colspan="7" class="muted">Aucune partie gardée.</td></tr>'}</table></div>
+    <h2>🏆 Semaines</h2>
+    <p>${weeks.map(([wk, v]) => `${fmtDay(wk)} → ${place(v)}`).join(' · ') || '<span class="muted">Aucune semaine terminée.</span>'}</p>
+    <h2>🎖️ Badges (${Object.keys(p.badges || {}).length})</h2>
+    <p>${Object.keys(p.badges || {}).map(id => BADGE_NAMES[id] || id).join(' · ') || '<span class="muted">Aucun.</span>'}</p>
+    <h2>🎨 Objets possédés (${owned.length})</h2>
+    <p>${owned.map(esc).join(' · ') || '<span class="muted">Aucun.</span>'}</p>
+    <p class="muted">Bousipédia : ${r.bousipedia} objets découverts · objet préféré : ${esc(r.fav || '—')} · coups de pouce : ${r.boosts}</p>
+  </div>`;
+  $('fiche').classList.remove('hidden');
+  $('fclose').onclick = () => $('fiche').classList.add('hidden');
+}
+$('fiche').onclick = e => { if (e.target.id === 'fiche') $('fiche').classList.add('hidden'); };
+
+$('csv').onclick = () => {
+  const q = v => `"${String(v).replace(/"/g, '""')}"`;
+  const num = (kind, v) => kind === 'm' ? (v / 100).toFixed(2).replace('.', ',') : kind === 't' ? Math.round(v / 60) : kind === 'p' ? Math.round(v * 100) : kind === 'd' ? fmtDate(v) : v;
+  const head = ([, l, kind]) => kind === 'm' ? l + ' (m)' : kind === 't' ? l + ' (min)' : kind === 'p' ? l + ' (%)' : l;
+  const csv = [STAT_COLS.map(c => q(head(c))).join(';'), ...pstats.map(r => STAT_COLS.map(([k, , kind]) => q(num(kind, r[k]))).join(';'))].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `bousier-stats-${env}-${dayKey()}.csv`; a.click();
+};
+
+function renderIdeas() {
+  const t = $('ifilter').value, st = $('isfilter').value;
+  const list = ideas.filter(i => (!t || i.type === t) && (!st || i.status === st));
+  $('itable').innerHTML = '<tr><th></th><th>Message</th><th>De</th><th>Reçu</th><th>État</th><th></th></tr>' + (list.map(i =>
+    `<tr><td>${IDEA_TYPE[i.type] || ''}</td><td>${esc(i.text)}</td><td>${esc(i.name)}</td><td class="muted">${fmtDate(i.at)}</td>
+      <td><select data-status="${esc(i.id)}">${Object.entries(IDEA_STATUS).map(([k, l]) => `<option value="${k}" ${i.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
+      <td class="r"><button class="danger" data-idel="${esc(i.id)}">🗑️</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucun message.</td></tr>');
+}
+$('ifilter').onchange = $('isfilter').onchange = renderIdeas;
+$('itable').onchange = async e => {
+  const id = e.target.dataset.status; if (!id) return;
+  const i = ideas.find(x => x.id === id), { id: _, ...data } = i;
+  await fb.setDoc(envRef('suggestions', id), { ...data, status: e.target.value });
+  i.status = e.target.value; toast('État mis à jour');
+  $('inew').textContent = ideas.filter(x => x.status === 'new').length ? `(${ideas.filter(x => x.status === 'new').length})` : '';
+};
+$('itable').onclick = async e => {
+  const id = e.target.dataset.idel; if (!id || !confirm('Supprimer ce message ?')) return;
+  await fb.deleteDoc(envRef('suggestions', id)); ideas = ideas.filter(x => x.id !== id); renderIdeas(); toast('Message supprimé');
+};
+
+// --- actions sur les joueurs ---
+for (const [type, items] of Object.entries(GIFTABLE)) for (const [id, label] of Object.entries(items))
+  $('gitem').insertAdjacentHTML('beforeend', `<option value="${type}:${id}">${TYPE_LABEL[type]} — ${esc(label)}</option>`);
+$('ptable').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.fiche) return openFiche(b.dataset.fiche);
+  const p = players.find(x => x.key === (b.dataset.gift || b.dataset.forgot || b.dataset.free)); if (!p) return;
+  if (b.dataset.gift) { selected = p; $('gname').textContent = p.name; $('gift').classList.remove('hidden'); $('gift').scrollIntoView({ behavior: 'smooth' }); }
+  if (b.dataset.forgot) { document.querySelector('[data-tab="password"]').click(); $('fname').value = p.name; $('fcheck').click(); }
+  if (b.dataset.free && confirm(`Libérer le pseudo « ${p.name} » ? Il disparaît des records et devient disponible pour un autre joueur.`)) { await freeName(p); toast('Pseudo libéré'); refresh(); }
+};
+$('gcancel').onclick = () => $('gift').classList.add('hidden');
+// joueurs de la version affichée (comptes qui ont déjà joué ici)
+const giftTargets = () => players.filter(p => p.uid && (env === 'prod' || p.rec));
+$('giftall').onclick = () => {
+  selected = 'ALL'; $('gname').textContent = `tout le monde (${giftTargets().length} joueurs)`;
+  $('gift').classList.remove('hidden'); $('gift').scrollIntoView({ behavior: 'smooth' });
+};
+$('gsend').onclick = async () => {
+  const coins = Math.max(0, Math.min(5000, parseInt($('gcoins').value, 10) || 0)), item = $('gitem').value, msg = $('gmsg').value.trim();
+  if (!coins && !item) return toast('Choisis des pièces ou un objet.');
+  const all = selected === 'ALL', targets = all ? giftTargets() : [selected];
+  if (all && !confirm(`Envoyer ce cadeau à ${targets.length} joueurs ?`)) return;
+  $('gsend').disabled = true;
+  try {
+    for (const p of targets) {
+      const ref = envRef('gifts', p.uid + '_' + encodeURIComponent(p.key));
+      // on cumule avec un cadeau pas encore récupéré
+      const prev = await fb.getDoc(ref), g = prev.exists() ? prev.data() : { coins: 0, items: [] };
+      await fb.setDoc(ref, { coins: (g.coins || 0) + coins, items: [...(g.items || []), ...(item ? [item] : [])], msg: msg || g.msg || '', at: Date.now() });
+    }
+  } finally { $('gsend').disabled = false; }
+  $('gift').classList.add('hidden'); $('gcoins').value = 0; $('gitem').value = ''; $('gmsg').value = '';
+  toast(all ? `🎁 Cadeau envoyé à ${targets.length} joueurs` : `🎁 Cadeau envoyé à ${selected.name}`);
+};
+async function freeName(p) {
+  await fb.deleteDoc(fb.doc(db, 'names', p.key));
+  await fb.deleteDoc(envRef('players', p.uid + '_' + encodeURIComponent(p.key))).catch(() => { });
+}
+
+// --- scores du jour ---
+$('stable').onclick = async e => {
+  const id = e.target.dataset.del; if (!id || !confirm('Supprimer ce score (et son fantôme) ?')) return;
+  const today = dayKey();
+  await fb.deleteDoc(envRef('days', today, 'scores', id));
+  await fb.deleteDoc(envRef('days', today, 'ghosts', id)).catch(() => { });
+  toast('Score supprimé'); refresh();
+};
+
+// --- annonces (plusieurs, chacune avec ses dates) ---
+let announces = [];
+// ancien format : une seule annonce { text, at, from, to }
+const annList = a => (a.list || (a.text ? [{ text: a.text, at: a.at, from: a.from, to: a.to }] : [])).filter(x => x && x.text);
+const annState = x => { const t = dayKey(); return x.to && x.to < t ? 'terminée' : x.from && x.from > t ? 'prévue' : 'en ligne'; };
+function renderAnnounces() {
+  const list = announces.slice().sort((a, b) => (a.from || '').localeCompare(b.from || '') || a.at - b.at);
+  $('alist').innerHTML = list.length ? '<tr><th>Texte</th><th>Dates</th><th>État</th><th></th></tr>' + list.map(x => `<tr><td>${esc(x.text)}</td>
+    <td class="muted">${x.from ? fmtDay(x.from) : 'dès maintenant'} → ${x.to ? fmtDay(x.to) : 'sans fin'}</td><td>${annState(x) === 'en ligne' ? '🟢 en ligne' : annState(x) === 'prévue' ? '🕒 prévue' : '⚪ terminée'}</td>
+    <td class="r"><button class="danger" data-adel="${x.at}">Supprimer</button></td></tr>`).join('') : '<tr><td class="muted">Aucune annonce.</td></tr>';
+}
+async function saveAnnounces() {
+  // on garde aussi l'ancien format (la dernière ajoutée) pour les jeux pas encore mis à jour
+  const t = dayKey(), keep = announces.filter(x => !x.to || x.to >= addDays(t, -7)), last = keep[keep.length - 1];
+  await fb.setDoc(envRef('config', 'announce'), { list: keep, text: last ? last.text : '', at: last ? last.at : Date.now(), ...(last && last.from ? { from: last.from } : {}), ...(last && last.to ? { to: last.to } : {}) });
+}
+$('asend').onclick = async () => {
+  const text = $('atext').value.trim(); if (!text) return toast('Écris une annonce.');
+  const from = $('afrom').value, to = $('ato').value;
+  if (from && to && to < from) return toast('La date de fin est avant la date de début.');
+  announces.push({ text, at: Date.now(), ...(from ? { from } : {}), ...(to ? { to } : {}) });
+  await saveAnnounces();
+  $('atext').value = ''; $('afrom').value = ''; $('ato').value = '';
+  toast(from && from > dayKey() ? `📣 Annonce programmée à partir du ${fmtDay(from)}` : '📣 Annonce publiée'); refresh();
+};
+$('alist').onclick = async e => {
+  const at = +e.target.dataset.adel; if (!at || !confirm('Supprimer cette annonce ?')) return;
+  announces = announces.filter(x => x.at !== at); await saveAnnounces(); toast('Annonce supprimée'); refresh();
+};
+
+// --- mot de passe oublié ---
+$('fcheck').onclick = () => {
+  const n = $('fname').value.trim(); if (!n) return;
+  $('femail').textContent = accountEmail(n);
+  $('flink').href = `https://console.firebase.google.com/project/${FIREBASE_CONFIG.projectId}/authentication/users`;
+  $('fsteps').classList.remove('hidden'); $('fmsg').textContent = '';
+};
+$('ffree').onclick = async () => {
+  const key = nameKey($('fname').value), p = players.find(x => x.key === key);
+  if (!p) return $('fmsg').textContent = 'Ce pseudo n\'est pas (ou plus) réservé.';
+  if (!confirm(`Libérer « ${p.name} » ? (sa progression est gardée de côté)`)) return;
+  await freeName(p); $('fmsg').innerHTML = '<span class="good">Pseudo libéré.</span> Le joueur peut recréer son profil (étape 3).'; refresh();
+};
+$('frestore').onclick = async () => {
+  const name = $('fname').value.trim(), key = nameKey(name);
+  const owner = await fb.getDoc(fb.doc(db, 'names', key));
+  if (!owner.exists()) return $('fmsg').textContent = 'Le joueur n\'a pas encore recréé son profil (étape 3).';
+  const uid = owner.data().uid, mineId = uid + '_' + encodeURIComponent(key);
+  // anciennes progressions de ce pseudo (autres comptes), la plus récente d'abord
+  const olds = (await all(envCol('profiles'))).filter(d => nameKey(d.name || '') === key && d.id !== mineId).sort((a, b) => (b.at || 0) - (a.at || 0));
+  if (!olds.length) return $('fmsg').textContent = 'Aucune ancienne progression trouvée pour ce pseudo.';
+  const data = JSON.parse(olds[0].data);
+  Object.assign(data, { uid, account: true, name: owner.data().name });
+  await fb.setDoc(envRef('profiles', mineId), { name: owner.data().name, at: Date.now(), data: JSON.stringify(data) });
+  $('fmsg').innerHTML = `<span class="good">Progression restaurée</span> (sauvegarde du ${fmtDate(olds[0].at)}). ${esc(owner.data().name)} la retrouve à sa prochaine ouverture du jeu.`;
+};
+
+start();
+</script>
+</body>
+</html>

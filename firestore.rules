@@ -1,0 +1,142 @@
+rules_version = '2';
+
+// Règles du classement en ligne de Bousier.
+// Tout le monde peut lire les classements ; chacun n'écrit que ses propres
+// documents (id « uid_pseudo »), sous un pseudo qui lui appartient, avec des
+// valeurs plausibles. À copier dans la console Firebase : Firestore Database > Règles.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    // Organisateur du jeu (compte « Florent ») : page admin
+    function isAdmin() {
+      return signedIn() && request.auth.uid in ['iYDurji9CuUbdV04FBIM1d2nLiH2'];
+    }
+    function mine(id) {
+      return signedIn() && id.matches(request.auth.uid + '_.+');
+    }
+    function okName(d) {
+      return d.name is string && d.name.size() >= 2 && d.name.size() <= 14;
+    }
+    // Le pseudo du document est réservé au joueur connecté
+    function ownsName(d) {
+      return okName(d)
+        && get(/databases/$(database)/documents/names/$(d.name.lower())).data.uid == request.auth.uid;
+    }
+    // Version officielle (prod) ouverte à tous ; version de test (dev) réservée à l'organisateur.
+    // okEnv : écriture permise ; openEnv : lecture permise.
+    function okEnv(env) {
+      return env == 'prod' || (env == 'dev' && isAdmin());
+    }
+    function openEnv(env) {
+      return env == 'prod' || isAdmin();
+    }
+    // Score en cm : 25 m maximum (largement au-delà d'une vraie partie)
+    function okScore(v) {
+      return v is number && v >= 0 && v <= 2500;
+    }
+    function okTeam(d) {
+      return !('team' in d) || (d.team is string && d.team.size() <= 14);
+    }
+    // Le jour (« AAAA-MM-JJ ») doit être aujourd'hui, à quelques heures près
+    // pour couvrir tous les fuseaux horaires.
+    function isToday(day) {
+      let p = day.split('-');
+      let t = timestamp.date(int(p[0]), int(p[1]), int(p[2]));
+      return day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.time > t - duration.value(14, 'h')
+        && request.time < t + duration.value(38, 'h');
+    }
+
+    // Réservation des pseudos (en minuscules) : premier arrivé, premier servi
+    match /names/{key} {
+      allow read: if true;
+      allow create: if signedIn() && okName(request.resource.data)
+        && key == request.resource.data.name.lower()
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    match /envs/{env}/days/{day}/scores/{id} {
+      allow read: if openEnv(env);
+      allow create, update: if okEnv(env) && mine(id) && isToday(day)
+        && ownsName(request.resource.data) && okScore(request.resource.data.score) && okTeam(request.resource.data)
+        && (resource == null || request.resource.data.score >= resource.data.score);
+      allow delete: if isAdmin();
+    }
+
+    match /envs/{env}/days/{day}/ghosts/{id} {
+      allow read: if openEnv(env);
+      allow create, update: if okEnv(env) && mine(id) && isToday(day)
+        && ownsName(request.resource.data) && okScore(request.resource.data.score)
+        && request.resource.data.x is list && request.resource.data.x.size() <= 20000
+        && request.resource.data.y is list && request.resource.data.y.size() <= 20000
+        && request.resource.data.r is list && request.resource.data.r.size() <= 20000;
+      allow delete: if isAdmin();
+    }
+
+    match /envs/{env}/days/{day}/reacts/{id} {
+      allow read: if openEnv(env);
+      allow create, update: if okEnv(env) && mine(id) && isToday(day)
+        && request.resource.data.e in ['👏', '😂', '💩', '🔥']
+        && request.resource.data.target is string && request.resource.data.target.size() < 200;
+    }
+
+    match /envs/{env}/players/{id} {
+      allow read: if openEnv(env);
+      allow create, update: if okEnv(env) && mine(id)
+        && ownsName(request.resource.data) && okScore(request.resource.data.best) && okTeam(request.resource.data)
+        && request.resource.data.bestStreak is int && request.resource.data.bestStreak >= 0;
+      allow delete: if isAdmin();
+    }
+
+    // Progression complète : visible et modifiable seulement par son propriétaire (et l'organisateur)
+    match /envs/{env}/profiles/{id} {
+      allow read: if (openEnv(env) && mine(id)) || isAdmin();
+      allow create, update: if okEnv(env) && (mine(id) && ownsName(request.resource.data) || isAdmin())
+        && request.resource.data.data is string && request.resource.data.data.size() < 500000;
+    }
+
+    // Cadeaux de l'organisateur (pièces, objets) : le joueur les récupère puis les efface
+    match /envs/{env}/gifts/{id} {
+      allow read, delete: if (openEnv(env) && mine(id)) || isAdmin();
+      allow create, update: if okEnv(env) && isAdmin();
+    }
+
+    // Premiers découvreurs des secrets : le premier qui crée le document gagne (jamais modifié ensuite)
+    match /envs/{env}/firsts/{key} {
+      allow read: if openEnv(env);
+      allow create: if okEnv(env) && signedIn() && request.resource.data.uid == request.auth.uid
+        && ownsName(request.resource.data) && request.resource.data.at is int
+        && key.matches('[a-z]+_[A-Za-z0-9]+');
+      allow delete: if isAdmin();
+    }
+
+    // Boîte à idées : chacun envoie et relit les siennes ; l'organisateur lit tout et change l'état
+    match /envs/{env}/suggestions/{id} {
+      allow read: if isAdmin() || (openEnv(env) && signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if okEnv(env) && mine(id) && request.resource.data.uid == request.auth.uid
+        && ownsName(request.resource.data)
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 300
+        && request.resource.data.type in ['idee', 'bug', 'autre'] && request.resource.data.status == 'new';
+      allow update, delete: if isAdmin();
+    }
+
+    // La Grande Fuite (mode survie) : record de distance de chacun, en mètres
+    match /envs/{env}/survival/{id} {
+      allow read: if openEnv(env);
+      allow create, update: if okEnv(env) && mine(id) && ownsName(request.resource.data)
+        && request.resource.data.best is int && request.resource.data.best >= 0 && request.resource.data.best <= 20000
+        && (resource == null || request.resource.data.best >= resource.data.best);
+      allow delete: if isAdmin();
+    }
+
+    // Annonce affichée sur l'accueil de tous les joueurs
+    match /envs/{env}/config/{doc} {
+      allow read: if openEnv(env);
+      allow write: if okEnv(env) && isAdmin();
+    }
+  }
+}
