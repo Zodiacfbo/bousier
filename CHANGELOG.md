@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.15.5 — « Comment je l'ai eu » (24 octobre 2026)
+- 🎨 Style : toucher un objet déjà obtenu l'équipe et rappelle, sur une ligne, comment on l'a eu (✅ condition, 🤫 pour
+  un secret, badge associé, mystère révélé). Rien pour un objet simplement acheté.
+- Explications ajoutées (visibles seulement une fois l'objet obtenu) pour Lunettes, Auréole, Expérience ratée, Notes de
+  musique, Code binaire, Casque de Kevin et Smoking.
+
 ## v1.15.4 — Boule citrouille sans lignes (programmé pour le 26 octobre 2026)
 - La Boule citrouille n'a plus de côtes orange (elles faisaient des traits cassés en roulant) : orange lisse, tige verte
   et visage lumineux.
