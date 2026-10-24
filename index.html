@@ -895,8 +895,8 @@ function genSpecks(skin) {
     }
   } else if (skin.pattern === 'pumpkin') {
     // citrouille : côtes autour de la tige (axe de roulement) et visage lumineux qui passe à chaque tour
-    for (let k = 0; k < 10; k++) {
-      const lon = k * Math.PI / 5;
+    for (let k = 0; k < (skin.ribs ?? 10); k++) {
+      const lon = k * 2 * Math.PI / (skin.ribs ?? 10);
       for (let lat = -1.35; lat <= 1.35; lat += 0.08) {
         const p = [Math.sin(lat), Math.cos(lat) * Math.cos(lon), Math.cos(lat) * Math.sin(lon)];
         if (p[2] < 0.72) pts.push({ p, col: skin.specks[0], big: true });
