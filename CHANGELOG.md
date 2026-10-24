@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.15.4 — Boule citrouille sans lignes (programmé pour le 26 octobre 2026)
+- La Boule citrouille n'a plus de côtes orange (elles faisaient des traits cassés en roulant) : orange lisse, tige verte
+  et visage lumineux.
+
 ## v1.15.3 — Boule citrouille redessinée (programmé pour le 26 octobre 2026)
 - La Boule citrouille ne ressemble plus à un ballon de basket : côtes orange plus douces, contour moins noir, petite
   tige verte sur le côté (sur l'axe de roulement) et visage lumineux de citrouille d'Halloween qui passe à chaque tour.
