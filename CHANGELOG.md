@@ -7,7 +7,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
-## v1.16.0 — Accès sur invitation (en test sur dev)
+## v1.16.0 — Accès sur invitation (24 octobre 2026)
 - Sans profil sur l'appareil, le jeu n'affiche plus que « 🎟️ Bousier se joue sur invitation » (ni dune, ni classement) ;
   « me connecter » reste possible pour les joueurs existants.
 - Lien d'invitation à usage unique (`?invite=CODE`) : « 🪲 Florent t'invite à jouer à Bousier ! », puis création du
