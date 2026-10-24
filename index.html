@@ -720,6 +720,10 @@ const ROWS = {
   cranesucre: ['..kkkkk..', '.kwwwwwk.', 'kwwpwpwwk', 'kwvvwvvwk', 'kwvvwvvwk', 'kwwwkwwwk', '.kwpwpwk.', '..kwkwk..', '..kkkkk..'],
   fantome: ['..kkkk..', '.kwwwwk.', 'kwwwwwwk', 'kwkwwkwk', 'kwkwwkwk', 'kwwwwwwk', 'kwwkkwwk', 'kwwwwwwk', 'kwwwwwwk', 'kk.kk.kk'],
   cranesucreWink: ['..kkkkk..', '.kwwwwwk.', 'kwwpwpwwk', 'kwwwwvvwk', 'kwkkwvvwk', 'kwwwkwwwk', '.kwpwpwk.', '..kwkwk..', '..kkkkk..'],
+  bonbon: ['kk.kkk.kk', 'kpkrrwkpk', '.kkrrrkk.', 'kpkRrrkpk', 'kk.kkk.kk'],
+  os: ['.kk.....kk.', 'kwwk...kwwk', '.kwwkkkwwk.', '.kWwwwwwWk.', 'kWWk...kWWk', '.kk.....kk.'],
+  trChauve: ['k.....k', 'kk.k.kk', 'kQkkkQk', '.kQ.Qk.'],
+  trChauveB: ['.......', '.k.k.k.', 'kQkkkQk', 'k.....k'],
   araignee: ['k.k.k.k', '.kkkkk.', 'kkrkrkk', '.kkkkk.', 'k.k.k.k'],
   toile: ['h.....h.....h', '.h....h....h.', '..hhhhhhhhh..', '..h.h.h.h.h..', 'hhhh.hhh.hhhh', '..h.h.h.h.h..', '..hhhhhhhhh..', '.h..h.h.h..h.', 'h...h.h.h...h', '....h.h.h....', '.....hhh.....', '......h......'],
   sorciere: ['....kk...', '...kvk...', '..kvvk...', '..kvvvk..', '.kyyyyyk.', 'kvvvvvvvk', '.kkkkkkk.'],
@@ -1002,6 +1006,7 @@ function emitTrail(game, trail, b) {
     case 'dust': if (f % 2 === 0) P.push({ x, y: y + 6, vx: (Math.random() - 0.5) * 40, vy: -20 - Math.random() * 20, g: 30, life: 0.6, col: f % 4 ? '#ffd25a' : '#fff4a8', s: 2 }); break;
     case 'swirl': if (f % 2 === 0) { const a = f * 0.5; P.push({ x: x + Math.cos(a) * 6, y: y + 4, vx: -Math.sin(a) * 30, vy: -18, g: 0, life: 0.7, col: f % 4 ? '#d9a860' : '#f2d08c', s: 2 }); } break;
     case 'bolts': if (f % 5 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 24, vy: -18, g: 0, life: 0.5, spr: 'trEclair' }); break;
+    case 'bats': if (f % 8 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 30, vy: -26, g: 0, life: 1, spr: 'trChauve', spr2: 'trChauveB' }); break;
     case 'hearts': if (f % 7 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 14, vy: -20, g: 0, life: 1.1, spr: 'trCoeur' }); break;
     case 'confetti': if (f % 2 === 0) P.push({ x, y, vx: (Math.random() - 0.5) * 50, vy: -25 - Math.random() * 15, g: 40, life: 0.9, col: RAINBOW[Math.floor(Math.random() * RAINBOW.length)], s: 2 }); break;
     case 'comet':
@@ -1042,6 +1047,7 @@ function drawTrailStatic(ctx, trail, x, yTop, yBot, r) {
     else if (trail.fx === 'dust') { ctx.fillStyle = k % 2 ? '#ffd25a' : '#fff4a8'; ctx.fillRect(px - 1, py, 2, 2); }
     else if (trail.fx === 'bolts' && k % 2 === 0) ctx.drawImage(SPR.trEclair, px - 1, py);
     else if (trail.fx === 'hearts' && k % 2 === 0) ctx.drawImage(SPR.trCoeur, px - 2, py);
+    else if (trail.fx === 'bats' && k % 2 === 0) ctx.drawImage(k % 4 ? SPR.trChauveB : SPR.trChauve, px - 3, py);
     else if (trail.fx === 'confetti') { ctx.fillStyle = RAINBOW[k % RAINBOW.length]; ctx.fillRect(px, py, 2, 2); }
     else if (trail.fx === 'comet') { if (k % 2) ctx.drawImage(SPR.trEtoile, Math.round(x + (k - 4) * 0.6) - 1, py); else { ctx.fillStyle = k > 3 ? '#ffffff' : '#7ac0e0'; ctx.fillRect(Math.round(x + (k - 4) * 0.6), py, 2, 2); } }
     else if (trail.fx === 'binary' && k % 2 === 0) drawText(ctx, rng.chance(0.5) ? '0' : '1', px, py, '#5aff7a', 1, null);
@@ -1166,8 +1172,11 @@ const isHalloween = day => day >= HALLOWEEN.from && day <= HALLOWEEN.to;
 // Défi communautaire d'Halloween : citrouilles avalées par tous les joueurs pendant la semaine
 const HW_GOAL = 666, HW_REWARD = 150;
 const SEASON_OBJECTS = [
-  { id: 'citrouille', name: 'Citrouille', sprite: 'citrouille', r: 4.5, w: 0.9, tp: 0.4, s: 0.35, glow: true, season: 'halloween', desc: 'Semaine Halloween 2026. Elle brille encore un peu.' },
-  { id: 'chauvesouris', name: 'Chauve-souris', sprite: 'chauvesouris', r: 3.5, w: 0.9, tp: 0.45, s: 0.35, move: 'side', season: 'halloween', desc: 'Semaine Halloween 2026. Elle voletait au ras du sable.' },
+  { id: 'citrouille', name: 'Citrouille', sprite: 'citrouille', r: 4.5, w: 1.05, tp: 0.4, s: 0.35, glow: true, season: 'halloween', desc: 'Semaine Halloween 2026. Elle brille encore un peu.' },
+  { id: 'bonbon', name: 'Bonbon', sprite: 'bonbon', r: 1.8, w: 0.6, tp: 0.12, s: 0.3, season: 'halloween', desc: 'Semaine Halloween 2026. Un bonbon ou un sort !' },
+  { id: 'araignee', name: 'Araignée', sprite: 'araignee', r: 3, w: 0.45, tp: 0.4, s: 0.3, move: 'spider', season: 'halloween', desc: 'Semaine Halloween 2026. Elle descendait au bout de son fil.' },
+  { id: 'os', name: 'Os', sprite: 'os', r: 4.5, w: 0.35, tp: 0.6, s: 0.3, season: 'halloween', desc: 'Semaine Halloween 2026. Personne ne sait à qui il était.' },
+  { id: 'chauvesouris', name: 'Chauve-souris', sprite: 'chauvesouris', r: 3.5, w: 1.0, tp: 0.45, s: 0.35, move: 'side', season: 'halloween', desc: 'Semaine Halloween 2026. Elle voletait au ras du sable.' },
 ];
 const SUGAR_SKULL = { id: 'cranesucre', name: 'Crâne en sucre', sprite: 'cranesucre', season: 'halloween', desc: 'Trésor de la nuit d\'Halloween, le 31 octobre 2026.' };
 // Easter egg : un mégot très rare sur la dune du jour (un seul par période de 5 jours, à un jour au hasard, à partir du 26 octobre).
@@ -1270,6 +1279,7 @@ const TRAILS = [
   { id: 'binaire', name: 'Code binaire', fx: 'binary' },
   { from: NEW_WX_FROM, id: 'tourbillon', name: 'Tourbillon de sable', fx: 'swirl' },
   { from: EGG.from, id: 'eclairs', name: 'Éclairs', fx: 'bolts' },
+  { id: 'chauvesouris', name: 'Chauves-souris', fx: 'bats', season: 'halloween' },
   { id: 'survivant', name: 'Tempête du survivant', fx: 'dust', survival: true },
 ];
 const THEMES = [
@@ -1441,6 +1451,7 @@ const UNLOCKS = {
   'trail:tourbillon': { text: 'Rentre dans le terrier un jour de sables mouvants 🌀', prog: p => [counter(p, 'hole_sablesmouvants'), 1] },
   'hat:lunetteseclipse': { text: 'Rentre dans le terrier un jour d\'éclipse 🌘', prog: p => [counter(p, 'hole_eclipse'), 1] },
   'ball:citrouille': { text: 'Joue une dune du jour pendant la semaine Halloween 🎃', prog: p => [counter(p, 'halloween'), 1] },
+  'trail:chauvesouris': { text: 'Avale 20 chauves-souris pendant la semaine Halloween 🦇', prog: p => [counter(p, 'bats'), 20] },
   'hat:sorciere': { text: 'Rentre dans le terrier sur la dune d\'Halloween, le samedi 31 octobre 🎃', prog: p => [counter(p, 'sorciere'), 1] },
   'trail:bulles': { price: 300 },
   'trail:flammes': { text: 'Rentre 5 fois dans le terrier sous la canicule', prog: p => [counter(p, 'heat'), 5] },
@@ -2752,7 +2763,7 @@ const EVENTS = {
   chaser: { name: 'SCORPION !', hint: 'IL TE POURSUIT : ESQUIVE', dur: 5, from: NEW_EVENTS_FROM },
   magnet: { name: 'AIMANT !', hint: 'LES PETITS OBJETS VIENNENT A TOI', dur: 4, from: NEW_EVENTS_FROM },
   // semaine Halloween : une fois par dune, en plus des autres
-  spooky: { name: 'FANTÔMES !', hint: 'ATTENTION !', dur: 4, season: 'halloween' },
+  spooky: { name: 'FANTÔMES !', hint: 'ATTENTION !', dur: 7, season: 'halloween' },
 };
 // Événements tirables ce jour-là
 const eventKinds = day => Object.keys(EVENTS).filter(k => k !== 'mirage' && !EVENTS[k].season && (!EVENTS[k].from || day >= EVENTS[k].from));
@@ -3457,15 +3468,18 @@ class Game {
       }
       case 'magnet': this.magnet = true; Sound.play('unlock'); break;
       case 'spooky': {
-        // des fantômes de toutes tailles passent devant l'écran ; le plus gros s'arrête pour faire BOUH
-        const H = this.H, n = rng.int(4, 5);
-        for (let i = 0; i < n; i++) {
-          const left = i % 2 === 0, big = i === 0;
-          this.spooks.push({
-            s: big ? 6 : rng.int(2, 4), y: big ? H * 0.42 : rng.range(H * 0.18, H * 0.85),
-            x: left ? -30 - i * 25 : W + 30 + i * 25, vx: (left ? 1 : -1) * rng.range(28, 55), ph: rng.range(0, 6.28),
-            big, delay: big ? 0.6 : rng.range(0, 1.6), t: 0,
-          });
+        // deux vagues de fantômes de toutes tailles ; dans chacune, un gros s'arrête au milieu pour faire BOUH
+        const H = this.H;
+        for (const wave of [0, 1]) {
+          const n = rng.int(3, 4), t0 = wave * 3.2;
+          for (let i = 0; i < n; i++) {
+            const big = i === 0, left = (i + wave) % 2 === 0;
+            this.spooks.push({
+              s: big ? 6 : rng.int(2, 5), y: big ? H * (wave ? 0.62 : 0.5) : rng.range(H * 0.15, H * 0.85),
+              x: left ? -30 - i * 20 : W + 30 + i * 20, vx: (left ? 1 : -1) * rng.range(40, 65), ph: rng.range(0, 6.28),
+              big, delay: t0 + (big ? 0.5 : rng.range(0, 1.4)), t: 0,
+            });
+          }
         }
         Sound.play('miss');
         break;
@@ -3511,7 +3525,7 @@ class Game {
           // le gros fantôme vient se planter au milieu de l'écran, fait BOUH, puis repart
           const k = g.t - g.delay, tx = W / 2;
           if (k < 1.1) g.x = lerp(g.x, tx, 0.06);
-          else if (k > 2.4) g.x += g.vx * 2.2 * TICK;
+          else if (k > 2.2) g.x += g.vx * 2.6 * TICK;
           if (k > 1.1 && !g.boo) { g.boo = true; Sound.play('bump'); this.shake = 4; }
         } else g.x += g.vx * TICK;
       }
@@ -3750,11 +3764,11 @@ class Game {
       if (g.t < g.delay) continue;
       const sp = SPR.fantome, w = sp.width * g.s, h = sp.height * g.s;
       const x = Math.round(g.x - w / 2), y = Math.round(g.y - h / 2 + Math.sin(this.t * 4 + g.ph) * 2 * g.s);
-      ctx.globalAlpha = 0.88;
+      ctx.globalAlpha = 0.92;
       if (g.vx < 0 && !g.big) { ctx.save(); ctx.translate(x + w, y); ctx.scale(-1, 1); ctx.drawImage(sp, 0, 0, w, h); ctx.restore(); }
       else ctx.drawImage(sp, x, y, w, h);
       ctx.globalAlpha = 1;
-      if (g.boo && g.t - g.delay < 2.4) drawText(ctx, 'BOUH !', W / 2, y - 12, '#ffffff', 2, '#1d1416', 'center');
+      if (g.boo && g.t - g.delay < 2.2) drawText(ctx, 'BOUH !', W / 2, y - 12, '#ffffff', 2, '#1d1416', 'center');
     }
     if (this.siren > 0 && this.frame % 20 < 10) { ctx.fillStyle = 'rgba(255,40,30,0.18)'; ctx.fillRect(0, 0, W, H); }
     ctx.save(); ctx.translate(0, -Math.round(camY));
@@ -3813,7 +3827,12 @@ class Game {
     let key = o.sprite;
     if (o.amp && o.def.move && Math.cos(this.t * o.w + o.phase) < 0 && SPR[key + 'F']) key += 'F';
     const s = SPR[key]; if (!s) return;
-    const x = Math.round(this.objX(o) - s.width / 2), y = Math.round(o.y - s.height / 2);
+    const x = Math.round(this.objX(o) - s.width / 2);
+    let y = Math.round(o.y - s.height / 2);
+    if (o.def.move === 'spider') {
+      y += Math.round(Math.sin(this.t * 1.7 + o.phase) * 5);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(Math.round(this.objX(o)), y - 34, 1, 34);
+    }
     if (!o.deco) {
       ctx.fillStyle = 'rgba(70,35,10,0.25)';
       const sw = Math.round(s.width * 0.8);
@@ -3914,7 +3933,7 @@ class Game {
   drawParticles() {
     const ctx = this.ctx;
     for (const p of this.particles) {
-      if (p.spr) { const s = SPR[p.spr]; if (s) ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2)); continue; }
+      if (p.spr) { const s = SPR[p.spr2 && this.frame % 12 < 6 ? p.spr2 : p.spr]; if (s) ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2)); continue; }
       if (p.txt) { drawText(ctx, p.txt, p.x, p.y, p.col, 1, null); continue; }
       ctx.fillStyle = p.col; ctx.fillRect(Math.round(p.x), Math.round(p.y), p.s, p.s);
     }
@@ -4807,6 +4826,7 @@ const App = {
         if (run.terrier && d.runs.length >= maxAttempts(p, this.today) && d.runs.slice(0, -1).every(x => !x.terrier)) inc('lastchance');
         if (run.terrier && !run.byType.feuille && !run.byType.cactus) inc('vege');
       }
+      if (isHalloween(this.today) && run.byType.chauvesouris) ct.bats = (ct.bats || 0) + run.byType.chauvesouris;
       if (isHalloween(this.today)) { inc('halloween'); res.pumpkins = run.byType.citrouille || 0; d.pumpkins = (d.pumpkins || 0) + res.pumpkins; }
       if (this.today === HALLOWEEN.night && run.terrier) inc('sorciere');
       const st = p.stats;
