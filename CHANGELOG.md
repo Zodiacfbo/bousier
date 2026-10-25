@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.17.2 — Coup de pouce pour les 2 derniers (à partir de la semaine du 26 octobre)
+- Coup de pouce (4 essais par jour la semaine suivante) pour les 2 derniers des joueurs ayant joué au moins 3 jours
+  (4 joueurs au moins), au lieu du seul dernier. Jamais deux semaines de suite : on remonte alors d'une place, sans
+  dépasser la moitié basse du classement. Plus de bonus de 50 🟡.
+
 ## v1.17.1 — Sondage caché si déjà voté ailleurs (25 octobre 2026)
 - Un sondage déjà voté sur un autre appareil (même compte) ne s'affiche plus : le jeu vérifie en ligne avant de le montrer.
 

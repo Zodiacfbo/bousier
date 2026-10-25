@@ -1875,8 +1875,12 @@ const Store = {
 const WEEK_BEST = 3;
 // Podium de la semaine : pièces pour les 3 premiers ; première semaine comptée
 const PODIUM_COINS = [200, 100, 50];
-// Coup de pouce : le dernier des joueurs à 3/3 (4 au moins) a 4 essais par jour la semaine suivante
-const BOOST_COINS = 50, BOOST_MIN = 4;
+// Coup de pouce : 4 essais par jour la semaine suivante pour les derniers des joueurs à 3/3 (4 au moins).
+// À partir de la semaine du 26 oct. : les BOOST_COUNT derniers, jamais deux semaines de suite (on remonte
+// alors d'une place), et seulement dans la moitié basse du classement. Plus de pièces (avant : 50 🟡).
+const BOOST_MIN = 4, BOOST_COUNT = 2, BOOST2_FROM = '2026-10-26';
+// joueurs qui reçoivent le coup de pouce à l'issue d'une semaine (anciens podiums : un seul « last »)
+const boosted = pod => !pod ? [] : pod.lasts || (pod.last ? [pod.last] : []);
 const maxAttempts = (p, day) => p && p.boostWeek === weekKey(day) ? 4 : 3;
 const FIRST_WEEK = '2026-10-19';
 function fmtWeek(wk) {
@@ -2573,8 +2577,15 @@ const Leaderboard = {
     const lb = await Online.week(wk);
     if (!lb) return null;
     const full = lb.filter(e => e.played >= WEEK_BEST);
+    let lasts = [];
+    if (full.length >= BOOST_MIN && wk < BOOST2_FROM) lasts = [full[full.length - 1].name];
+    else if (full.length >= BOOST_MIN) {
+      // en partant du dernier : on saute ceux qui ont eu le coup de pouce la semaine d'avant
+      const prev = await this.podium(addDays(wk, -7)), before = new Set(boosted(prev));
+      for (let i = full.length - 1; i >= Math.ceil(full.length / 2) && lasts.length < BOOST_COUNT; i--) if (!before.has(full[i].name)) lasts.push(full[i].name);
+    }
     const looks = Object.fromEntries(((await Online.records()) || []).map(r => [r.name, r.look]));
-    const res = { wk, players: lb.length, top: lb.length >= 2 ? lb.slice(0, 3).map(e => ({ name: e.name, total: e.total, look: looks[e.name] || null })) : [], last: full.length >= BOOST_MIN ? full[full.length - 1].name : null };
+    const res = { wk, players: lb.length, top: lb.length >= 2 ? lb.slice(0, 3).map(e => ({ name: e.name, total: e.total, look: looks[e.name] || null })) : [], last: lasts[0] || null, lasts };
     safeStorageSet(key, JSON.stringify(res));
     return res;
   },
@@ -4530,9 +4541,9 @@ const App = {
       if (!pod) return;  // hors ligne : on réessaiera
       const i = pod.top.findIndex(e => e.name === p.name);
       p.weeks[wk] = i + 1;
-      if (pod.last === p.name) {
+      if (boosted(pod).includes(p.name)) {
         // coup de pouce, valable la semaine qui suit (message seulement si elle est en cours)
-        p.coins += BOOST_COINS; p.boosts = (p.boosts || 0) + 1;
+        p.boosts = (p.boosts || 0) + 1;
         p.boostWeek = addDays(wk, 7);
         if (p.boostWeek === weekKey(this.today)) p.boostMsg = p.boostWeek;
       }
@@ -5386,7 +5397,7 @@ const App = {
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
       ${p.hwMsg ? `<div class="banner">🎃 <b>Défi communautaire réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b> <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}
-      ${p.boostMsg === weekKey(this.today) ? `<div class="banner">🚀 <b>Coup de pouce de la semaine</b> : 4 essais par jour et +${BOOST_COINS} 🟡. Merci d'avoir joué jusqu'au bout la semaine dernière ! <button class="btn ghost small" data-a="boostok">OK</button></div>` : ''}
+      ${p.boostMsg === weekKey(this.today) ? `<div class="banner">🚀 <b>Coup de pouce de la semaine</b> : 4 essais par jour ! Merci d'avoir joué jusqu'au bout la semaine dernière. <button class="btn ghost small" data-a="boostok">OK</button></div>` : ''}
       ${podShow || mine ? `<div class="banner">${podShow ? `👑 <b>Podium de la semaine dernière</b> — bravo ${esc(pod.top[0].name)} !${podiumHtml(pod.top)}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
