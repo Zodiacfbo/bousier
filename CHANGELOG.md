@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.16.2 — Bougie d'Halloween à la place de l'Os (25 octobre 2026)
+- Correctif : l'Os d'Halloween portait le même identifiant que l'Os habituel (il s'affichait dans « Objets de saison » avec
+  les os déjà avalés, et avait remplacé le dessin de l'Os habituel). L'Os habituel retrouve son dessin ; l'objet
+  d'Halloween devient une 🕯️ Bougie (fin de dune, lumineuse). Toujours ~20 citrouilles par dune.
+
 ## v1.16.1 — News de l'accès sur invitation (24 octobre 2026)
 - News : « Bousier passe sur invitation… » (numéro 8.5, entre les news du 21 et du 26 octobre).
 
