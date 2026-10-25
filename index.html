@@ -1411,7 +1411,7 @@ const TITLES = [
   { id: 'stagiaire', name: 'Stagiaire éternel', price: 250, from: SHOP_FROM },
   { id: 'pousseur', name: 'Pousseur pro', price: 300, from: SHOP_FROM },
   { id: 'terrier', name: 'Pro du terrier', price: 400, from: SHOP_FROM },
-  { id: 'legende', name: 'Légende de la dune', price: 500, from: SHOP_FROM },
+  { id: 'legende', name: 'Légende de la dune', price: 1000, from: SHOP_FROM },
   { id: 'exchamp', name: '👑 Ex-champion', from: SHOP_FROM },
   { id: 'recruteur', name: 'Recruteur 🎟️' },
   { id: 'roicitrouille', name: '🎃 Roi des citrouilles 2026', season: 'halloween' },
@@ -1492,7 +1492,8 @@ const UNLOCKS = {
   'frame:halloween26': { text: 'Réussir tous ensemble le défi communautaire d\'Halloween (666 citrouilles), en ayant joué la semaine', prog: p => [p.counters && p.counters.hwTeam === 1 ? 1 : 0, 1] },
   'title:roicitrouille': { text: 'Avale le plus de citrouilles de la semaine Halloween (titre donné le 2 novembre)', prog: p => [counter(p, 'roicitrouille'), 1] },
   'title:recruteur': { text: 'Invite quelqu\'un qui joue 3 jours (🎟️ Profil > Mes invitations)', prog: p => [counter(p, 'recrues'), 1] },
-  'title:exchamp': { text: 'Sois champion de la semaine 👑', prog: p => [counter(p, 'champion'), 1] },
+  // donné à la fin du règne : la semaine qui suit la victoire, la couronne suffit
+  'title:exchamp': { text: 'Sois champion de la semaine 👑 (titre donné à la fin de ton règne)', prog: p => [Object.entries(p.weeks || {}).filter(([wk, v]) => v === 1 && addDays(wk, 7) < weekKey(dayKey())).length, 1] },
   'title:encyclo': { text: 'Complète la Bousipédia', prog: p => [Store.discovered(p), OBJECTS.filter(o => !o.bonus).length + LEGENDS.length] },
   'title:fidele': { text: 'Fais une série de 30 jours', prog: p => [p.bestStreak, 30] },
   'title:chasseur': { text: 'Trouve 20 trésors légendaires', prog: p => [Object.values(p.legends).reduce((a, b) => a + b, 0), 20] },

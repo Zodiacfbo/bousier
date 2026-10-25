@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.17.6 — Titre Ex-champion à la fin du règne (25 octobre 2026)
+- Le titre « 👑 Ex-champion » n'est plus donné dès la victoire, mais le lundi qui suit la semaine de règne (pendant le
+  règne, la couronne et le reflet suffisent).
+- Titre « Légende de la dune » : 1000 🟡 au lieu de 500.
+
 ## v1.17.5 — Roi des citrouilles : suspense jusqu'au bout (25 octobre 2026)
 - Sous le défi communautaire, plus de nom du meneur : chacun voit seulement son propre total (« Toi : X 🎃 ») ; le
   gagnant du titre reste secret jusqu'au 2 novembre.
