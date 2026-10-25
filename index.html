@@ -290,9 +290,7 @@ table { width: 100%; border-collapse: collapse; }
 @keyframes champ { 50% { border-color: #fff0a0; } }
 /* 🎃 Halloween 2026 : lanterne qui vacille entre orange citrouille et violet */
 .fr-halloween26 { --frc: #ff8a2a; --frb: rgba(70,30,90,.55); }
-.lb tr.fr-halloween26 td { border-top-width: calc(var(--u) * 2); border-bottom-width: calc(var(--u) * 2); animation: lantern 2.6s steps(1) infinite; }
-.lb tr.fr-halloween26 td:first-child { border-left-width: calc(var(--u) * 2); }
-.lb tr.fr-halloween26 td:last-child { border-right-width: calc(var(--u) * 2); }
+.lb tr.fr-halloween26 td { animation: lantern 2.6s steps(1) infinite; }
 @keyframes lantern { 0%, 100% { border-color: #ff8a2a; } 30% { border-color: #ffb45a; } 34% { border-color: #ff8a2a; } 55% { border-color: #9a5ac8; } 70% { border-color: #c070e0; } 85% { border-color: #ff6a1a; } }
 .fr-fidelefr { --frc: #ff9a3a; --frb: rgba(255,154,58,.12); }
 .lb tr.fr-fidelefr td { border-top-style: double; border-bottom-style: double; border-top-width: calc(var(--u) * 2); border-bottom-width: calc(var(--u) * 2); }
