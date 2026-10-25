@@ -2614,7 +2614,7 @@ const Leaderboard = {
     const by = {};
     for (const l of lists) for (const e of l) if (e.pumpkins) by[e.name] = (by[e.name] || 0) + e.pumpkins;
     const best = Math.max(0, ...Object.values(by));
-    return { total: Object.values(by).reduce((a, b) => a + b, 0), best, kings: best ? Object.keys(by).filter(n => by[n] === best) : [] };
+    return { total: Object.values(by).reduce((a, b) => a + b, 0), best, by, kings: best ? Object.keys(by).filter(n => by[n] === best) : [] };
   },
   // Champion de la semaine précédente (couronne 👑)
   async champion(today) {
@@ -5450,7 +5450,7 @@ const App = {
         <div>Avalez <b>${HW_GOAL} citrouilles</b> à vous tous : <b>+${HW_REWARD} 🟡</b> et le cadre <b>🎃 Halloween 2026</b> pour chaque joueur de la semaine !</div>
         <div class="hwbar"><div style="width:${Math.min(100, hwTotal * 100 / HW_GOAL)}%"></div><span>${Math.min(hwTotal, HW_GOAL)} / ${HW_GOAL}</span></div>
         ${hwTotal >= HW_GOAL ? '<div class="good tiny">🎉 Défi réussi ! La récompense arrive lundi 2 novembre.</div>' : hwStep ? `<div class="tiny">${hwStep}</div>` : ''}
-        ${hw.best ? `<div class="tiny">👑 Roi des citrouilles pour l'instant : <b>${hw.kings.map(esc).join(', ')}</b> (${hw.best} 🎃) · titre unique à gagner !</div>` : ''}
+        <div class="tiny">👑 Titre « Roi des citrouilles 2026 » à gagner : avale le plus de citrouilles de la semaine ! Toi : <b>${hw.by[p.name] || 0} 🎃</b></div>
       </div>` : ''}
       <div class="play-zone">
         <div class="dots">${dots}</div>

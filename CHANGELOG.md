@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.17.5 — Roi des citrouilles : suspense jusqu'au bout (25 octobre 2026)
+- Sous le défi communautaire, plus de nom du meneur : chacun voit seulement son propre total (« Toi : X 🎃 ») ; le
+  gagnant du titre reste secret jusqu'au 2 novembre.
+
 ## v1.17.4 — Cadre souvenir du défi d'Halloween (25 octobre 2026)
 - Défi communautaire réussi : en plus des 150 🟡, chaque participant reçoit le cadre « 🎃 Halloween 2026 » (épaisseur
   normale, animation lanterne orange ↔ violet, fond violet), introuvable ensuite.
