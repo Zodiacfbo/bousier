@@ -288,6 +288,12 @@ table { width: 100%; border-collapse: collapse; }
 .lb tr.fr-champfr.now td { animation: champ 1.2s steps(2) infinite; }
 @keyframes shine { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 @keyframes champ { 50% { border-color: #fff0a0; } }
+/* 🎃 Halloween 2026 : lanterne qui vacille entre orange citrouille et violet */
+.fr-halloween26 { --frc: #ff8a2a; --frb: rgba(70,30,90,.55); }
+.lb tr.fr-halloween26 td { border-top-width: calc(var(--u) * 2); border-bottom-width: calc(var(--u) * 2); animation: lantern 2.6s steps(1) infinite; }
+.lb tr.fr-halloween26 td:first-child { border-left-width: calc(var(--u) * 2); }
+.lb tr.fr-halloween26 td:last-child { border-right-width: calc(var(--u) * 2); }
+@keyframes lantern { 0%, 100% { border-color: #ff8a2a; } 30% { border-color: #ffb45a; } 34% { border-color: #ff8a2a; } 55% { border-color: #9a5ac8; } 70% { border-color: #c070e0; } 85% { border-color: #ff6a1a; } }
 .fr-fidelefr { --frc: #ff9a3a; --frb: rgba(255,154,58,.12); }
 .lb tr.fr-fidelefr td { border-top-style: double; border-bottom-style: double; border-top-width: calc(var(--u) * 2); border-bottom-width: calc(var(--u) * 2); }
 .fr-flammes { --frc: #ff7a2a; --frb: rgba(255,122,42,.18); }
@@ -1371,6 +1377,7 @@ const FRAMES = [
   { from: SHOP_FROM, id: 'arcenfr', name: '🌈 Arc-en-ciel', price: 2000, col: '#ff5a5a', prestige: true },
   { from: SHOP_FROM, id: 'diamantfr', name: '💎 Diamant', price: 2500, col: '#c8f0ff', prestige: true },
   { from: SHOP_FROM, id: 'champfr', name: '👑 Champion', col: '#ffb82a', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
+  { id: 'halloween26', name: '🎃 Halloween 2026', col: '#ff8a2a', season: 'halloween' },
   { from: SHOP_FROM, id: 'fidelefr', name: '🔥 Fidèle', col: '#ff9a3a', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
 ];
 const NAME_COLORS = [
@@ -1414,7 +1421,7 @@ const TITLES = [
   { id: 'fidele', name: 'Fidèle au poste', from: SHOP_FROM },
   { id: 'chasseur', name: 'Chasseur de trésors', from: SHOP_FROM },
   { id: 'kevin', name: 'Ami de Kevin', from: SHOP_FROM },
-  { id: 'citrouille', name: 'Citrouille d\'or 🎃', from: SHOP_FROM },
+  { id: 'citrouille', name: 'Citrouille 🎃', from: SHOP_FROM },
   { id: 'pionnier', name: '🌱 Pionnier de la dune', from: SHOP_FROM },
   { id: 'mois1', name: '🎂 Là depuis le 1er mois', gift: true },
   { from: EGG.from, id: 'abattu', name: 'Jamais abattu' },
