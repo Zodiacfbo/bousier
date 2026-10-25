@@ -1489,6 +1489,7 @@ const UNLOCKS = {
   'trail:notes': { secret: true, flag: 'silence', got: 'Une partie jouée le son coupé' },
   'trail:binaire': { secret: true, flag: 'leet', got: 'Une dune du jour jouée à 13 h 37' },
   'frame:podium': { text: 'Finis sur le podium d\'une semaine', prog: p => [Object.values(p.weeks || {}).filter(v => v >= 1 && v <= 3).length, 1] },
+  'frame:halloween26': { text: 'Réussir tous ensemble le défi communautaire d\'Halloween (666 citrouilles), en ayant joué la semaine', prog: p => [p.counters && p.counters.hwTeam === 1 ? 1 : 0, 1] },
   'title:roicitrouille': { text: 'Avale le plus de citrouilles de la semaine Halloween (titre donné le 2 novembre)', prog: p => [counter(p, 'roicitrouille'), 1] },
   'title:recruteur': { text: 'Invite quelqu\'un qui joue 3 jours (🎟️ Profil > Mes invitations)', prog: p => [counter(p, 'recrues'), 1] },
   'title:exchamp': { text: 'Sois champion de la semaine 👑', prog: p => [counter(p, 'champion'), 1] },
@@ -5420,7 +5421,7 @@ const App = {
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
       ${p.hwKingMsg ? `<div class="banner">👑 <b>Tu es le Roi des citrouilles 2026</b> avec ${p.hwKingMsg} citrouilles ! Titre « 🎃 Roi des citrouilles 2026 » débloqué. <button class="btn ghost small" data-a="hwkingok">OK</button></div>` : ''}
-      ${p.hwMsg ? `<div class="banner">🎃 <b>Défi communautaire réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b> <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}
+      ${p.hwMsg ? `<div class="banner">🎃 <b>Défi communautaire réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b> et le cadre <b>🎃 Halloween 2026</b> (à équiper dans 🎨 Style > Classement) <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}
       ${p.boostMsg === weekKey(this.today) ? `<div class="banner">🚀 <b>Coup de pouce de la semaine</b> : 4 essais par jour ! Merci d'avoir joué jusqu'au bout la semaine dernière. <button class="btn ghost small" data-a="boostok">OK</button></div>` : ''}
       ${podShow || mine ? `<div class="banner">${podShow ? `👑 <b>Podium de la semaine dernière</b> — bravo ${esc(pod.top[0].name)} !${podiumHtml(pod.top)}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
@@ -5446,7 +5447,7 @@ const App = {
       </div>
       ${hwTotal != null ? `<div class="panel">
         <div class="label">🎃 Défi communautaire <span class="tiny">(tous ensemble, jusqu'à dimanche soir)</span></div>
-        <div>Avalez <b>${HW_GOAL} citrouilles</b> à vous tous : <b>+${HW_REWARD} 🟡</b> pour chaque joueur de la semaine !</div>
+        <div>Avalez <b>${HW_GOAL} citrouilles</b> à vous tous : <b>+${HW_REWARD} 🟡</b> et le cadre <b>🎃 Halloween 2026</b> pour chaque joueur de la semaine !</div>
         <div class="hwbar"><div style="width:${Math.min(100, hwTotal * 100 / HW_GOAL)}%"></div><span>${Math.min(hwTotal, HW_GOAL)} / ${HW_GOAL}</span></div>
         ${hwTotal >= HW_GOAL ? '<div class="good tiny">🎉 Défi réussi ! La récompense arrive lundi 2 novembre.</div>' : hwStep ? `<div class="tiny">${hwStep}</div>` : ''}
         ${hw.best ? `<div class="tiny">👑 Roi des citrouilles pour l'instant : <b>${hw.kings.map(esc).join(', ')}</b> (${hw.best} 🎃) · titre unique à gagner !</div>` : ''}
