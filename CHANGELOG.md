@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.17.7 — Titre Recruteur caché (25 octobre 2026)
+- Le titre « Recruteur 🎟️ » n'apparaît plus dans 🎨 Style tant qu'on ne l'a pas gagné (parrainage pas encore lancé).
+
 ## v1.17.6 — Titre Ex-champion à la fin du règne (25 octobre 2026)
 - Le titre « 👑 Ex-champion » n'est plus donné dès la victoire, mais le lundi qui suit la semaine de règne (pendant le
   règne, la couronne et le reflet suffisent).
