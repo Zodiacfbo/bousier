@@ -2143,6 +2143,10 @@ const Online = {
     try { await c.fb.setDoc(c.fb.doc(c.db, 'members', uid), { name: p.name, at: Date.now() }); p.memberOk = uid; Store.save(); }
     catch (e) { console.warn('Carte de membre', e); }
   },
+  // A-t-il déjà voté à ce sondage (sur un autre appareil) ?
+  hasVoted(p, at) {
+    return this.run(async c => (await c.fb.getDoc(this.ref(c, 'votes', at + '_' + this.uid(c)))).exists());
+  },
   // Sondage : un vote par joueur (déjà voté ailleurs = compte comme fait)
   vote(p, at, choice) {
     return this.run(async c => {
@@ -5350,8 +5354,15 @@ const App = {
     const nowDays = weekDays(weekKey(this.today)).filter(k => p.days[k] && p.days[k].best > 0).length;
     const sunday = dayFromKey(this.today).getDay() === 0 && left > 0 && !(d.best > 0) && nowDays < WEEK_BEST;
     // annonces de l'organisateur : toutes celles en cours, chacune jusqu'à « OK »
-    const seenAnn = annSeen(), annList = !ann ? [] : (ann.list || (ann.text ? [ann] : []))
+    const seenAnn = annSeen();
+    let annList = !ann ? [] : (ann.list || (ann.text ? [ann] : []))
       .filter(a => a && a.text && (!a.from || this.today >= a.from) && (!a.to || this.today <= a.to) && !seenAnn.includes(String(a.at)));
+    // sondage déjà voté sur un autre appareil : caché ici aussi
+    for (const a of annList.filter(a => (a.choices || []).length)) {
+      if (!await Online.hasVoted(this.p, a.at)) continue;
+      safeStorageSet('bousier_annseen_' + ONLINE_ENV, JSON.stringify([...annSeen(), String(a.at)].slice(-40)));
+      annList = annList.filter(x => x !== a);
+    }
     const leg = cfg.legend;
     const quests = cfg.quests.map(q => `<li class="${d.quests[q.id] ? 'done' : ''}">${d.quests[q.id] ? '✅' : '⬜'} ${esc(q.text)}</li>`).join('');
     const dots = [...Array(tries).keys()].map(i => `<span class="dot ${i < d.attempts ? 'used' : ''}"></span>`).join('');

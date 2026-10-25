@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.17.1 — Sondage caché si déjà voté ailleurs (25 octobre 2026)
+- Un sondage déjà voté sur un autre appareil (même compte) ne s'affiche plus : le jeu vérifie en ligne avant de le montrer.
+
 ## v1.17.0 — Parrainage et sondages (25 octobre 2026)
 - Parrainage : les joueurs autorisés (quotas réglés par l'organisateur) voient « 🎟️ Inviter quelqu'un » dans leur profil
   et un écran « Mes invitations » (créer un lien, copier/partager, annuler = invitation rendue, suivi des invités).
