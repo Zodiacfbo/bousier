@@ -7,7 +7,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
-## v1.17.0 — Parrainage et sondages (en test sur dev)
+## v1.17.0 — Parrainage et sondages (25 octobre 2026)
 - Parrainage : les joueurs autorisés (quotas réglés par l'organisateur) voient « 🎟️ Inviter quelqu'un » dans leur profil
   et un écran « Mes invitations » (créer un lien, copier/partager, annuler = invitation rendue, suivi des invités).
   L'invité voit « 🪲 <parrain> t'invite… ». Quand l'invité a joué 3 jours : 50 🟡 pour chacun, et le titre
