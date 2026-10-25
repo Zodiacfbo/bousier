@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.17.3 — Halloween : Roi des citrouilles, paliers, Le gourmand (25 octobre 2026)
+- Titre unique « 🎃 Roi des citrouilles 2026 » pour celui (ou ceux, à égalité) qui avale le plus de citrouilles de la
+  semaine Halloween ; donné le 2 novembre avec un message. Le roi du moment est affiché sous le défi communautaire.
+- Défi communautaire : message d'encouragement à 25 %, 50 % et 75 %.
+- Titre du jour (semaine Halloween) : « 🍬 Le gourmand », le plus de bonbons avalés sur la journée.
+
 ## v1.17.2 — Coup de pouce pour les 2 derniers (à partir de la semaine du 26 octobre)
 - Coup de pouce (4 essais par jour la semaine suivante) pour les 2 derniers des joueurs ayant joué au moins 3 jours
   (4 joueurs au moins), au lieu du seul dernier. Jamais deux semaines de suite : on remonte alors d'une place, sans

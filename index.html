@@ -1409,6 +1409,7 @@ const TITLES = [
   { id: 'legende', name: 'Légende de la dune', price: 500, from: SHOP_FROM },
   { id: 'exchamp', name: '👑 Ex-champion', from: SHOP_FROM },
   { id: 'recruteur', name: 'Recruteur 🎟️' },
+  { id: 'roicitrouille', name: '🎃 Roi des citrouilles 2026', season: 'halloween' },
   { id: 'encyclo', name: 'Encyclopédiste', from: SHOP_FROM },
   { id: 'fidele', name: 'Fidèle au poste', from: SHOP_FROM },
   { id: 'chasseur', name: 'Chasseur de trésors', from: SHOP_FROM },
@@ -1483,6 +1484,7 @@ const UNLOCKS = {
   'trail:notes': { secret: true, flag: 'silence', got: 'Une partie jouée le son coupé' },
   'trail:binaire': { secret: true, flag: 'leet', got: 'Une dune du jour jouée à 13 h 37' },
   'frame:podium': { text: 'Finis sur le podium d\'une semaine', prog: p => [Object.values(p.weeks || {}).filter(v => v >= 1 && v <= 3).length, 1] },
+  'title:roicitrouille': { text: 'Avale le plus de citrouilles de la semaine Halloween (titre donné le 2 novembre)', prog: p => [counter(p, 'roicitrouille'), 1] },
   'title:recruteur': { text: 'Invite quelqu\'un qui joue 3 jours (🎟️ Profil > Mes invitations)', prog: p => [counter(p, 'recrues'), 1] },
   'title:exchamp': { text: 'Sois champion de la semaine 👑', prog: p => [counter(p, 'champion'), 1] },
   'title:encyclo': { text: 'Complète la Bousipédia', prog: p => [Store.discovered(p), OBJECTS.filter(o => !o.bonus).length + LEGENDS.length] },
@@ -2223,7 +2225,7 @@ const Online = {
     const past = day < dayKey();
     if (past) { const saved = this.pastGet(day); if (saved) { this.live = true; return this.hideBlocked(saved); } }
     const lb = await this.cached('day:' + day, DAY_TTL, () => this.run(async c => sortBoard((await this.list(c, ['days', day, 'scores'], 'score', 200))
-      .map(e => ({ id: e.id, name: e.name, score: e.score, time: e.time, run: e.run || null, runs: e.runs || null, team: e.team || '', pumpkins: e.pumpkins || 0 })))));
+      .map(e => ({ id: e.id, name: e.name, score: e.score, time: e.time, run: e.run || null, runs: e.runs || null, team: e.team || '', pumpkins: e.pumpkins || 0, bonbons: e.bonbons || 0 })))));
     if (lb && past) this.pastSet(day, lb);
     return lb ? this.hideBlocked(lb.slice()) : lb;
   },
@@ -2275,13 +2277,13 @@ const Online = {
       const id = this.id(c, p.name), at = Date.now(), team = p.team || '';
       const time = d.bestRun && d.bestRun.time != null ? d.bestRun.time : null;
       const runs = runsBrief(d.runs);
-      const writes = [c.fb.setDoc(this.ref(c, 'days', day, 'scores', id), { name: p.name, score: d.best, time, run: d.bestRun, runs, team, at, ...(d.pumpkins ? { pumpkins: d.pumpkins } : {}) })];
+      const writes = [c.fb.setDoc(this.ref(c, 'days', day, 'scores', id), { name: p.name, score: d.best, time, run: d.bestRun, runs, team, at, ...(d.pumpkins ? { pumpkins: d.pumpkins } : {}), ...(d.bonbons ? { bonbons: d.bonbons } : {}) })];
       if (d.ghost) writes.push(c.fb.setDoc(this.ref(c, 'days', day, 'ghosts', id), { name: p.name, score: d.best, x: d.ghost.x, y: d.ghost.y, r: d.ghost.r, at }));
       await Promise.all(writes);
       // mon score remplace l'ancien dans le classement en mémoire (sans relecture)
       const c0 = this.mem['day:' + day];
       if (c0) {
-        const entry = { id, name: p.name, score: d.best, time, run: d.bestRun, runs, team, pumpkins: d.pumpkins || 0 };
+        const entry = { id, name: p.name, score: d.best, time, run: d.bestRun, runs, team, pumpkins: d.pumpkins || 0, bonbons: d.bonbons || 0 };
         c0.val = sortBoard(c0.val.filter(e => e.id !== id).concat(entry));
       }
       return true;
@@ -2596,12 +2598,17 @@ const Leaderboard = {
     return (await Promise.all(weeks.map(wk => this.podium(wk)))).filter(w => w && w.top.length);
   },
   // Défi communautaire d'Halloween : total des citrouilles de tous les joueurs (null hors connexion)
-  async hwTotal() {
+  async hwTotal() { const s = await this.hwStats(); return s && s.total; },
+  // … et le « Roi des citrouilles » : le(s) joueur(s) qui en ont avalé le plus
+  async hwStats() {
     const days = [];
     for (let k = HALLOWEEN.from; k <= HALLOWEEN.to && k <= dayKey(); k = addDays(k, 1)) days.push(k);
     const lists = await Promise.all(days.map(k => Online.day(k)));
     if (lists.some(l => !l)) return null;
-    return lists.reduce((n, l) => n + l.reduce((m, e) => m + (e.pumpkins || 0), 0), 0);
+    const by = {};
+    for (const l of lists) for (const e of l) if (e.pumpkins) by[e.name] = (by[e.name] || 0) + e.pumpkins;
+    const best = Math.max(0, ...Object.values(by));
+    return { total: Object.values(by).reduce((a, b) => a + b, 0), best, kings: best ? Object.keys(by).filter(n => by[n] === best) : [] };
   },
   // Champion de la semaine précédente (couronne 👑)
   async champion(today) {
@@ -4553,6 +4560,14 @@ const App = {
       if (i === 0 && !p.badges.champion) p.badges.champion = this.today;
     }
     p.counters.champion = Object.values(p.weeks).filter(v => v === 1).length;
+    // Roi des citrouilles 2026 : titre pour celui (ou ceux, à égalité) qui en a avalé le plus
+    if (this.today > HALLOWEEN.to && counter(p, 'halloween') > 0 && !p.counters.hwKing) {
+      const st = await Leaderboard.hwStats();
+      if (st) {
+        p.counters.hwKing = 1;
+        if (st.kings.includes(p.name)) { p.counters.roicitrouille = 1; p.hwKingMsg = st.best; }
+      }
+    }
     // défi communautaire d'Halloween : récompense pour tous ceux qui ont joué pendant la semaine
     if (this.today > HALLOWEEN.to && counter(p, 'halloween') > 0 && !p.counters.hwTeam) {
       const total = await Leaderboard.hwTotal();
@@ -4685,6 +4700,7 @@ const App = {
       tickle: () => this.tickle(),
       moon: () => this.moonTap(),
       giftok: () => { this.p.inbox = []; Store.save(); this.show('home'); },
+      hwkingok: () => { delete this.p.hwKingMsg; Store.save(); this.show('home'); },
       hwteamok: () => { delete this.p.hwMsg; Store.save(); this.show('home'); },
       boostok: () => { delete this.p.boostMsg; Store.save(); this.show('home'); },
       podok: () => { safeStorageSet('bousier_pod_' + ONLINE_ENV, v); if (this.p.weekMsg) { delete this.p.weekMsg; Store.save(); } this.show('home'); },
@@ -5042,7 +5058,7 @@ const App = {
         if (run.terrier && !run.byType.feuille && !run.byType.cactus) inc('vege');
       }
       if (isHalloween(this.today) && run.byType.chauvesouris) ct.bats = (ct.bats || 0) + run.byType.chauvesouris;
-      if (isHalloween(this.today)) { inc('halloween'); res.pumpkins = run.byType.citrouille || 0; d.pumpkins = (d.pumpkins || 0) + res.pumpkins; }
+      if (isHalloween(this.today)) { inc('halloween'); res.pumpkins = run.byType.citrouille || 0; d.pumpkins = (d.pumpkins || 0) + res.pumpkins; d.bonbons = (d.bonbons || 0) + (run.byType.bonbon || 0); }
       if (this.today === HALLOWEEN.night && run.terrier) inc('sorciere');
       const st = p.stats;
       st.runs++; st.absorbed += run.absorbed; st.best = Math.max(st.best, run.score);
@@ -5357,7 +5373,9 @@ const App = {
     const news = await this.news(lb);
     this.ideasBadge = ideasChanged(await Online.myIdeas());
     const ann = await Online.announce();
-    const hwTotal = isHalloween(this.today) ? await Leaderboard.hwTotal() : null;
+    const hw = isHalloween(this.today) ? await Leaderboard.hwStats() : null, hwTotal = hw ? hw.total : null;
+    const hwStep = hwTotal == null ? '' : hwTotal >= HW_GOAL ? '' : hwTotal >= HW_GOAL * 0.75 ? '🔥 Plus que quelques citrouilles, on y est presque !'
+      : hwTotal >= HW_GOAL / 2 ? '🎃 Mi-chemin passé, continuez !' : hwTotal >= HW_GOAL / 4 ? '🎃 Un quart du chemin, bien parti !' : '';
     const prevWk = addDays(weekKey(this.today), -7), pod = await Leaderboard.podium(prevWk);
     const podShow = pod && pod.top.length && safeStorageGet('bousier_pod_' + ONLINE_ENV) !== prevWk;
     const mine = p.weekMsg || null;
@@ -5396,6 +5414,7 @@ const App = {
         : `<div class="banner">📣 ${esc(a.text)} <button class="btn ghost small" data-a="annok" data-v="${a.at}">OK</button></div>`).join('')}
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
+      ${p.hwKingMsg ? `<div class="banner">👑 <b>Tu es le Roi des citrouilles 2026</b> avec ${p.hwKingMsg} citrouilles ! Titre « 🎃 Roi des citrouilles 2026 » débloqué. <button class="btn ghost small" data-a="hwkingok">OK</button></div>` : ''}
       ${p.hwMsg ? `<div class="banner">🎃 <b>Défi communautaire réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b> <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}
       ${p.boostMsg === weekKey(this.today) ? `<div class="banner">🚀 <b>Coup de pouce de la semaine</b> : 4 essais par jour ! Merci d'avoir joué jusqu'au bout la semaine dernière. <button class="btn ghost small" data-a="boostok">OK</button></div>` : ''}
       ${podShow || mine ? `<div class="banner">${podShow ? `👑 <b>Podium de la semaine dernière</b> — bravo ${esc(pod.top[0].name)} !${podiumHtml(pod.top)}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
@@ -5424,7 +5443,8 @@ const App = {
         <div class="label">🎃 Défi communautaire <span class="tiny">(tous ensemble, jusqu'à dimanche soir)</span></div>
         <div>Avalez <b>${HW_GOAL} citrouilles</b> à vous tous : <b>+${HW_REWARD} 🟡</b> pour chaque joueur de la semaine !</div>
         <div class="hwbar"><div style="width:${Math.min(100, hwTotal * 100 / HW_GOAL)}%"></div><span>${Math.min(hwTotal, HW_GOAL)} / ${HW_GOAL}</span></div>
-        ${hwTotal >= HW_GOAL ? '<div class="good tiny">🎉 Défi réussi ! La récompense arrive lundi 2 novembre.</div>' : ''}
+        ${hwTotal >= HW_GOAL ? '<div class="good tiny">🎉 Défi réussi ! La récompense arrive lundi 2 novembre.</div>' : hwStep ? `<div class="tiny">${hwStep}</div>` : ''}
+        ${hw.best ? `<div class="tiny">👑 Roi des citrouilles pour l'instant : <b>${hw.kings.map(esc).join(', ')}</b> (${hw.best} 🎃) · titre unique à gagner !</div>` : ''}
       </div>` : ''}
       <div class="play-zone">
         <div class="dots">${dots}</div>
@@ -5898,6 +5918,8 @@ function dayTitles(lb, day = dayKey()) {
   const fresh = day >= EGG.from;
   const zenBest = (() => { let best = null; for (const e of tries) for (const r of e.runs) if (r.terrier && r.score != null && r.bumps === 0 && r.wallHits === 0 && (!best || r.score > best.v)) best = { name: e.name, v: r.score }; return best; })();
   const miracle = most(rs => Math.max(0, ...rs.filter(r => r.terrier && r.bumps != null).map(r => r.bumps + (r.wallHits || 0))));
+  // semaine Halloween : le plus de bonbons avalés sur la journée (tous essais)
+  const sweet = isHalloween(day) && (() => { let best = null; for (const e of lb) if ((e.bonbons || 0) > (best ? best.v : 0)) best = { name: e.name, v: e.bonbons }; return best; })();
   const remont = most(rs => rs.length > 1 && rs.every(r => r.score != null) ? Math.max(...rs.map(r => r.score)) - rs[0].score : 0);
   return [
     ['🎯', 'Dans le mille', low(r => r.terrier && r.holeOff != null ? r.holeOff : null), v => `${Math.round(100 - v / HOLE_TOL * 100)} %`, 'bullseye'],
@@ -5910,6 +5932,7 @@ function dayTitles(lb, day = dayKey()) {
     ['⚡', 'Le sprinteur', fresh && low(r => r.terrier && r.time ? r.time : null), v => fmtTime(v), 'sprint'],
     ['📈', 'La remontada', fresh && remont && remont.v >= 30 ? remont : null, v => '+' + fmtSize(v), 'remontada'],
     ['🧘', 'Le zen', fresh && zenBest, () => '0 choc', 'zen'],
+    ['🍬', 'Le gourmand', sweet, v => v + ' bonbon' + (v > 1 ? 's' : ''), 'sweet'],
     ['🍀', 'Le miraculé', fresh && miracle && miracle.v >= 10 ? miracle : null, v => v + ' chocs et au terrier !', 'miracle'],
   ].filter(t => t[2]).map(([icon, label, b, fmt, key]) => ({ icon, label, key, name: b.name, value: fmt(b.v) }));
 }
