@@ -1408,6 +1408,7 @@ const TITLES = [
   { id: 'terrier', name: 'Pro du terrier', price: 400, from: SHOP_FROM },
   { id: 'legende', name: 'Légende de la dune', price: 500, from: SHOP_FROM },
   { id: 'exchamp', name: '👑 Ex-champion', from: SHOP_FROM },
+  { id: 'recruteur', name: 'Recruteur 🎟️' },
   { id: 'encyclo', name: 'Encyclopédiste', from: SHOP_FROM },
   { id: 'fidele', name: 'Fidèle au poste', from: SHOP_FROM },
   { id: 'chasseur', name: 'Chasseur de trésors', from: SHOP_FROM },
@@ -1482,6 +1483,7 @@ const UNLOCKS = {
   'trail:notes': { secret: true, flag: 'silence', got: 'Une partie jouée le son coupé' },
   'trail:binaire': { secret: true, flag: 'leet', got: 'Une dune du jour jouée à 13 h 37' },
   'frame:podium': { text: 'Finis sur le podium d\'une semaine', prog: p => [Object.values(p.weeks || {}).filter(v => v >= 1 && v <= 3).length, 1] },
+  'title:recruteur': { text: 'Invite quelqu\'un qui joue 3 jours (🎟️ Profil > Mes invitations)', prog: p => [counter(p, 'recrues'), 1] },
   'title:exchamp': { text: 'Sois champion de la semaine 👑', prog: p => [counter(p, 'champion'), 1] },
   'title:encyclo': { text: 'Complète la Bousipédia', prog: p => [Store.discovered(p), OBJECTS.filter(o => !o.bonus).length + LEGENDS.length] },
   'title:fidele': { text: 'Fais une série de 30 jours', prog: p => [p.bestStreak, 30] },
@@ -1659,6 +1661,10 @@ let INVITE_CODE = (() => {
     return localStorage.getItem(INVITE_KEY);
   } catch (e) { return null; }
 })();
+const INVITE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';  // sans 0/O ni 1/I/L, faciles à confondre
+const inviteCode = () => [...crypto.getRandomValues(new Uint8Array(6))].map(b => INVITE_ABC[b % INVITE_ABC.length]).join('');
+const inviteUrl = code => GAME_URL + (ONLINE_ENV === 'dev' ? 'dev/' : '') + '?invite=' + code;
+const INVITE_REWARD = 50, INVITE_DAYS = 3;
 function clearInvite() { INVITE_CODE = null; try { localStorage.removeItem(INVITE_KEY); } catch (e) { } }
 const VENDOR_VERSION = 7;
 // La version de test (/dev/) est réservée à l'organisateur (compte Florent) :
@@ -2137,6 +2143,63 @@ const Online = {
     try { await c.fb.setDoc(c.fb.doc(c.db, 'members', uid), { name: p.name, at: Date.now() }); p.memberOk = uid; Store.save(); }
     catch (e) { console.warn('Carte de membre', e); }
   },
+  // Sondage : un vote par joueur (déjà voté ailleurs = compte comme fait)
+  vote(p, at, choice) {
+    return this.run(async c => {
+      if (!await this.ready(c, p)) return false;
+      const ref = this.ref(c, 'votes', at + '_' + this.uid(c));
+      if ((await c.fb.getDoc(ref)).exists()) return true;
+      await c.fb.setDoc(ref, { name: p.name, choice, at: Date.now() });
+      return true;
+    }, 8000);
+  },
+  // Réglages de l'accès (config/access) : pause des invitations, pseudos bloqués (cachés du classement)
+  access() {
+    return this.cached('access', RECORDS_TTL, () => this.run(async c => {
+      const snap = await c.fb.getDoc(c.fb.doc(c.db, 'config', 'access'));
+      const d = snap.exists() ? snap.data() : {};
+      return { paused: !!d.paused, blocked: (d.blocked || []).map(nameKey) };
+    }));
+  },
+  async hideBlocked(list) {
+    const a = list && await this.access();
+    return a && a.blocked.length ? list.filter(e => !a.blocked.includes(nameKey(e.name))) : list;
+  },
+  // Parrainage : invitations restantes (null = pas le droit d'inviter) et liens créés par ce joueur
+  myInvites() {
+    return this.run(async c => {
+      const uid = this.uid(c), q = await c.fb.getDoc(c.fb.doc(c.db, 'quotas', uid));
+      const snap = await c.fb.getDocs(c.fb.query(c.fb.collection(c.db, 'invites'), c.fb.where('byUid', '==', uid)));
+      const list = snap.docs.map(d => ({ code: d.id, ...d.data() })).sort((a, b) => b.at - a.at);
+      return { left: q.exists() ? q.data().left : null, list };
+    }, 8000);
+  },
+  // Crée un lien (une invitation de moins, dans la même écriture) ; renvoie le code
+  newInvite(p, label) {
+    return this.run(async c => {
+      const uid = this.uid(c), qref = c.fb.doc(c.db, 'quotas', uid), q = await c.fb.getDoc(qref);
+      if (!q.exists() || !(q.data().left > 0)) return null;
+      const code = inviteCode(), batch = c.fb.writeBatch(c.db);
+      batch.set(c.fb.doc(c.db, 'invites', code), { label, by: p.name, byUid: uid, at: Date.now() });
+      batch.update(qref, { left: q.data().left - 1, last: code });
+      await batch.commit();
+      return code;
+    }, 8000);
+  },
+  // Annule un lien pas encore utilisé : l'invitation est rendue
+  cancelInvite(code) {
+    return this.run(async c => {
+      const uid = this.uid(c), qref = c.fb.doc(c.db, 'quotas', uid), q = await c.fb.getDoc(qref), batch = c.fb.writeBatch(c.db);
+      batch.update(c.fb.doc(c.db, 'invites', code), { cancelled: true });
+      batch.update(qref, { left: q.data().left + 1, last: code });
+      await batch.commit();
+      return true;
+    }, 8000);
+  },
+  // L'invité note ses jours joués sur son lien (pour la récompense des deux)
+  inviteDays(code, n) {
+    return this.run(async c => { await c.fb.setDoc(c.fb.doc(c.db, 'invites', code), { days: n }, { merge: true }); return true; });
+  },
   // Invitation : { by, ok } si utilisable, { ok: false } si déjà servie, annulée ou inconnue ; null hors ligne
   invite(code) {
     return this.run(async c => {
@@ -2150,11 +2213,11 @@ const Online = {
   // --- Lectures ---
   async day(day) {
     const past = day < dayKey();
-    if (past) { const saved = this.pastGet(day); if (saved) { this.live = true; return saved; } }
+    if (past) { const saved = this.pastGet(day); if (saved) { this.live = true; return this.hideBlocked(saved); } }
     const lb = await this.cached('day:' + day, DAY_TTL, () => this.run(async c => sortBoard((await this.list(c, ['days', day, 'scores'], 'score', 200))
       .map(e => ({ id: e.id, name: e.name, score: e.score, time: e.time, run: e.run || null, runs: e.runs || null, team: e.team || '', pumpkins: e.pumpkins || 0 })))));
     if (lb && past) this.pastSet(day, lb);
-    return lb ? lb.slice() : lb;
+    return lb ? this.hideBlocked(lb.slice()) : lb;
   },
   async week(wk) {
     const today = dayKey(), ks = weekDays(wk).filter(k => k <= today), days = await Promise.all(ks.map(k => this.day(k)));
@@ -2169,9 +2232,9 @@ const Online = {
     });
     return Object.values(by).map(e => ({ name: e.name, team: e.team, total: weekTotal(e.scores), played: e.scores.length, det: e.det })).sort((a, b) => b.total - a.total);
   },
-  records() {
-    return this.cached('records', RECORDS_TTL, () => this.run(async c => (await this.list(c, ['players'], 'best', 100))
-      .map(e => ({ name: e.name, best: e.best, bestStreak: e.bestStreak, legends: e.legends, badges: e.badges, team: e.team || '', look: e.look || null }))));
+  async records() {
+    return this.hideBlocked(await this.cached('records', RECORDS_TTL, () => this.run(async c => (await this.list(c, ['players'], 'best', 100))
+      .map(e => ({ name: e.name, best: e.best, bestStreak: e.bestStreak, legends: e.legends, badges: e.badges, team: e.team || '', look: e.look || null })))));
   },
   ghosts(day, targets) {
     return this.run(async c => (await Promise.all(targets.map(async t => {
@@ -2403,7 +2466,7 @@ const Online = {
       batch.update(fb.doc(c.db, 'invites', invite), { uid, usedBy: name, usedAt: at });
       batch.set(fb.doc(c.db, 'members', uid), { name, at });
       await withTimeout(batch.commit(), 8000);
-      const p = Object.assign(Store.newProfile(name), { uid, account: true, nameOk: uid, memberOk: uid });
+      const p = Object.assign(Store.newProfile(name), { uid, account: true, nameOk: uid, memberOk: uid, invitedBy: { code: invite, by: inv.data().by || '' } });
       Store.data.profiles[name] = p; Store.data.current = name; Store.save();
       this.live = true;
       return { name, isNew: true };
@@ -4303,6 +4366,7 @@ const App = {
     if ((r && r.cloud) || Store.dirty) { Store.dirty = false; Store.save(); }
     this.dailyAwards();  // titres et récompenses de la semaine : seulement une fois la progression à jour
     this.claimFirsts();  // secrets trouvés hors connexion : on tente d'être le premier
+    this.parrainage();  // récompenses de parrainage (parrain et invité)
     // essais du jour joués avant la mise à jour : renvoyés une fois avec le score de chaque essai
     const dd = p && p.days[this.today];
     if (p && p.account && dd && dd.best > 0 && (dd.runs || []).length && !dd.runsSent) Online.submitScore(p, this.today).then(ok => { if (ok) { dd.runsSent = true; Store.save(); } });
@@ -4395,6 +4459,34 @@ const App = {
         if (this.screen === 'home') this.show('home');
       }
     } finally { this.awarding = false; }
+  },
+
+  // Parrainage : l'invité note ses jours joués sur son lien ; à 3 jours, l'invité et son parrain
+  // gagnent chacun INVITE_REWARD pièces (le parrain gagne aussi le titre « Recruteur » la 1re fois)
+  async parrainage() {
+    const p = this.p;
+    if (!p || !p.account || this.parraining) return;
+    this.parraining = true;
+    try {
+      const ct = p.counters, lines = [];
+      const inv = p.invitedBy;
+      if (inv && inv.code && !ct.filleul) {
+        const n = Math.min(INVITE_DAYS, Object.keys(p.days).filter(k => (p.days[k].runs || []).length).length);
+        if (n > (inv.sent || 0) && await Online.inviteDays(inv.code, n)) { inv.sent = n; Store.save(); }
+        if (n >= INVITE_DAYS) { ct.filleul = 1; p.coins += INVITE_REWARD; lines.push({ txt: `🎟️ ${INVITE_DAYS} jours joués : +${INVITE_REWARD} 🟡 de parrainage`, why: inv.by ? `Merci d'avoir rejoint ${inv.by} sur la dune !` : '' }); }
+      }
+      const mine = await Online.myInvites();
+      for (const i of (mine && mine.list) || []) {
+        if (!i.uid || (i.days || 0) < INVITE_DAYS || ct['parr_' + i.code]) continue;
+        ct['parr_' + i.code] = 1; ct.recrues = (ct.recrues || 0) + 1; p.coins += INVITE_REWARD;
+        lines.push({ txt: `🎟️ ${i.usedBy} a joué ${INVITE_DAYS} jours : +${INVITE_REWARD} 🟡 de parrainage`, why: 'Merci de faire grandir la dune !' });
+      }
+      if (!lines.length) return;
+      const fresh = Store.checkUnlocks(p);
+      this.addRewards(lines.concat(fresh.map(f => rewardLine(f.type, f.item))));
+      Store.save(); Sound.play('unlock'); this.toast('🎟️ Récompense de parrainage !');
+      if (this.screen === 'home') this.show('home');
+    } finally { this.parraining = false; }
   },
 
   // Rattrapage (une seule fois) des badges effacés par l'ancien bug de synchronisation (avant
@@ -4567,6 +4659,10 @@ const App = {
       switchp: () => this.switchTo(v),
       create: () => this.doCreate(),
       logout: () => this.doLogout(),
+      invnew: () => this.invNew(),
+      invcancel: () => this.invCancel(v),
+      invcopy: () => this.invCopy(v),
+      invshare: () => navigator.share({ title: 'Bousier', text: 'Je t\'invite à jouer à Bousier 🪲', url: inviteUrl(v) }).catch(() => {}),
       login: () => this.doLogin(),
       ideatype: () => { this.ideaType = v; for (const b of this.ui.querySelectorAll('[data-a="ideatype"]')) b.classList.toggle('on', b.dataset.v === v); },
       sendidea: () => this.sendIdea(),
@@ -4577,6 +4673,7 @@ const App = {
       hwteamok: () => { delete this.p.hwMsg; Store.save(); this.show('home'); },
       boostok: () => { delete this.p.boostMsg; Store.save(); this.show('home'); },
       podok: () => { safeStorageSet('bousier_pod_' + ONLINE_ENV, v); if (this.p.weekMsg) { delete this.p.weekMsg; Store.save(); } this.show('home'); },
+      vote: () => this.vote(v),
       annok: () => { safeStorageSet('bousier_annseen_' + ONLINE_ENV, JSON.stringify([...annSeen(), v].slice(-40))); this.show('home'); },
       eye: () => { for (const i of this.ui.querySelectorAll('input.pw')) i.type = i.type === 'password' ? 'text' : 'password'; },
       secure: () => this.doSecure(),
@@ -4618,7 +4715,7 @@ const App = {
       delete Store.data.profiles[this.p.name]; Store.data.current = null; Store.save();
       return this.formError('✅ Compte créé ! (Sur la version de test, seul l\'organisateur peut jouer : le compte servira sur le vrai jeu.)');
     }
-    Store.data.settings.seenVersion = visibleNews()[0].v;
+    Store.data.settings.seenVersion = visibleNews()[0].v; Store.save();  // un nouveau joueur ne reçoit pas tout l'historique des nouveautés
     this.loadDay();
     Online.submitPlayer(this.p);
     if (!Store.data.settings.tutoDone) return this.show('tuto', 0);
@@ -4636,6 +4733,8 @@ const App = {
       delete Store.data.profiles[this.p.name]; Store.data.current = null; Store.save();
       return this.formError('Version de test réservée à l\'organisateur.');
     }
+    // nouvel appareil : l'historique des nouveautés est considéré comme lu
+    if (Store.data.settings.seenVersion == null) { Store.data.settings.seenVersion = visibleNews()[0].v; Store.save(); }
     this.loadDay();
     this.toast(`Content de te revoir, ${r.name} !`);
     this.show('home');
@@ -4948,6 +5047,7 @@ const App = {
       // badges
       // envoyé à chaque partie : rattrape aussi un envoi raté hors connexion
       if (await Online.submitScore(p, this.today)) d.runsSent = true;
+      if (p.invitedBy && d.attempts === 1) this.parrainage();  // nouveau jour joué : l'invité avance vers ses 3 jours
       const lb = await Leaderboard.day(this.today);
       res.rank = lb.findIndex(e => e.name === p.name) + 1;
       res.players = lb.length;
@@ -5269,7 +5369,9 @@ const App = {
       ${(p.inbox || []).length ? `<div class="banner gift"><b>🎁 Tes récompenses</b><ul class="quests">${p.inbox.map(e => `<li>${esc(e.txt)}${e.why ? `<div class="tiny why">${esc(e.why)}</div>` : ''}</li>`).join('')}</ul>
         <div class="gift-btns"><button class="btn ghost small" data-a="giftok">OK</button></div></div>` : ''}
       ${isHalloween(this.today) && safeStorageGet('bousier_hw_' + ONLINE_ENV) !== this.today ? `<div class="banner">🎃 <b>Semaine Halloween !</b> Citrouilles et chauves-souris dans la dune.<div class="tiny">${this.today === HALLOWEEN.night ? 'Ce soir, dune spéciale de nuit : rentre dans le terrier pour gagner le 🧙 Chapeau de sorcière !' : `Joue une dune pour gagner la 🎃 Boule citrouille. ${this.today < HALLOWEEN.night ? 'Samedi 31 : dune spéciale de nuit !' : ''}`}</div> <button class="btn ghost small" data-a="hwok">OK</button></div>` : ''}
-      ${annList.map(a => `<div class="banner">📣 ${esc(a.text)} <button class="btn ghost small" data-a="annok" data-v="${a.at}">OK</button></div>`).join('')}
+      ${annList.map(a => (a.choices || []).length
+        ? `<div class="banner">🗳️ ${esc(a.text)}<div class="col" style="margin-top:calc(var(--u)*2)">${a.choices.map((c, i) => `<button class="btn ghost small" data-a="vote" data-v="${a.at}:${i}">${esc(c)}</button>`).join('')}</div><div class="tiny">Un seul vote, anonyme pour les autres joueurs.</div></div>`
+        : `<div class="banner">📣 ${esc(a.text)} <button class="btn ghost small" data-a="annok" data-v="${a.at}">OK</button></div>`).join('')}
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
       ${p.hwMsg ? `<div class="banner">🎃 <b>Défi communautaire réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b> <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}
@@ -5633,10 +5735,13 @@ const App = {
 
   async scr_profile() {
     const p = this.p, cur = p.name;
-    const list = Object.keys(Store.data.profiles).map(n => `<button class="btn ${n === cur ? '' : 'ghost'}" data-a="switchp" data-v="${esc(n)}">${n === cur ? '✔ ' : ''}${esc(n)}</button>`).join('');
+    const names = Object.keys(Store.data.profiles);
+    const list = names.map(n => `<button class="btn ${n === cur ? '' : 'ghost'}" data-a="switchp" data-v="${esc(n)}">${n === cur ? '✔ ' : ''}${esc(n)}</button>`).join('');
     // équipes connues, pour les proposer à la saisie
     const recs = TEAMS_ON ? await Leaderboard.records() : [];
     this.knownTeams = [...new Map(recs.filter(e => e.team).map(e => [nameKey(e.team), e.team])).values()];
+    // parrainage : encadré visible seulement pour les joueurs autorisés à inviter
+    const inv = p.account ? await Online.myInvites() : null;
     const account = p.account
       ? '<div class="good">🔒 Connecté. Pour jouer sur un autre téléphone, mets ton pseudo et ton mot de passe.</div>'
       : `<p>Choisis un mot de passe : sans lui, tu perds ton pseudo si tu changes de téléphone ou réinstalles le jeu.</p>
@@ -5649,17 +5754,19 @@ const App = {
         <div class="label">Mon compte</div>
         ${account}
       </div>
+      ${inv && inv.left !== null ? `<div class="panel"><div class="label">🎟️ Inviter quelqu'un</div>
+        <div>Fais découvrir Bousier : il te reste <b class="gold">${inv.left} invitation${inv.left > 1 ? 's' : ''}</b>.</div>
+        <button class="btn" data-a="go" data-v="invites">🎟️ Mes invitations</button></div>` : ''}
       ${TEAMS_ON ? `<div class="panel">
         <div class="label">Mon équipe</div>
         <input id="team" maxlength="14" placeholder="Ex. : Compta, Marketing…" value="${esc(p.team || '')}" list="teams">
         <datalist id="teams">${this.knownTeams.map(t => `<option value="${esc(t)}">`).join('')}</datalist>
         <button class="btn" data-a="saveteam">Enregistrer</button>
       </div>` : ''}
-      <div class="panel">
+      ${names.length > 1 ? `<div class="panel">
         <div class="label">Joueurs de cet appareil</div>
         <div class="col">${list}</div>
-        <button class="btn ghost" data-a="go" data-v="name">➕ Autre joueur ou autre compte</button>
-      </div>
+      </div>` : ''}
       <div class="panel">
         <button class="btn ghost" data-a="sound">${Sound.on ? '🔊 Son activé' : '🔇 Son coupé'}</button>
         <div class="tiny">Commandes : glisse ton doigt (ou la souris) à gauche/droite. Clavier : ← → ou Q/D. Pause : Échap.</div>
@@ -5668,6 +5775,58 @@ const App = {
       ${ONLINE_ENV === 'dev' ? this.timeShiftPanel() : ''}
     </div>`;
   },
+  // Parrainage : créer un lien, suivre ses invités
+  async scr_invites() {
+    const r = await Online.myInvites();
+    if (!r) return `<div class="screen">${this.back('Mes invitations', 'profile')}<div class="panel center">📶 Connecte-toi à internet pour voir tes invitations.</div></div>`;
+    this.invLeft = r.left;
+    const done = this.invDone, row = i => i.uid
+      ? `<tr><td>✅ <b>${esc(i.usedBy)}</b></td><td class="tiny">${Math.min(i.days || 0, INVITE_DAYS)} / ${INVITE_DAYS} jours</td><td class="r tiny ${(i.days || 0) >= INVITE_DAYS ? 'good' : ''}">${(i.days || 0) >= INVITE_DAYS ? `+${INVITE_REWARD} 🟡 reçus` : `🎁 au ${INVITE_DAYS}e jour`}</td></tr>`
+      : i.cancelled ? '' : `<tr><td>⏳ <b>${esc(i.label || 'Lien')}</b></td><td class="tiny">en attente</td><td class="r"><button class="btn ghost small" data-a="invcopy" data-v="${i.code}">📋</button> <button class="btn ghost small" data-a="invcancel" data-v="${i.code}">Annuler</button></td></tr>`;
+    const rows = r.list.map(row).join('');
+    return `<div class="screen">
+      ${this.back('Mes invitations', 'profile')}
+      <div class="panel"><div class="label">Nouvelle invitation <span class="tiny">(il t'en reste ${r.left || 0})</span></div>
+        ${r.left > 0 ? `<input id="invlabel" maxlength="40" placeholder="Pour qui ? (facultatif, ex. Paul)">
+        <div class="tiny bad form-err"></div>
+        <button class="btn big" data-a="invnew">Créer le lien</button>` : '<div class="tiny">Plus d\'invitation pour l\'instant. Annuler un lien pas encore utilisé te la rend.</div>'}
+        ${done ? `<div class="panel" style="margin-top:calc(var(--u)*3)">✅ Lien créé${done.label ? ` pour <b>${esc(done.label)}</b>` : ''} :<div class="tiny" style="word-break:break-all">${esc(inviteUrl(done.code))}</div>
+          <div style="display:flex;gap:calc(var(--u)*2)"><button class="btn small" data-a="invcopy" data-v="${done.code}">📋 Copier</button>${navigator.share ? `<button class="btn ghost small" data-a="invshare" data-v="${done.code}">📤 Partager</button>` : ''}</div></div>` : ''}
+      </div>
+      ${rows ? `<div class="panel"><div class="label">Mes invités</div><table class="lb">${rows}</table></div>` : ''}
+      <div class="tiny center">Chaque lien ne sert qu'une fois. Quand ton invité a joué ${INVITE_DAYS} jours, vous gagnez <b>${INVITE_REWARD} 🟡</b> chacun (et toi le titre « Recruteur 🎟️ » la première fois). Annuler un lien pas encore utilisé te rend l'invitation.</div>
+      <div class="tiny center">Invite des gens de confiance : tu es un peu responsable de tes invités 😉</div>
+    </div>`;
+  },
+  // Sondage : le vote est enregistré en ligne, puis le sondage disparaît de l'accueil (comme « OK »)
+  async vote(v) {
+    const [at, choice] = v.split(':');
+    this.toast('Envoi du vote…');
+    const ok = await Online.vote(this.p, at, +choice);
+    if (!ok) return this.toast('Vote impossible pour le moment (pas de connexion ?).');
+    safeStorageSet('bousier_annseen_' + ONLINE_ENV, JSON.stringify([...annSeen(), at].slice(-40)));
+    this.toast('🗳️ Merci pour ton vote !');
+    this.show('home');
+  },
+  async invNew() {
+    const el = this.ui.querySelector('#invlabel'), label = el ? el.value.trim().slice(0, 40) : '';
+    this.formError('Un instant…');
+    const code = await Online.newInvite(this.p, label);
+    if (!code) return this.formError('Impossible pour le moment (plus d\'invitation, invitations en pause, ou pas de connexion).');
+    this.invDone = { code, label };
+    this.show('invites');
+  },
+  async invCancel(code) {
+    if (!confirm('Annuler ce lien ? Il ne pourra plus servir, et ton invitation te sera rendue.')) return;
+    if (this.invDone && this.invDone.code === code) this.invDone = null;
+    if (!await Online.cancelInvite(code)) return this.toast('Impossible pour le moment (pas de connexion ?).');
+    this.show('invites');
+  },
+  async invCopy(code) {
+    try { await navigator.clipboard.writeText(inviteUrl(code)); this.toast('Lien copié !'); }
+    catch (e) { prompt('Copie ce lien :', inviteUrl(code)); }
+  },
+
   // Dev seulement : choisir la date simulée (raccourcis vers les nouveautés et chaque météo spéciale)
   timeShiftPanel() {
     const marks = [['2026-10-26', '🎃 26 oct. Halloween, Style, pionniers'], ['2026-10-31', '🧙 31 oct. nuit d\'Halloween'], ['2026-11-02', '⚡ 2 nov. événements'], ['2026-11-09', '⭐ 9 nov. boutique de la semaine']];

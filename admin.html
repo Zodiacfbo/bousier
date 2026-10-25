@@ -162,9 +162,20 @@ svg text { fill: var(--muted); font-size: 10px; }
       <p class="muted">Chaque lien ne sert qu'une fois (communs aux 2 versions). Sans lien, le jeu n'affiche que « Bousier se joue sur invitation ». Les joueurs déjà inscrits ne sont pas concernés.</p>
       <div class="row"><input id="ilabel" maxlength="40" placeholder="Pour qui ? (ex. Marc, stagiaire)" style="flex:1"><button class="main" id="icreate">Créer le lien</button></div>
       <div id="idone" class="panel hidden" style="margin:10px 0 0"></div>
-      <h2 style="margin-top:16px">Mes invitations</h2>
+      <h2 style="margin-top:16px">Droit d'inviter (parrainage)</h2>
+      <p class="muted">Les joueurs autorisés voient « 🎟️ Inviter quelqu'un » dans leur profil. Quand leur invité a joué 3 jours, chacun gagne 50 🟡 (et le parrain le titre « Recruteur 🎟️ »).</p>
+      <div class="row"><span class="muted">Invitations données :</span><input id="idef" type="number" min="1" max="20" value="2" style="width:64px">
+        <button class="main" id="ifirst">🎟️ Les donner aux joueurs de la 1re semaine</button></div>
+      <div class="row" style="margin-top:8px"><label class="muted"><input type="checkbox" id="ipause"> ⏸️ Pause : plus aucun joueur ne peut créer de lien (les tiens marchent toujours)</label></div>
+      <div class="scroll" style="margin-top:8px"><table id="iquotas"></table></div>
+      <h2 style="margin-top:16px">Qui a invité qui</h2>
+      <div id="itree"></div>
+      <h2 style="margin-top:16px">Tous les liens</h2>
       <p class="muted" id="isum"></p>
       <div class="scroll"><table id="ilist"></table></div>
+      <h2 style="margin-top:16px">Joueurs bloqués</h2>
+      <p class="muted">Un joueur bloqué disparaît du classement et ne peut plus envoyer de score ni inviter.</p>
+      <div class="scroll"><table id="iblocked"></table></div>
       <p class="muted" id="imembers"></p>
     </section>
 
@@ -174,6 +185,9 @@ svg text { fill: var(--muted); font-size: 10px; }
       <textarea id="atext" maxlength="200" placeholder="Ex. : Fin de la saison 1 vendredi ! Bravo à…"></textarea>
       <div class="row"><label class="muted">Du <input id="afrom" type="date"></label><label class="muted">au <input id="ato" type="date"></label>
         <span class="muted">(facultatif : vide = tout de suite et sans fin)</span></div>
+      <details><summary class="muted" style="cursor:pointer">🗳️ En faire un sondage (facultatif)</summary>
+        <p class="muted">Un choix par ligne (2 à 6). Les joueurs votent une seule fois, directement sur l'accueil ; tu vois les résultats ici.</p>
+        <textarea id="achoices" placeholder="👍 Oui&#10;👎 Non"></textarea></details>
       <div class="row"><button class="main" id="asend">Ajouter l'annonce</button></div>
       <h2>Annonces prévues</h2>
       <div class="scroll"><table id="alist"></table></div>
@@ -312,19 +326,26 @@ async function refresh() {
   renderIdeas();
   const ann = await fb.getDoc(envRef('config', 'announce'));
   announces = annList(ann.exists() ? ann.data() : {});
+  try { votes = announces.some(x => x.choices) ? await all(envCol('votes')) : []; } catch (e) { votes = []; }
   renderAnnounces();
   await loadInvites(names);
 }
 
 // --- invitations : liens à usage unique (collection « invites », commune aux 2 versions) ---
-let invites = [], members = 0, accounts = 0;
+let invites = [], members = [], quotas = {}, access = { paused: false, blocked: [] }, firstWeek = new Set(), accounts = 0;
+const PIONEER_DAYS = ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25'];
 const INVITE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';  // sans 0/O ni 1/I/L, faciles à confondre
 const newCode = () => [...crypto.getRandomValues(new Uint8Array(6))].map(b => INVITE_ABC[b % INVITE_ABC.length]).join('');
 const inviteUrl = code => `https://zodiacfbo.github.io/bousier/${env === 'dev' ? 'dev/' : ''}?invite=${code}`;
 async function loadInvites(names) {
   try {
-    invites = (await fb.getDocs(fb.query(fb.collection(db, 'invites'), fb.orderBy('at', 'desc'), fb.limit(300)))).docs.map(d => ({ code: d.id, ...d.data() }));
-    members = (await all(fb.collection(db, 'members'))).length;
+    invites = (await fb.getDocs(fb.query(fb.collection(db, 'invites'), fb.orderBy('at', 'desc'), fb.limit(500)))).docs.map(d => ({ code: d.id, ...d.data() }));
+    members = await all(fb.collection(db, 'members'));
+    quotas = Object.fromEntries((await all(fb.collection(db, 'quotas'))).map(q => [q.id, q]));
+    const a = await fb.getDoc(fb.doc(db, 'config', 'access'));
+    access = { paused: false, blocked: [], ...(a.exists() ? a.data() : {}) };
+    // joueurs de la 1re semaine (classement officiel du 20 au 25 octobre)
+    firstWeek = new Set((await Promise.all(PIONEER_DAYS.map(d => all(fb.collection(db, 'envs', 'prod', 'days', d, 'scores'))))).flat().map(s => nameKey(s.name)));
   } catch (e) { invites = null; }
   accounts = names.length;
   renderInvites();
@@ -336,12 +357,86 @@ function renderInvites() {
   }
   const used = invites.filter(i => i.uid).length, open = invites.filter(i => !i.uid && !i.cancelled).length;
   $('isum').innerHTML = `${invites.length} créée${invites.length > 1 ? 's' : ''} · <span class="good">${used} utilisée${used > 1 ? 's' : ''}</span> · ${open} en attente`;
-  $('ilist').innerHTML = '<tr><th>Pour</th><th>Créé</th><th>État</th><th></th></tr>' + invites.map(i => `<tr>
-    <td>${esc(i.label || '—')}</td><td class="muted">${fmtDate(i.at)}</td>
+  $('ilist').innerHTML = '<tr><th>Pour</th><th>Par</th><th>Créé</th><th>État</th><th></th></tr>' + invites.map(i => `<tr>
+    <td>${esc(i.label || '—')}</td><td>${esc(i.byUid ? i.by : 'moi')}</td><td class="muted">${fmtDate(i.at)}</td>
     <td>${i.uid ? `<span class="good">✅ Utilisé par <b>${esc(i.usedBy)}</b></span>` : i.cancelled ? '<span class="muted">✖ Annulé</span>' : '<span class="warn">⏳ En attente</span>'}</td>
     <td class="r">${!i.uid && !i.cancelled ? `<button data-icopy="${i.code}" title="Copier le lien">📋</button> <button class="danger" data-icancel="${i.code}">Annuler</button>` : ''}</td></tr>`).join('');
-  $('imembers').textContent = `Cartes de membre : ${members} / ${accounts} comptes (quand presque tous l'ont, on pourra réserver la lecture du classement aux inscrits).`;
+  $('imembers').textContent = `Cartes de membre : ${members.length} / ${accounts} comptes (quand presque tous l'ont, on pourra réserver la lecture du classement aux inscrits).`;
+  $('ipause').checked = !!access.paused;
+  // droit d'inviter : une ligne par joueur
+  const byUid = {};
+  for (const i of invites) if (i.byUid) (byUid[i.byUid] ||= []).push(i);
+  const blockedUid = new Set(members.filter(m => m.blocked).map(m => m.id));
+  const rows = players.filter(p => !blockedUid.has(p.uid)).map(p => {
+    const q = quotas[p.uid], mine = byUid[p.uid] || [], used = mine.filter(i => i.uid).length;
+    return { p, q, sent: mine.filter(i => !i.cancelled).length, used };
+  }).sort((a, b) => (b.q ? 1 : 0) - (a.q ? 1 : 0) || b.sent - a.sent || a.p.name.localeCompare(b.p.name));
+  $('iquotas').innerHTML = '<tr><th>Joueur</th><th class="r">Restantes</th><th class="r">Envoyées</th><th class="r">Inscrits</th><th></th></tr>' + rows.map(({ p, q, sent, used }) => `<tr>
+    <td>${esc(p.name)}${firstWeek.has(p.key) ? ' <span class="muted">🌱</span>' : ''}</td>
+    <td class="r">${q ? `<b>${q.left}</b>` : '<span class="muted">—</span>'}</td><td class="r">${sent}</td><td class="r">${used}</td>
+    <td class="r" style="white-space:nowrap">${q ? `<button data-iq="${p.uid}" data-d="-1">−</button> <button data-iq="${p.uid}" data-d="1">+</button> <button data-iqoff="${p.uid}" title="Retirer le droit d'inviter">✖</button>` : `<button class="main" data-iq="${p.uid}" data-d="0">🎟️ Autoriser</button>`}</td></tr>`).join('');
+  // arbre : organisateur puis chaque parrain, avec ses invités et ses liens
+  const nameOfUid = uid => (players.find(p => p.uid === uid) || {}).name || '?';
+  const line = i => {
+    const b = i.uid && blockedUid.has(i.uid);
+    const st = i.uid ? `${b ? '🚫' : (i.days || 0) >= 3 ? '✅' : (i.days || 0) ? '🌱' : '⚠️'} <b>${esc(i.usedBy)}</b> <span class="muted">— inscrit le ${fmtDate(i.usedAt)} · ${Math.min(i.days || 0, 3)}${(i.days || 0) >= 3 ? '+' : ''} jour${(i.days || 0) > 1 ? 's' : ''} joué${(i.days || 0) > 1 ? 's' : ''}${i.label ? ` · « ${esc(i.label)} »` : ''}</span>${b ? '' : ` <button class="danger" data-iblock="${i.uid}" title="Bloquer">🚫</button>`}`
+      : i.cancelled ? `✖ lien « ${esc(i.label || i.code)} » <span class="muted">— annulé</span>`
+      : `⏳ lien « ${esc(i.label || i.code)} » <span class="muted">— créé le ${fmtDate(i.at)}, en attente</span> <button data-icopy="${i.code}">📋</button> <button class="danger" data-icancel="${i.code}">Annuler</button>`;
+    return `<div style="margin-left:18px;border-left:2px solid var(--panel2);padding-left:8px">${st}</div>`;
+  };
+  const groups = [['🪲 <b>Organisateur</b>', invites.filter(i => !i.byUid)], ...Object.entries(byUid).map(([uid, l]) => [`🪲 <b>${esc(nameOfUid(uid))}</b>`, l])];
+  $('itree').innerHTML = groups.filter(([, l]) => l.length).map(([h, l]) => `<div style="margin-top:8px">${h}</div>` + l.map(line).join('')).join('') || '<p class="muted">Aucune invitation pour l\'instant.</p>';
+  // bloqués
+  const bl = members.filter(m => m.blocked);
+  $('iblocked').innerHTML = bl.length ? bl.map(m => { const i = invites.find(x => x.uid === m.id);
+    return `<tr><td>🚫 <b>${esc(m.name)}</b> <span class="muted">${i ? `— invité par ${esc(i.by)}` : ''}</span></td><td class="r"><button data-iunblock="${m.id}">Débloquer</button></td></tr>`; }).join('') : '<tr><td class="muted">Personne.</td></tr>';
 }
+async function saveAccess(patch) {
+  access = { ...access, ...patch };
+  await fb.setDoc(fb.doc(db, 'config', 'access'), { paused: !!access.paused, blocked: access.blocked || [] });
+}
+async function setQuota(uid, left) {
+  const p = players.find(x => x.uid === uid);
+  quotas[uid] = { ...(quotas[uid] || {}), left: Math.max(0, left), name: p ? p.name : '' };
+  await fb.setDoc(fb.doc(db, 'quotas', uid), { left: quotas[uid].left, name: quotas[uid].name, last: quotas[uid].last || '' });
+}
+async function setBlocked(uid, on) {
+  const p = players.find(x => x.uid === uid), name = p ? p.name : (members.find(m => m.id === uid) || {}).name || '';
+  await fb.setDoc(fb.doc(db, 'members', uid), { name, at: Date.now(), ...(on ? { blocked: true } : {}) });
+  const k = nameKey(name), list = (access.blocked || []).filter(x => nameKey(x) !== k);
+  await saveAccess({ blocked: on ? list.concat(name) : list });
+  const m = members.find(x => x.id === uid);
+  if (m) { if (on) m.blocked = true; else delete m.blocked; } else members.push({ id: uid, name, blocked: on || undefined });
+}
+$('ifirst').onclick = async () => {
+  const n = +$('idef').value || 2, todo = players.filter(p => firstWeek.has(p.key) && !quotas[p.uid] && p.uid);
+  if (!todo.length) return toast('Tous les joueurs de la 1re semaine ont déjà le droit d\'inviter.');
+  if (!confirm(`Donner ${n} invitation${n > 1 ? 's' : ''} à ${todo.length} joueur${todo.length > 1 ? 's' : ''} de la 1re semaine ?`)) return;
+  for (const p of todo) await setQuota(p.uid, n);
+  toast('Invitations données !'); renderInvites();
+};
+$('ipause').onchange = async () => { await saveAccess({ paused: $('ipause').checked }); toast($('ipause').checked ? '⏸️ Invitations des joueurs en pause' : '▶️ Invitations des joueurs rouvertes'); };
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-iq],[data-iqoff],[data-iblock],[data-iunblock]'); if (!b) return;
+  if (b.dataset.iq) { const uid = b.dataset.iq, d = +b.dataset.d, q = quotas[uid]; await setQuota(uid, d === 0 ? (+$('idef').value || 2) : (q ? q.left : 0) + d); }
+  if (b.dataset.iqoff) {
+    if (!confirm('Retirer le droit d\'inviter à ce joueur ? (ses invités déjà inscrits ne sont pas touchés)')) return;
+    await fb.deleteDoc(fb.doc(db, 'quotas', b.dataset.iqoff)); delete quotas[b.dataset.iqoff];
+  }
+  if (b.dataset.iblock) {
+    const uid = b.dataset.iblock, p = players.find(x => x.uid === uid);
+    if (!confirm(`Bloquer ${p ? p.name : 'ce joueur'} ? Il disparaît du classement et ne peut plus envoyer de score ni inviter.`)) return;
+    await setBlocked(uid, true);
+    const kids = invites.filter(i => i.byUid === uid && i.uid);
+    if (kids.length && confirm(`Bloquer aussi ses ${kids.length} invité${kids.length > 1 ? 's' : ''} (${kids.map(i => i.usedBy).join(', ')}) ?`)) for (const i of kids) await setBlocked(i.uid, true);
+    // ses liens pas encore utilisés sont annulés
+    for (const i of invites.filter(i => i.byUid === uid && !i.uid && !i.cancelled)) { await fb.setDoc(fb.doc(db, 'invites', i.code), { cancelled: true }, { merge: true }); i.cancelled = true; }
+    if (quotas[uid]) { await fb.deleteDoc(fb.doc(db, 'quotas', uid)); delete quotas[uid]; }
+    toast('Joueur bloqué.');
+  }
+  if (b.dataset.iunblock) { await setBlocked(b.dataset.iunblock, false); toast('Joueur débloqué.'); }
+  renderInvites();
+});
 function showInvite(i) {
   const url = inviteUrl(i.code);
   $('idone').innerHTML = `✅ Lien créé pour <b>${esc(i.label || '—')}</b> :<br><code>${esc(url)}</code>
@@ -365,6 +460,7 @@ document.addEventListener('click', async e => {
     if (!confirm('Annuler ce lien ? Il ne pourra plus servir.')) return;
     await fb.setDoc(fb.doc(db, 'invites', b.dataset.icancel), { cancelled: true }, { merge: true });
     const i = invites.find(x => x.code === b.dataset.icancel); if (i) i.cancelled = true;
+    if (i && i.byUid && quotas[i.byUid]) await setQuota(i.byUid, quotas[i.byUid].left + 1);  // le parrain récupère son invitation
     renderInvites();
   }
 });
@@ -781,13 +877,22 @@ $('stable').onclick = async e => {
 // --- annonces (plusieurs, chacune avec ses dates) ---
 let announces = [];
 // ancien format : une seule annonce { text, at, from, to }
-const annList = a => (a.list || (a.text ? [{ text: a.text, at: a.at, from: a.from, to: a.to }] : [])).filter(x => x && x.text);
+const annList = a => (a.list || (a.text ? [{ text: a.text, at: a.at, from: a.from, to: a.to }] : [])).filter(x => x && x.text);  // x.choices : sondage
 const annState = x => { const t = dayKey(); return x.to && x.to < t ? 'terminée' : x.from && x.from > t ? 'prévue' : 'en ligne'; };
 function renderAnnounces() {
   const list = announces.slice().sort((a, b) => (a.from || '').localeCompare(b.from || '') || a.at - b.at);
-  $('alist').innerHTML = list.length ? '<tr><th>Texte</th><th>Dates</th><th>État</th><th></th></tr>' + list.map(x => `<tr><td>${esc(x.text)}</td>
+  $('alist').innerHTML = list.length ? '<tr><th>Texte</th><th>Dates</th><th>État</th><th></th></tr>' + list.map(x => `<tr><td>${x.choices ? '🗳️ ' : ''}${esc(x.text)}${x.choices ? voteResults(x) : ''}</td>
     <td class="muted">${x.from ? fmtDay(x.from) : 'dès maintenant'} → ${x.to ? fmtDay(x.to) : 'sans fin'}</td><td>${annState(x) === 'en ligne' ? '🟢 en ligne' : annState(x) === 'prévue' ? '🕒 prévue' : '⚪ terminée'}</td>
     <td class="r"><button class="danger" data-adel="${x.at}">Supprimer</button></td></tr>`).join('') : '<tr><td class="muted">Aucune annonce.</td></tr>';
+}
+// résultats d'un sondage : nombre de votes par choix, avec les pseudos
+let votes = [];
+function voteResults(x) {
+  const mine = votes.filter(v => v.id.startsWith(x.at + '_')), n = mine.length;
+  return `<div class="muted" style="margin-top:4px">${n} vote${n > 1 ? 's' : ''}</div>` + x.choices.map((c, i) => {
+    const who = mine.filter(v => v.choice === i), pc = n ? Math.round(who.length * 100 / n) : 0;
+    return `<div style="margin:3px 0"><b>${esc(c)}</b> : ${who.length} (${pc} %)<div style="background:#1a1020;height:8px"><div style="background:var(--accent);height:8px;width:${pc}%"></div></div><span class="muted">${who.map(v => esc(v.name)).join(', ')}</span></div>`;
+  }).join('');
 }
 async function saveAnnounces() {
   // on garde aussi l'ancien format (la dernière ajoutée) pour les jeux pas encore mis à jour
@@ -798,7 +903,10 @@ $('asend').onclick = async () => {
   const text = $('atext').value.trim(); if (!text) return toast('Écris une annonce.');
   const from = $('afrom').value, to = $('ato').value;
   if (from && to && to < from) return toast('La date de fin est avant la date de début.');
-  announces.push({ text, at: Date.now(), ...(from ? { from } : {}), ...(to ? { to } : {}) });
+  const choices = $('achoices').value.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 6);
+  if (choices.length === 1) return toast('Un sondage a besoin d\'au moins 2 choix.');
+  announces.push({ text, at: Date.now(), ...(from ? { from } : {}), ...(to ? { to } : {}), ...(choices.length ? { choices } : {}) });
+  $('achoices').value = '';
   await saveAnnounces();
   $('atext').value = ''; $('afrom').value = ''; $('ato').value = '';
   toast(from && from > dayKey() ? `📣 Annonce programmée à partir du ${fmtDay(from)}` : '📣 Annonce publiée'); refresh();

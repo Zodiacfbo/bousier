@@ -48,6 +48,16 @@ service cloud.firestore {
     function invitePath(code) {
       return /databases/$(database)/documents/invites/$(code);
     }
+    function quotaPath(uid) {
+      return /databases/$(database)/documents/quotas/$(uid);
+    }
+    function memberPath(uid) {
+      return /databases/$(database)/documents/members/$(uid);
+    }
+    // Joueur bloqué par l'organisateur : il ne peut plus rien envoyer ni inviter
+    function notBlocked() {
+      return !exists(memberPath(request.auth.uid)) || get(memberPath(request.auth.uid)).data.get('blocked', false) != true;
+    }
     // Invitation encore libre avant l'écriture, et utilisée par ce compte dans la même écriture
     function invited(d) {
       return d.invite is string
@@ -86,28 +96,81 @@ service cloud.firestore {
 
     // Liens d'invitation (créés et annulés par l'organisateur). Un nouveau joueur l'utilise une
     // seule fois, en même temps qu'il réserve son pseudo.
+    // Parrainage : un joueur autorisé (quotas/{uid}) crée ses propres liens, chacun contre une
+    // invitation de son quota (même écriture), et peut annuler un lien pas encore utilisé (invitation rendue).
+    // L'invité y note ses jours joués (jusqu'à 3) pour la récompense des deux.
     match /invites/{code} {
       allow get: if true;
+      allow list: if isAdmin() || (signedIn() && resource.data.get('byUid', '') == request.auth.uid);
+      allow delete: if isAdmin();
+      allow create: if isAdmin() || (signedIn() && notBlocked()
+        && request.resource.data.keys().hasOnly(['label', 'by', 'byUid', 'at'])
+        && request.resource.data.byUid == request.auth.uid
+        && request.resource.data.by == get(memberPath(request.auth.uid)).data.name
+        && request.resource.data.label is string && request.resource.data.label.size() <= 40
+        && (!exists(/databases/$(database)/documents/config/access)
+          || get(/databases/$(database)/documents/config/access).data.get('paused', false) != true)
+        && get(quotaPath(request.auth.uid)).data.left > 0
+        && getAfter(quotaPath(request.auth.uid)).data.left == get(quotaPath(request.auth.uid)).data.left - 1);
+      allow update: if isAdmin()
+        // un nouveau joueur utilise le lien en réservant son pseudo
+        || (signedIn()
+          && !('uid' in resource.data) && resource.data.get('cancelled', false) != true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid', 'usedBy', 'usedAt'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.usedBy is string
+          && getAfter(/databases/$(database)/documents/names/$(request.resource.data.usedBy.lower())).data.uid == request.auth.uid)
+        // le parrain annule son lien pas encore utilisé (son invitation lui est rendue)
+        || (signedIn() && resource.data.get('byUid', '') == request.auth.uid
+          && !('uid' in resource.data) && resource.data.get('cancelled', false) != true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cancelled'])
+          && request.resource.data.cancelled == true
+          && getAfter(quotaPath(request.auth.uid)).data.left == get(quotaPath(request.auth.uid)).data.left + 1)
+        // l'invité note ses jours joués (1 à 3)
+        || (signedIn() && resource.data.get('uid', '') == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['days'])
+          && request.resource.data.days is int && request.resource.data.days <= 3
+          && request.resource.data.days > resource.data.get('days', 0));
+    }
+
+    // Invitations restantes de chaque joueur autorisé : l'organisateur les règle ; le joueur ne
+    // peut que dépenser une invitation (lien créé) ou la récupérer (lien annulé), dans la même écriture.
+    match /quotas/{uid} {
+      allow get: if (signedIn() && request.auth.uid == uid) || isAdmin();
       allow list, create, delete: if isAdmin();
-      allow update: if isAdmin() || (signedIn()
-        && !('uid' in resource.data) && resource.data.get('cancelled', false) != true
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid', 'usedBy', 'usedAt'])
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.usedBy is string
-        && getAfter(/databases/$(database)/documents/names/$(request.resource.data.usedBy.lower())).data.uid == request.auth.uid);
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['left', 'last'])
+        && request.resource.data.last is string
+        && ((request.resource.data.left == resource.data.left - 1
+              && !exists(invitePath(request.resource.data.last))
+              && getAfter(invitePath(request.resource.data.last)).data.byUid == uid)
+          || (request.resource.data.left == resource.data.left + 1
+              && get(invitePath(request.resource.data.last)).data.byUid == uid
+              && get(invitePath(request.resource.data.last)).data.get('cancelled', false) != true
+              && getAfter(invitePath(request.resource.data.last)).data.cancelled == true)));
+    }
+
+    // Réglages de l'accès (pause des invitations, joueurs bloqués) : écrits par l'organisateur
+    match /config/{doc} {
+      allow get: if signedIn();
+      allow write: if isAdmin();
     }
 
     // Cartes de membre (une par compte) : on ne la crée que pour un pseudo qui est le sien
     match /members/{uid} {
       allow get: if (signedIn() && request.auth.uid == uid) || isAdmin();
       allow list, delete: if isAdmin();
-      allow create, update: if signedIn() && request.auth.uid == uid && okName(request.resource.data)
-        && getAfter(/databases/$(database)/documents/names/$(request.resource.data.name.lower())).data.uid == uid;
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == uid && okName(request.resource.data)
+        && resource.data.get('blocked', false) != true && !('blocked' in request.resource.data)
+        && getAfter(/databases/$(database)/documents/names/$(request.resource.data.name.lower())).data.uid == uid);
+      allow create: if isAdmin() || (signedIn() && request.auth.uid == uid && okName(request.resource.data)
+        && !('blocked' in request.resource.data)
+        && getAfter(/databases/$(database)/documents/names/$(request.resource.data.name.lower())).data.uid == uid);
     }
 
     match /envs/{env}/days/{day}/scores/{id} {
       allow read: if openEnv(env);
-      allow create, update: if okEnv(env) && mine(id) && isToday(day)
+      allow create, update: if okEnv(env) && mine(id) && isToday(day) && notBlocked()
         && ownsName(request.resource.data) && okScore(request.resource.data.score) && okTeam(request.resource.data)
         && (resource == null || request.resource.data.score >= resource.data.score);
       allow delete: if isAdmin();
@@ -115,7 +178,7 @@ service cloud.firestore {
 
     match /envs/{env}/days/{day}/ghosts/{id} {
       allow read: if openEnv(env);
-      allow create, update: if okEnv(env) && mine(id) && isToday(day)
+      allow create, update: if okEnv(env) && mine(id) && isToday(day) && notBlocked()
         && ownsName(request.resource.data) && okScore(request.resource.data.score)
         && request.resource.data.x is list && request.resource.data.x.size() <= 20000
         && request.resource.data.y is list && request.resource.data.y.size() <= 20000
@@ -132,7 +195,7 @@ service cloud.firestore {
 
     match /envs/{env}/players/{id} {
       allow read: if openEnv(env);
-      allow create, update: if okEnv(env) && mine(id)
+      allow create, update: if okEnv(env) && mine(id) && notBlocked()
         && ownsName(request.resource.data) && okScore(request.resource.data.best) && okTeam(request.resource.data)
         && request.resource.data.bestStreak is int && request.resource.data.bestStreak >= 0;
       allow delete: if isAdmin();
@@ -176,6 +239,16 @@ service cloud.firestore {
       allow create, update: if okEnv(env) && mine(id) && ownsName(request.resource.data)
         && request.resource.data.best is int && request.resource.data.best >= 0 && request.resource.data.best <= 20000
         && (resource == null || request.resource.data.best >= resource.data.best);
+      allow delete: if isAdmin();
+    }
+
+    // Sondages (annonce avec des choix) : un vote par joueur, définitif ; résultats lus par l'organisateur
+    match /envs/{env}/votes/{id} {
+      allow get: if isAdmin() || (signedIn() && id.matches('[0-9]+_' + request.auth.uid));
+      allow list: if isAdmin();
+      allow create: if okEnv(env) && signedIn() && notBlocked()
+        && id.matches('[0-9]+_' + request.auth.uid) && ownsName(request.resource.data)
+        && request.resource.data.choice is int && request.resource.data.choice >= 0 && request.resource.data.choice < 6;
       allow delete: if isAdmin();
     }
 

@@ -7,6 +7,20 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.17.0 — Parrainage et sondages (en test sur dev)
+- Parrainage : les joueurs autorisés (quotas réglés par l'organisateur) voient « 🎟️ Inviter quelqu'un » dans leur profil
+  et un écran « Mes invitations » (créer un lien, copier/partager, annuler = invitation rendue, suivi des invités).
+  L'invité voit « 🪲 <parrain> t'invite… ». Quand l'invité a joué 3 jours : 50 🟡 pour chacun, et le titre
+  « Recruteur 🎟️ » pour le parrain.
+- Admin (🎟️ Invitations) : droit d'inviter (donner N invitations aux joueurs de la 1re semaine, + / − / autoriser /
+  retirer), pause des invitations des joueurs, arbre « qui a invité qui » avec l'état de chaque lien et de chaque invité,
+  blocage d'un joueur (caché du classement, plus de score ni d'invitation ; option : ses invités aussi), déblocage.
+- Sondages : une annonce peut proposer 2 à 6 choix ; chaque joueur vote une fois depuis l'accueil, résultats (avec les
+  pseudos) dans l'admin.
+- Profil : plus de bouton « Autre joueur ou autre compte » (la liste reste seulement si l'appareil a déjà plusieurs profils).
+- Nouveau joueur ou nouvel appareil : l'historique des nouveautés est considéré comme lu (plus de pile de notifications).
+- Règles Firestore : quotas, invitations des joueurs, cartes de membre bloquables, config/access, votes.
+
 ## v1.16.2 — Bougie d'Halloween à la place de l'Os (25 octobre 2026)
 - Correctif : l'Os d'Halloween portait le même identifiant que l'Os habituel (il s'affichait dans « Objets de saison » avec
   les os déjà avalés, et avait remplacé le dessin de l'Os habituel). L'Os habituel retrouve son dessin ; l'objet
