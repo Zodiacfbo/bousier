@@ -1673,7 +1673,7 @@ let INVITE_CODE = (() => {
 const INVITE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';  // sans 0/O ni 1/I/L, faciles à confondre
 const inviteCode = () => [...crypto.getRandomValues(new Uint8Array(6))].map(b => INVITE_ABC[b % INVITE_ABC.length]).join('');
 const inviteUrl = code => GAME_URL + (ONLINE_ENV === 'dev' ? 'dev/' : '') + '?invite=' + code;
-const INVITE_REWARD = 50, INVITE_DAYS = 3;
+const INVITE_REWARD = 150, INVITE_DAYS = 3;
 function clearInvite() { INVITE_CODE = null; try { localStorage.removeItem(INVITE_KEY); } catch (e) { } }
 const VENDOR_VERSION = 7;
 // La version de test (/dev/) est réservée à l'organisateur (compte Florent) :
