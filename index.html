@@ -84,6 +84,7 @@ img.pix, canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; 
 .tiny { font-size: .78em; color: var(--muted); }
 .center { text-align: center; }
 .gold { color: var(--gold); }
+#app.cvd { --good: #5ab4ff; --bad: #ffb43a; }
 .good { color: var(--good); }
 .bad { color: var(--bad); }
 button.banner { font: inherit; width: 100%; cursor: pointer; }
@@ -1662,6 +1663,8 @@ const ONLINE_ENV = location.pathname.includes('/dev/') ? 'dev' : 'prod';
 const GAME_URL = 'https://zodiacfbo.github.io/bousier/';
 // Accès sur invitation : sans profil sur l'appareil, il faut un lien « ?invite=CODE » créé dans l'admin.
 // Le code est gardé sur l'appareil jusqu'à la création du profil (et retiré de l'adresse).
+// Mode daltonien (deutéranopie) : option du profil, mémorisée sur l'appareil
+let CVD = (() => { try { return localStorage.getItem('bousier_cvd') === '1'; } catch (e) { return false; } })();
 const INVITE_KEY = 'bousier_invite';
 let INVITE_CODE = (() => {
   try {
@@ -4003,8 +4006,20 @@ class Game {
       ctx.fillRect(x + ((s.width - sw) >> 1), y + s.height - 1, sw, 2);
     }
     if (this.state === 'run' && !o.deco && !o.def.pickup && o.y > this.ball.y - 15 && o.y < this.ball.y + 110 && !edible(o, this.ball)) {
-      const red = OUTLINE_CACHE[key] || (OUTLINE_CACHE[key] = silhouette(s, o.def.hazard ? '#ff2a2a' : '#ff5a4a'));
-      for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.drawImage(red, x + ox, y + oy);
+      if (CVD) {
+        // mode daltonien (deutéranopie) : bleu + ✖ pour « trop gros », jaune et noir pour ce qui pique
+        const danger = o.def.hazard || o.def.prickly, ck = key + (danger ? '_cvdD' : '_cvd');
+        const ring = OUTLINE_CACHE[ck] || (OUTLINE_CACHE[ck] = silhouette(s, danger ? '#ffe14a' : '#3a9cff'));
+        if (danger) { const dk = OUTLINE_CACHE[key + '_cvdK'] || (OUTLINE_CACHE[key + '_cvdK'] = silhouette(s, '#000000'));
+          for (const [ox, oy] of [[-2, 0], [2, 0], [0, -2], [0, 2]]) ctx.drawImage(dk, x + ox, y + oy); }
+        for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.drawImage(ring, x + ox, y + oy);
+        if (!danger) { const cx = Math.round(this.objX(o)), cy = y - 4;
+          ctx.fillStyle = '#0a1a3a'; ctx.fillRect(cx - 2, cy - 2, 5, 5);
+          ctx.fillStyle = '#ffffff'; for (let i = -1; i <= 1; i++) { ctx.fillRect(cx + i, cy + i, 1, 1); ctx.fillRect(cx + i, cy - i, 1, 1); } }
+      } else {
+        const red = OUTLINE_CACHE[key] || (OUTLINE_CACHE[key] = silhouette(s, o.def.hazard ? '#ff2a2a' : '#ff5a4a'));
+        for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.drawImage(red, x + ox, y + oy);
+      }
     }
     ctx.drawImage(s, x, y);
     if (o.def.legendary && this.frame % 12 === 0)
@@ -4323,6 +4338,7 @@ const App = {
     Store.load();
     Sound.on = Store.data.settings.sound !== false;
     this.appEl = document.getElementById('app');
+    this.appEl.classList.toggle('cvd', CVD);
     this.ui = document.getElementById('ui');
     this.hud = {
       root: document.getElementById('hud'), size: document.getElementById('hud-size'),
@@ -4698,6 +4714,7 @@ const App = {
       colsel: () => { this.colSel = v; this.show('collection'); },
       resume: () => this.resume(),
       abandon: () => this.abandon(),
+      cvd: () => { CVD = !CVD; safeStorageSet('bousier_cvd', CVD ? '1' : ''); this.appEl.classList.toggle('cvd', CVD); this.show('profile'); },
       sound: () => { Sound.on = !Sound.on; Store.data.settings.sound = Sound.on; Store.save(); this.show('profile'); },
       switchp: () => this.switchTo(v),
       create: () => this.doCreate(),
@@ -5829,6 +5846,7 @@ const App = {
       </div>` : ''}
       <div class="panel">
         <button class="btn ghost" data-a="sound">${Sound.on ? '🔊 Son activé' : '🔇 Son coupé'}</button>
+        <button class="btn ghost" data-a="cvd">👁️ Mode daltonien : ${CVD ? 'activé' : 'désactivé'}</button>
         <div class="tiny">Commandes : glisse ton doigt (ou la souris) à gauche/droite. Clavier : ← → ou Q/D. Pause : Échap.</div>
       </div>
       ${p.account ? '<button class="btn ghost" data-a="logout">🚪 Se déconnecter</button>' : ''}
