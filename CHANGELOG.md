@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.18.0 — Mode daltonien (26 octobre 2026)
+- Profil 👤 : option « 👁️ Mode daltonien » (pensée pour la deutéranopie), mémorisée sur l'appareil. Objets trop gros :
+  contour bleu vif et petit ✖ au-dessus (au lieu du rouge) ; objets qui piquent : contour jaune et noir ; messages
+  « réussi / erreur » en bleu et orangé. Rien ne change pour les autres joueurs.
+
 ## v1.17.11 — Accueil plus rapide (26 octobre 2026)
 - L'accueil lance toutes ses lectures en ligne en même temps (classement, idées, annonces, défi, podium) au lieu de les
   attendre l'une après l'autre ; les lectures identiques en cours sont partagées. Chargement ~2× plus rapide.
