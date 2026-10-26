@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.17.8 — Trésor du jour : bonus expliqué (26 octobre 2026)
+- Accueil et tuto : « +10 % à chaque essai où tu l'attrapes » (le bonus compte pour l'essai où le trésor est avalé).
+
 ## v1.17.7 — Titre Recruteur caché (25 octobre 2026)
 - Le titre « Recruteur 🎟️ » n'apparaît plus dans 🎨 Style tant qu'on ne l'a pas gagné (parrainage pas encore lancé).
 

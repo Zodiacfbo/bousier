@@ -5335,7 +5335,7 @@ const App = {
       {
         title: 'Vise le terrier',
         pics: '🕳️',
-        text: 'Au bout de la dune, rentre dans le terrier : <b>sinon ton score est divisé par 2</b>.<br>Ton score = la taille de ta boule (+10 % si tu trouves le trésor du jour).',
+        text: 'Au bout de la dune, rentre dans le terrier : <b>sinon ton score est divisé par 2</b>.<br>Ton score = la taille de ta boule (+10 % à chaque essai où tu attrapes le trésor du jour).',
       },
       {
         title: 'Une dune par jour',
@@ -5439,7 +5439,7 @@ const App = {
           <div class="label">Trésor du jour</div>
           <div class="big-ico">${spriteImg(leg.sprite, 3, !d.legend)}</div>
           <b>${d.legend ? esc(leg.name) : '???'}</b>
-          <div class="tiny">${d.legend ? 'Trouvé ! +10 % au score' : 'Caché entre deux cactus… +10 % au score'}</div>
+          <div class="tiny">${d.legend ? 'Trouvé ! +10 % à chaque essai où tu l\'attrapes' : 'Caché entre deux cactus… +10 % à chaque essai où tu l\'attrapes'}</div>
         </div>
       </div>
       <div class="panel">
