@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.17.10 — Admin : +1 invitation à tout le monde (26 octobre 2026)
+- Onglet 🎟️ Invitations : bouton « ➕ +1 à tout le monde » (une invitation de plus à chaque joueur autorisé, non bloqué).
+
 ## v1.17.9 — Parrainage : 150 🟡 chacun (26 octobre 2026)
 - Récompense du parrainage (invité qui a joué 3 jours) : 150 🟡 pour le parrain et 150 🟡 pour l'invité, au lieu de 50.
   Le parrainage reste invisible tant qu'aucune invitation n'est donnée.

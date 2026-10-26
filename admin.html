@@ -165,7 +165,8 @@ svg text { fill: var(--muted); font-size: 10px; }
       <h2 style="margin-top:16px">Droit d'inviter (parrainage)</h2>
       <p class="muted">Les joueurs autorisés voient « 🎟️ Inviter quelqu'un » dans leur profil. Quand leur invité a joué 3 jours, chacun gagne 150 🟡 (et le parrain le titre « Recruteur 🎟️ »).</p>
       <div class="row"><span class="muted">Invitations données :</span><input id="idef" type="number" min="1" max="20" value="2" style="width:64px">
-        <button class="main" id="ifirst">🎟️ Les donner aux joueurs de la 1re semaine</button></div>
+        <button class="main" id="ifirst">🎟️ Les donner aux joueurs de la 1re semaine</button>
+        <button id="iplusall" title="Une invitation de plus à chaque joueur qui a déjà le droit d'inviter">➕ +1 à tout le monde</button></div>
       <div class="row" style="margin-top:8px"><label class="muted"><input type="checkbox" id="ipause"> ⏸️ Pause : plus aucun joueur ne peut créer de lien (les tiens marchent toujours)</label></div>
       <div class="scroll" style="margin-top:8px"><table id="iquotas"></table></div>
       <h2 style="margin-top:16px">Qui a invité qui</h2>
@@ -414,6 +415,13 @@ $('ifirst').onclick = async () => {
   if (!confirm(`Donner ${n} invitation${n > 1 ? 's' : ''} à ${todo.length} joueur${todo.length > 1 ? 's' : ''} de la 1re semaine ?`)) return;
   for (const p of todo) await setQuota(p.uid, n);
   toast('Invitations données !'); renderInvites();
+};
+$('iplusall').onclick = async () => {
+  const ids = Object.keys(quotas).filter(uid => !(members.find(m => m.id === uid) || {}).blocked);
+  if (!ids.length) return toast('Personne n\'a encore le droit d\'inviter.');
+  if (!confirm(`Donner 1 invitation de plus à ${ids.length} joueur${ids.length > 1 ? 's' : ''} ?`)) return;
+  for (const uid of ids) await setQuota(uid, quotas[uid].left + 1);
+  toast('+1 invitation pour tout le monde !'); renderInvites();
 };
 $('ipause').onchange = async () => { await saveAccess({ paused: $('ipause').checked }); toast($('ipause').checked ? '⏸️ Invitations des joueurs en pause' : '▶️ Invitations des joueurs rouvertes'); };
 document.addEventListener('click', async e => {
