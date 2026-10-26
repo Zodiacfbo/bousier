@@ -2063,9 +2063,15 @@ const Online = {
   async cached(key, ttl, fn) {
     const c = this.mem[key];
     if (c && Date.now() - c.at < ttl) return c.val;
-    const val = await fn();
-    if (val) this.mem[key] = { val, at: Date.now() };
-    return val;
+    // même lecture déjà en cours (accueil qui charge tout en même temps) : on attend celle-là
+    this.pending = this.pending || {};
+    if (this.pending[key]) return this.pending[key];
+    try {
+      this.pending[key] = fn();
+      const val = await this.pending[key];
+      if (val) this.mem[key] = { val, at: Date.now() };
+      return val;
+    } finally { delete this.pending[key]; }
   },
   pastGet(day) {
     try { return JSON.parse(safeStorageGet(PAST_KEY + day) || 'null'); } catch (e) { return null; }
@@ -5374,16 +5380,21 @@ const App = {
     const tries = maxAttempts(p, this.today), left = tries - d.attempts;
     const skin = findCos('ball', p.equip.ball), hat = findCos('hat', p.equip.hat);
     const outfit = findCos('outfit', p.equip.outfit), trail = findCos('trail', p.equip.trail);
+    // toutes les lectures en ligne partent en même temps (sinon l'accueil attend chacune à la suite)
+    const prevWk = addDays(weekKey(this.today), -7);
+    const pIdeas = Online.myIdeas(), pAnn = Online.announce(), pPod = Leaderboard.podium(prevWk);
+    const pHw = isHalloween(this.today) ? Leaderboard.hwStats() : null;
+    Online.day(addDays(this.today, -1));  // classement d'hier, pour les nouvelles
     const [lb, champ] = await Promise.all([Leaderboard.day(this.today), Leaderboard.champion(this.today)]);
     this.champ = champ;
     const rank = lb.findIndex(e => e.name === p.name) + 1;
     const news = await this.news(lb);
-    this.ideasBadge = ideasChanged(await Online.myIdeas());
-    const ann = await Online.announce();
-    const hw = isHalloween(this.today) ? await Leaderboard.hwStats() : null, hwTotal = hw ? hw.total : null;
+    this.ideasBadge = ideasChanged(await pIdeas);
+    const ann = await pAnn;
+    const hw = await pHw, hwTotal = hw ? hw.total : null;
     const hwStep = hwTotal == null ? '' : hwTotal >= HW_GOAL ? '' : hwTotal >= HW_GOAL * 0.75 ? '🔥 Plus que quelques citrouilles, on y est presque !'
       : hwTotal >= HW_GOAL / 2 ? '🎃 Mi-chemin passé, continuez !' : hwTotal >= HW_GOAL / 4 ? '🎃 Un quart du chemin, bien parti !' : '';
-    const prevWk = addDays(weekKey(this.today), -7), pod = await Leaderboard.podium(prevWk);
+    const pod = await pPod;
     const podShow = pod && pod.top.length && safeStorageGet('bousier_pod_' + ONLINE_ENV) !== prevWk;
     const mine = p.weekMsg || null;
     // rappel du dimanche : jours joués cette semaine (d'après cet appareil)

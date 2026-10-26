@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.17.11 — Accueil plus rapide (26 octobre 2026)
+- L'accueil lance toutes ses lectures en ligne en même temps (classement, idées, annonces, défi, podium) au lieu de les
+  attendre l'une après l'autre ; les lectures identiques en cours sont partagées. Chargement ~2× plus rapide.
+
 ## v1.17.10 — Admin : +1 invitation à tout le monde (26 octobre 2026)
 - Onglet 🎟️ Invitations : bouton « ➕ +1 à tout le monde » (une invitation de plus à chaque joueur autorisé, non bloqué).
 
