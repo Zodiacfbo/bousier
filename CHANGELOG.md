@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.18.2 — Inversion corrigée (27 octobre 2026)
+- Événement INVERSION (et commandes inversées du mode survie) : on inverse désormais les déplacements du doigt depuis
+  le début de l'événement, et non sa position par rapport à la boule, qui faisait partir le bousier tout seul vers le
+  bord. À la fin, la boule garde sa cible. News 11.5.
+
 ## v1.18.1 — Défi bonus d'Halloween (27 octobre 2026)
 - Le défi des 666 citrouilles étant presque atteint dès le mardi : un défi bonus (1 666 citrouilles, +100 🟡 de plus
   pour chaque participant) apparaît sous la barre, seulement une fois les 666 atteintes. Distribué le 2 novembre avec
