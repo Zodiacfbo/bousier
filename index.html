@@ -1199,6 +1199,8 @@ const HALLOWEEN = { from: '2026-10-26', to: '2026-11-01', night: '2026-10-31' };
 const isHalloween = day => day >= HALLOWEEN.from && day <= HALLOWEEN.to;
 // Défi communautaire d'Halloween : citrouilles avalées par tous les joueurs pendant la semaine
 const HW_GOAL = 666, HW_REWARD = 150;
+// défi bonus : révélé seulement une fois le premier objectif atteint
+const HW_BONUS = 1666, HW_BONUS_REWARD = 100;
 const SEASON_OBJECTS = [
   { id: 'citrouille', name: 'Citrouille', sprite: 'citrouille', r: 4.5, w: 1.05, tp: 0.4, s: 0.35, glow: true, season: 'halloween', desc: 'Semaine Halloween 2026. Elle brille encore un peu.' },
   { id: 'bonbon', name: 'Bonbon', sprite: 'bonbon', r: 1.8, w: 0.6, tp: 0.12, s: 0.3, season: 'halloween', desc: 'Semaine Halloween 2026. Un bonbon ou un sort !' },
@@ -4603,6 +4605,7 @@ const App = {
       if (total != null) {
         p.counters.hwTeam = total >= HW_GOAL ? 1 : -1;
         if (total >= HW_GOAL) { p.coins += HW_REWARD; p.hwMsg = total; }
+        if (total >= HW_BONUS) { p.coins += HW_BONUS_REWARD; p.hwBonus = 1; }
       }
     }
   },
@@ -4731,7 +4734,7 @@ const App = {
       moon: () => this.moonTap(),
       giftok: () => { this.p.inbox = []; Store.save(); this.show('home'); },
       hwkingok: () => { delete this.p.hwKingMsg; Store.save(); this.show('home'); },
-      hwteamok: () => { delete this.p.hwMsg; Store.save(); this.show('home'); },
+      hwteamok: () => { delete this.p.hwMsg; delete this.p.hwBonus; Store.save(); this.show('home'); },
       boostok: () => { delete this.p.boostMsg; Store.save(); this.show('home'); },
       podok: () => { safeStorageSet('bousier_pod_' + ONLINE_ENV, v); if (this.p.weekMsg) { delete this.p.weekMsg; Store.save(); } this.show('home'); },
       vote: () => this.vote(v),
@@ -5450,7 +5453,7 @@ const App = {
       ${this.isOffline() ? '<div class="banner off">📴 <b>Hors connexion</b> — tu peux jouer normalement : ta partie sera envoyée dès le retour d\'internet.<div class="tiny">Le classement affiché n\'est pas à jour.</div></div>' : ''}
       ${sunday ? `<div class="banner">⏰ Dernier jour de la semaine ! ${nowDays === WEEK_BEST - 1 ? `Il te manque <b>1 jour sur ${WEEK_BEST}</b> pour ton classement de la semaine.` : `Joue aujourd'hui pour ajouter un score à ta semaine (${nowDays}/${WEEK_BEST}).`}</div>` : ''}
       ${p.hwKingMsg ? `<div class="banner">👑 <b>Tu es le Roi des citrouilles 2026</b> avec ${p.hwKingMsg} citrouilles ! Titre « 🎃 Roi des citrouilles 2026 » débloqué. <button class="btn ghost small" data-a="hwkingok">OK</button></div>` : ''}
-      ${p.hwMsg ? `<div class="banner">🎃 <b>Défi communautaire réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b> et le cadre <b>🎃 Halloween 2026</b> (à équiper dans 🎨 Style > Classement) <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}
+      ${p.hwMsg ? `<div class="banner">🎃 <b>Défi communautaire réussi</b> : ${p.hwMsg} citrouilles avalées à vous tous ! <b>+${HW_REWARD} 🟡</b>${p.hwBonus ? ` (+${HW_BONUS_REWARD} 🟡 du défi bonus)` : ''} et le cadre <b>🎃 Halloween 2026</b> (à équiper dans 🎨 Style > Classement) <button class="btn ghost small" data-a="hwteamok">OK</button></div>` : ''}
       ${p.boostMsg === weekKey(this.today) ? `<div class="banner">🚀 <b>Coup de pouce de la semaine</b> : 4 essais par jour ! Merci d'avoir joué jusqu'au bout la semaine dernière. <button class="btn ghost small" data-a="boostok">OK</button></div>` : ''}
       ${podShow || mine ? `<div class="banner">${podShow ? `👑 <b>Podium de la semaine dernière</b> — bravo ${esc(pod.top[0].name)} !${podiumHtml(pod.top)}<div class="tiny">Podium récompensé : ${PODIUM_COINS.join(' / ')} 🟡</div>` : ''}${mine ? `<div>🎉 Tu as fini <b>${placeTxt(mine.place)}</b> de la semaine ${mine.wk === prevWk ? 'dernière' : esc(fmtWeek(mine.wk))} : <b>+${mine.coins} 🟡</b> !</div>` : ''} <button class="btn ghost small" data-a="podok" data-v="${prevWk}">OK</button></div>` : ''}
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
@@ -5478,7 +5481,10 @@ const App = {
         <div class="label">🎃 Défi communautaire <span class="tiny">(tous ensemble, jusqu'à dimanche soir)</span></div>
         <div>Avalez <b>${HW_GOAL} citrouilles</b> à vous tous : <b>+${HW_REWARD} 🟡</b> et le cadre <b>🎃 Halloween 2026</b> pour chaque joueur de la semaine !</div>
         <div class="hwbar"><div style="width:${Math.min(100, hwTotal * 100 / HW_GOAL)}%"></div><span>${Math.min(hwTotal, HW_GOAL)} / ${HW_GOAL}</span></div>
-        ${hwTotal >= HW_GOAL ? '<div class="good tiny">🎉 Défi réussi ! La récompense arrive lundi 2 novembre.</div>' : hwStep ? `<div class="tiny">${hwStep}</div>` : ''}
+        ${hwTotal >= HW_GOAL ? `<div class="good tiny">🎉 Défi réussi ! La récompense arrive lundi 2 novembre.</div>
+        <div style="margin-top:calc(var(--u)*2)">🎃 <b>Défi bonus</b> : ${HW_BONUS} citrouilles à vous tous pour <b>+${HW_BONUS_REWARD} 🟡 de plus</b> chacun !</div>
+        <div class="hwbar"><div style="width:${Math.min(100, hwTotal * 100 / HW_BONUS)}%"></div><span>${Math.min(hwTotal, HW_BONUS)} / ${HW_BONUS}</span></div>
+        ${hwTotal >= HW_BONUS ? '<div class="good tiny">🎉 Défi bonus réussi aussi ! Bravo à tous.</div>' : ''}` : hwStep ? `<div class="tiny">${hwStep}</div>` : ''}
         <div class="tiny">👑 Titre « Roi des citrouilles 2026 » à gagner : avale le plus de citrouilles de la semaine ! Toi : <b>${hw.by[p.name] || 0} 🎃</b></div>
       </div>` : ''}
       <div class="play-zone">

@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.18.1 — Défi bonus d'Halloween (27 octobre 2026)
+- Le défi des 666 citrouilles étant presque atteint dès le mardi : un défi bonus (1 666 citrouilles, +100 🟡 de plus
+  pour chaque participant) apparaît sous la barre, seulement une fois les 666 atteintes. Distribué le 2 novembre avec
+  le reste.
+
 ## v1.18.0 — Mode daltonien (26 octobre 2026)
 - Profil 👤 : option « 👁️ Mode daltonien » (pensée pour la deutéranopie), mémorisée sur l'appareil. Objets trop gros :
   contour bleu vif et petit ✖ au-dessus (au lieu du rouge) ; objets qui piquent : contour jaune et noir ; messages
