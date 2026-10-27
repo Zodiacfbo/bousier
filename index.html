@@ -3212,7 +3212,16 @@ class Game {
     this.playTicks++; this.run.time += TICK;
     if (this.input.keys) this.input.targetX = clamp((this.input.targetX == null ? b.x : this.input.targetX) + this.input.keys * 150 * TICK, 0, W);
     let target = this.input.targetX == null ? b.x : this.input.targetX;
-    if (this.mirror) target = 2 * b.x - target;
+    // commandes inversées : on inverse les déplacements du doigt depuis le début de l'inversion
+    // (et pas sa position par rapport à la boule, qui s'emballait vers le bord)
+    if (this.mirror && this.input.targetX != null) {
+      if (!this.mirrorRef) this.mirrorRef = { f: target, b: b.x };
+      target = this.mirrorRef.b - (target - this.mirrorRef.f);
+      this.mirrorTarget = target;
+    } else if (!this.mirror && this.mirrorRef) {
+      // fin de l'inversion : la boule garde sa cible, le doigt reprend la main au prochain geste
+      this.mirrorRef = null; this.input.targetX = target = this.mirrorTarget;
+    }
     const maxLat = Math.max(42, 150 - r * 3.4);
     const desired = clamp((target - b.x) * 7, -maxLat, maxLat);
     const foamy = this.foam && b.y > this.foam.y0 && b.y < this.foam.y1;
@@ -3533,7 +3542,7 @@ class Game {
 
   // --- Événements surprise ---------------------------------------------------
   resetEvents() {
-    this.mirror = false; this.popup = null; this.mirage = null; this.kevins = []; this.saidEnd = false;
+    this.mirror = false; this.mirrorRef = null; this.popup = null; this.mirage = null; this.kevins = []; this.saidEnd = false;
     this.alert = null; this.msg = null;
     this.blackout = 0; this.coffeeT = 0; this.foam = null; this.siren = 0; this.chaser = null; this.magnet = false; this.spooks = [];
   }
