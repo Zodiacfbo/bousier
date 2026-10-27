@@ -5495,7 +5495,8 @@ const App = {
         ${hwTotal >= HW_GOAL ? `<div class="good tiny">🎉 Défi réussi ! La récompense arrive lundi 2 novembre.</div>
         <div style="margin-top:calc(var(--u)*2)">🎃 <b>Défi bonus</b> : ${HW_BONUS} citrouilles à vous tous pour <b>+${HW_BONUS_REWARD} 🟡 de plus</b> chacun !</div>
         <div class="hwbar"><div style="width:${Math.min(100, hwTotal * 100 / HW_BONUS)}%"></div><span>${Math.min(hwTotal, HW_BONUS)} / ${HW_BONUS}</span></div>
-        ${hwTotal >= HW_BONUS ? '<div class="good tiny">🎉 Défi bonus réussi aussi ! Bravo à tous.</div>' : ''}` : hwStep ? `<div class="tiny">${hwStep}</div>` : ''}
+        ${hwTotal >= HW_BONUS ? `<div class="good tiny">🎉 Défi bonus réussi aussi ! Bravo à tous.</div>
+        <div class="tiny">🎃 Total de la semaine : <b>${hwTotal} citrouilles</b>, un record à battre au prochain défi !</div>` : ''}` : hwStep ? `<div class="tiny">${hwStep}</div>` : ''}
         <div class="tiny">👑 Titre « Roi des citrouilles 2026 » à gagner : avale le plus de citrouilles de la semaine ! Toi : <b>${hw.by[p.name] || 0} 🎃</b></div>
       </div>` : ''}
       <div class="play-zone">

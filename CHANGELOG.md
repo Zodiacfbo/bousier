@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.18.3 — Record de citrouilles (27 octobre 2026)
+- Une fois le défi bonus atteint (1 666), le total de la semaine continue d'être affiché sous la barre : « un record à
+  battre au prochain défi ». Pas de récompense en plus.
+
 ## v1.18.2 — Inversion corrigée (27 octobre 2026)
 - Événement INVERSION (et commandes inversées du mode survie) : on inverse désormais les déplacements du doigt depuis
   le début de l'événement, et non sa position par rapport à la boule, qui faisait partir le bousier tout seul vers le
