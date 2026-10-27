@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.18.4 — Admin : course aux citrouilles (27 octobre 2026)
+- Tableau de bord de l'admin : rubrique « 🎃 Semaine Halloween » (total, avancée du défi et du bonus, classement des
+  citrouilles par joueur en temps réel), visible seulement par l'organisateur, jusqu'au 3 novembre.
+
 ## v1.18.3 — Record de citrouilles (27 octobre 2026)
 - Une fois le défi bonus atteint (1 666), le total de la semaine continue d'être affiché sous la barre : « un record à
   battre au prochain défi ». Pas de récompense en plus.

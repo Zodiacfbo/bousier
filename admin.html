@@ -84,6 +84,7 @@ svg text { fill: var(--muted); font-size: 10px; }
       <h2>📊 Aujourd'hui</h2>
       <div class="stats" id="stats"></div>
       <p class="muted">Comptes = pseudos réservés, communs à la version officielle et à la version de test. Les autres chiffres concernent la version choisie en haut.</p>
+      <div id="hwboard"></div>
       <h2>📈 Activité jour par jour</h2>
       <div id="chart"></div>
       <details><summary class="muted">Voir le tableau jour par jour</summary><div class="scroll"><table id="atable"></table></div></details>
@@ -330,6 +331,24 @@ async function refresh() {
   try { votes = announces.some(x => x.choices) ? await all(envCol('votes')) : []; } catch (e) { votes = []; }
   renderAnnounces();
   await loadInvites(names);
+  await renderHalloween(today);
+}
+
+// --- semaine Halloween : défi communautaire et course au Roi des citrouilles (visible seulement ici) ---
+const HW_DAYS = ['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'];
+async function renderHalloween(today) {
+  if (today < HW_DAYS[0] || today > addDays(HW_DAYS[6], 2)) { $('hwboard').innerHTML = ''; return; }
+  const lists = await Promise.all(HW_DAYS.filter(d => d <= today).map(d => all(envCol('days', d, 'scores'))));
+  const by = {};
+  for (const l of lists) for (const e of l) if (e.pumpkins) by[e.name] = (by[e.name] || 0) + e.pumpkins;
+  const rows = Object.entries(by).sort((a, b) => b[1] - a[1]), total = rows.reduce((n, r) => n + r[1], 0);
+  const bar = (n, goal) => `<div style="background:#1a1020;height:10px;margin:4px 0"><div style="background:var(--accent);height:10px;width:${Math.min(100, n * 100 / goal)}%"></div></div>`;
+  $('hwboard').innerHTML = `<h2>🎃 Semaine Halloween</h2>
+    <div class="row"><b>${total}</b><span class="muted">citrouilles au total · défi 666 ${total >= 666 ? '✅' : `(${Math.round(total * 100 / 666)} %)`} · bonus 1666 ${total >= 1666 ? '✅' : `(${Math.round(total * 100 / 1666)} %)`}</span></div>
+    ${bar(total, 1666)}
+    <div class="scroll"><table><tr><th>#</th><th>Roi des citrouilles</th><th class="r">Citrouilles</th></tr>${rows.map(([n, v], i) =>
+      `<tr><td>${i === 0 ? '👑' : i + 1}</td><td>${esc(n)}</td><td class="r">${v}</td></tr>`).join('') || '<tr><td class="muted">Personne pour l\'instant.</td></tr>'}</table></div>
+    <p class="muted">Visible seulement dans l'admin : les joueurs ne voient que leur propre total.</p>`;
 }
 
 // --- invitations : liens à usage unique (collection « invites », commune aux 2 versions) ---
