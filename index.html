@@ -5935,7 +5935,7 @@ const App = {
         || `<div class="tiny center">${filt === 'own' ? 'Rien à porter ici pour l\'instant.' : 'Tout est débloqué ici, bravo !'}</div>`) + `
         <div class="tiny center">🏅 = ne s'achète pas, se gagne. Visible par tout le monde dans les classements.</div>`;
     } else {
-      top = `<div class="mascot">${tab === 'theme' ? swatch(prev || eq('theme'), 2) : '<canvas id="preview" width="64" height="84" class="pix" style="width:calc(var(--u)*48);height:calc(var(--u)*63)"></canvas>'}</div>`;
+      top = `<div class="mascot">${tab === 'theme' ? swatch(prev || eq('theme'), 3) : '<canvas id="preview" width="64" height="84" class="pix" style="width:calc(var(--u)*72);height:calc(var(--u)*94.5)"></canvas>'}</div>`;
       body = `${items.length ? `<div class="grid three">${items.map(it => tile(it)).join('')}</div>` : `<div class="tiny center">${filt === 'own' ? 'Rien à porter ici pour l\'instant.' : 'Tout est débloqué ici, bravo !'}</div>`}
         <div class="tiny center">Gagne des 🟡 en jouant, en finissant les quêtes et en trouvant les trésors. Certains objets se méritent autrement…</div>
         <div class="tiny center">🤫 Secrets trouvés : ${found} / ${SECRET_COUNT}</div>`;
