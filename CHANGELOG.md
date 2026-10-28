@@ -9,7 +9,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ## v1.21.0 — Menus plus clairs (29 octobre 2026)
 - Style : aperçu plus petit et toujours visible en haut (y compris l'aperçu de sa ligne de classement), onglets sur
-  2 lignes, filtre « Seulement ce que je peux acheter », phrase d'explication à la place de « 🔒 0/31 »,
+  2 lignes, filtres « Tout / 👕 À porter / 🔓 À débloquer » (ce qu'on peut acheter tout de suite en tête), phrase d'explication à la place de « 🔒 0/31 »,
   la page ne remonte plus en haut quand on touche un objet.
 - Badges : plus lisibles, barre de progression pour les badges à paliers, badges gagnés puis les plus proches en premier.
 - Bousipédia : barre de progression, indice pour les objets pas encore découverts (où, quelle taille, rareté).

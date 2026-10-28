@@ -226,8 +226,8 @@ input, textarea {
   background: rgba(14, 8, 18, .94); border-bottom: var(--u) solid var(--line); display: flex; flex-direction: column; gap: calc(var(--u) * 2); }
 .shop-top .mascot { display: flex; justify-content: center; }
 .tabs.shoptabs { display: grid; grid-template-columns: repeat(3, 1fr); }
-.btn.afford { font-size: .75em; }
-.btn.afford.on { box-shadow: inset 0 0 0 var(--u) var(--gold); color: var(--gold); }
+.tabs.shopfilt { display: grid; grid-template-columns: 1fr 1.3fr 1.5fr; }
+.tabs.shopfilt .tab { font-size: .85em; }
 .tile .cond { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2; }
 .panel.detail { position: sticky; top: calc(var(--u) * -5 - var(--st, 0px)); z-index: 4; }
 .colbar { margin: 0; flex-shrink: 0; }
@@ -4821,7 +4821,7 @@ const App = {
       resume: () => this.resume(),
       abandon: () => this.abandon(),
       annnav: () => this.annShow((this.annIdx || 0) + +v),
-      shopafford: () => { this.shopAfford = !this.shopAfford; this.show('shop'); },
+      shopfilt: () => { this.shopFilt = v; this.show('shop'); },
       cvd: () => { CVD = !CVD; safeStorageSet('bousier_cvd', CVD ? '1' : ''); this.appEl.classList.toggle('cvd', CVD); this.show('profile'); },
       sound: () => { Sound.on = !Sound.on; Store.data.settings.sound = Sound.on; Store.save(); this.show('profile'); },
       switchp: () => this.switchTo(v),
@@ -5859,9 +5859,12 @@ const App = {
     const tab = this.shopTab, type = this.shopType(), rank = tab === 'rank';
     const shown = (t, it) => { const own = Store.owns(p, t, it); return (!it.secret || own) && (!it.survival || SURVIVAL_ON)
       && (!it.season || isHalloween(this.today) || own) && (!it.from || this.today >= it.from || own) && (!it.week || own) && (!it.gift || own) && (!it.devOnly || ONLINE_ENV === 'dev'); };
-    // filtre « ce que je peux acheter » : pas encore à moi, et assez de pièces
-    const afford = (t, it) => !this.shopAfford || (!Store.owns(p, t, it) && it.price && it.price <= p.coins);
-    const items = rank ? [] : COSMETICS[tab].filter(it => shown(tab, it) && afford(tab, it));
+    // filtre : tout / à porter (déjà à moi) / à débloquer (pas encore à moi ; ce que je peux acheter tout de suite en tête)
+    const filt = this.shopFilt || 'all';
+    const afford = (t, it) => filt === 'all' || (filt === 'own') === !!Store.owns(p, t, it);
+    const buyNow = (t, it) => filt === 'lock' && it.price && it.price <= p.coins && !Store.owns(p, t, it) ? 0 : 1;
+    const order = (t, l) => l.map((it, i) => [it, i]).sort((a, b) => buyNow(t, a[0]) - buyNow(t, b[0]) || a[1] - b[1]).map(x => x[0]);
+    const items = rank ? [] : order(tab, COSMETICS[tab].filter(it => shown(tab, it) && afford(tab, it)));
     const eq = t => findCos(t, p.equip[t]);
     const prev = this.shopSel ? findCos(type, this.shopSel) : null;
     const mascot = (skin, hat, outfit, trail, R, scale) => {
@@ -5907,7 +5910,7 @@ const App = {
     }
     const tabs = [['ball', 'Boules'], ['hat', 'Chapeaux'], ['outfit', 'Tenues'], ['trail', 'Traînées'], ['theme', 'Décors'], ...(open ? [['rank', 'Classement']] : [])]
       .map(([k, l]) => `<button class="tab ${tab === k ? 'on' : ''}" data-a="shoptab" data-v="${k}">${l}</button>`).join('');
-    const filt = `<button class="btn ghost small afford ${this.shopAfford ? 'on' : ''}" data-a="shopafford">${this.shopAfford ? '✅' : '⬜'} 🟡 Seulement ce que je peux acheter</button>`;
+    const filters = `<div class="tabs shopfilt">${[['all', 'Tout'], ['own', '👕 À porter'], ['lock', '🔓 À débloquer']].map(([k, l]) => `<button class="tab ${filt === k ? 'on' : ''}" data-a="shopfilt" data-v="${k}">${l}</button>`).join('')}</div>`;
     const found = Object.keys(COSMETICS).reduce((n, t) => n + COSMETICS[t].filter(it => it.secret && Store.owns(p, t, it)).length, 0);
     let top, body;
     if (rank) {
@@ -5918,14 +5921,14 @@ const App = {
       // chaque catégorie : d'abord ce qui s'achète, puis ce qui se gagne (🏅)
       const rstatus = (t, it) => !Store.owns(p, t, it) && it.prog ? `🏅 ${status(it, t)}` : `${it.prog ? '🏅 ' : ''}${status(it, t)}`;
       const pill = (t, it) => `<button class="pill ${p.equip[t] === it.id ? 'on' : ''} ${this.shopSel === it.id && type === t ? 'sel2' : ''} ${Store.owns(p, t, it) ? '' : 'lock'} ${it.prog ? 'earn' : ''}" data-a="rankitem" data-v="${t}:${it.id}"><span class="pn">${t === 'color' ? `<span class="sw ${it.rainbow ? 'rainbow-bg' : ''}" style="${it.col ? 'background:' + it.col : ''}"></span> ` : t === 'frame' && it.col ? `<span class="sw" style="background:${it.col}"></span> ` : ''}${t === 'title' && it.id !== 'aucun' ? `« ${esc(it.name)} »` : esc(it.name)}</span><span class="tiny">${rstatus(t, it)}</span></button>`;
-      const group = t => { const l = COSMETICS[t].filter(it => shown(t, it) && afford(t, it)); return l.filter(it => !it.prog).concat(l.filter(it => it.prog)).map(it => pill(t, it)).join(''); };
+      const group = t => { const l = COSMETICS[t].filter(it => shown(t, it) && afford(t, it)); return order(t, l.filter(it => !it.prog).concat(l.filter(it => it.prog))).map(it => pill(t, it)).join(''); };
       const sect = (t, label) => { const g = group(t); return g ? `<div class="label">${label}</div><div class="pills rank">${g}</div>` : ''; };
       body = (sect('frame', '🖼️ Cadres') + sect('color', '🎨 Couleurs du pseudo') + sect('title', '🏷️ Titres sous le pseudo')
-        || `<div class="tiny center">Rien à acheter ici pour l'instant avec tes ${p.coins} 🟡.</div>`) + `
+        || `<div class="tiny center">${filt === 'own' ? 'Rien à porter ici pour l\'instant.' : 'Tout est débloqué ici, bravo !'}</div>`) + `
         <div class="tiny center">🏅 = ne s'achète pas, se gagne. Visible par tout le monde dans les classements.</div>`;
     } else {
       top = `<div class="mascot">${tab === 'theme' ? swatch(prev || eq('theme'), 2) : '<canvas id="preview" width="64" height="84" class="pix" style="width:calc(var(--u)*48);height:calc(var(--u)*63)"></canvas>'}</div>`;
-      body = `${items.length ? `<div class="grid three">${items.map(it => tile(it)).join('')}</div>` : `<div class="tiny center">Rien à acheter ici pour l'instant avec tes ${p.coins} 🟡.</div>`}
+      body = `${items.length ? `<div class="grid three">${items.map(it => tile(it)).join('')}</div>` : `<div class="tiny center">${filt === 'own' ? 'Rien à porter ici pour l\'instant.' : 'Tout est débloqué ici, bravo !'}</div>`}
         <div class="tiny center">Gagne des 🟡 en jouant, en finissant les quêtes et en trouvant les trésors. Certains objets se méritent autrement…</div>
         <div class="tiny center">🤫 Secrets trouvés : ${found} / ${SECRET_COUNT}</div>`;
     }
@@ -5935,7 +5938,7 @@ const App = {
       <div class="shop-top">${top}${bar}</div>
       ${wkHtml}
       <div class="tabs shoptabs">${tabs}</div>
-      ${filt}
+      ${filters}
       ${body}
     </div>`;
   },
