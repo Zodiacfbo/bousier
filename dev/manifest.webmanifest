@@ -1,0 +1,17 @@
+{
+  "name": "Bousier (dev)",
+  "short_name": "Bousier dev",
+  "description": "Roule ta boule sur la dune du jour.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#120a16",
+  "theme_color": "#1a1020",
+  "lang": "fr",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
