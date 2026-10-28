@@ -7,7 +7,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
-## v1.21.0 — Menus plus clairs (29 octobre 2026)
+## v1.21.0 — Menus plus clairs (28 octobre 2026)
 - Style : aperçu plus petit, onglets et filtres toujours visibles en haut (seuls les objets défilent) (y compris l'aperçu de sa ligne de classement), onglets sur
   2 lignes, filtres « Tout / 👕 À porter / 🔓 À débloquer » (ce qu'on peut acheter tout de suite en tête), phrase d'explication à la place de « 🔒 0/31 »,
   la page ne remonte plus en haut quand on touche un objet.
@@ -15,7 +15,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Bousipédia : barre de progression, indice pour les objets pas encore découverts (où, quelle taille, rareté).
 - Profil : rubrique « 📊 Mes stats ».
 
-## v1.20.0 — Accueil plus simple (29 octobre 2026)
+## v1.20.0 — Accueil plus simple (28 octobre 2026)
 - Le bouton ROULER ! et le menu restent visibles en bas de l'accueil.
 - Les annonces (récompenses, podium, fêtes, annonces de l'organisateur…) sont rangées dans un seul encadré,
   une à la fois, avec ◀ ▶ ; OK n'enlève que celle affichée.
@@ -23,7 +23,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Bouton « 🎲 Entraînement aléatoire » à côté de ROULER ! (remplace « 🏜️ Entraînement libre »).
 - Étiquette « ▼ Quêtes du jour plus bas » au-dessus de ROULER !, qui disparaît une fois en bas de l'accueil.
 
-## v1.19.1 — Cadres complets (29 octobre 2026)
+## v1.19.1 — Cadres complets (28 octobre 2026)
 - Classements : deux cadres qui se suivent ne se recouvrent plus, chacun garde ses 4 côtés.
 
 ## v1.19.0 — Météo de demain (28 octobre 2026)
