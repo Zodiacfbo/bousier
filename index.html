@@ -224,6 +224,8 @@ input, textarea {
 .tab.on { color: #2a1408; background: var(--accent); font-weight: 700; }
 
 table { width: 100%; border-collapse: collapse; }
+/* classements : chaque ligne garde ses propres bordures (deux cadres qui se suivent ne se recouvrent pas) */
+.lb { border-collapse: separate; border-spacing: 0; }
 .lb td, .stats td { padding: calc(var(--u) * 1.5) var(--u); border-bottom: var(--u) solid rgba(255,255,255,.07); }
 .lb td.r, .stats td:last-child { text-align: right; font-weight: 700; }
 .lb tr.me td { color: var(--gold); }
