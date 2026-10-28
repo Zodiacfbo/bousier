@@ -225,6 +225,7 @@ input, textarea {
 .shop-top { position: sticky; top: calc(var(--u) * -5 - var(--st, 0px)); z-index: 4; margin: calc(var(--u) * -2) calc(var(--u) * -5) 0; padding: calc(var(--u) * 2) calc(var(--u) * 5);
   background: rgba(14, 8, 18, .94); border-bottom: var(--u) solid var(--line); display: flex; flex-direction: column; gap: calc(var(--u) * 2); }
 .shop-top .mascot { display: flex; justify-content: center; }
+.shop-top .tab:not(.on) { box-shadow: inset 0 0 0 var(--u) var(--panel2); }
 .tabs.shoptabs { display: grid; grid-template-columns: repeat(3, 1fr); }
 .tabs.shopfilt { display: grid; grid-template-columns: 1fr 1.3fr 1.5fr; }
 .tabs.shopfilt .tab { font-size: .85em; }
@@ -5935,10 +5936,8 @@ const App = {
     return `<div class="screen">
       ${this.back('Style')}
       <div class="topbar end"><span class="chip gold">🟡 ${p.coins}</span></div>
-      <div class="shop-top">${top}${bar}</div>
+      <div class="shop-top">${top}${bar}<div class="tabs shoptabs">${tabs}</div>${filters}</div>
       ${wkHtml}
-      <div class="tabs shoptabs">${tabs}</div>
-      ${filters}
       ${body}
     </div>`;
   },
