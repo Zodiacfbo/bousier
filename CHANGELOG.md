@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.21.1 — Chapeau de paille (28 octobre 2026)
+- Nouveau chapeau secret 🤫 « Chapeau de paille » (ruban rouge) : 50 coquillages avalés dans les dunes du jour. Sans news.
+- Encadré « 🎁 Tes récompenses » : l'explication s'affiche aussi pour les secrets (ex. lunettes de protection).
+
 ## v1.21.0 — Menus plus clairs (28 octobre 2026)
 - Style : aperçu plus petit, onglets et filtres toujours visibles en haut (seuls les objets défilent) (y compris l'aperçu de sa ligne de classement), onglets sur
   2 lignes, filtres « Tout / 👕 À porter / 🔓 À débloquer » (ce qu'on peut acheter tout de suite en tête), phrase d'explication à la place de « 🔒 0/31 »,

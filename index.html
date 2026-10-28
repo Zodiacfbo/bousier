@@ -804,6 +804,7 @@ const ROWS = {
   bob: ['.ttttt.', 'tssssst', 'tsspsst', 'tssssst', '.ttttt.'],
   fez: ['..k....', '..kRR..', '.RrrrR.', '.RrrrR.', '..RRR..'],
   sombrero: ['..ttttt..', '.tTTTTTt.', 'tTTrrrTTt', 'tTTrrrTTt', '.tTTTTTt.', '..ttttt..'],
+  paille: ['...YyyyyY...', '.YyysssyyY..', 'Yyysrrrsyyy.', 'YysrsssrsyY.', 'YysrsssrsyY.', 'Yyysrrrsyyy.', '.YyysssyyY..', '...YyyyyY...'],
   couronneHat: ['y.y.y.y', 'yYyYyYy', 'YyyryyY', 'YYYYYYY'],
   nemes: ['.yCyCy.', 'yCyCyCy', 'CyCyCyC', 'yC...Cy', 'C.....C'],
   drapeau: ['krr', 'krrr', 'krr', 'k', 'k', 'k', 'k'],
@@ -1332,6 +1333,7 @@ const HATS = [
   { id: 'bob', name: 'Bob de touriste', price: 150, sprite: 'bob' },
   { id: 'fez', name: 'Fez', price: 200, sprite: 'fez' },
   { id: 'sombrero', name: 'Sombrero', price: 260, sprite: 'sombrero' },
+  { id: 'paille', name: 'Chapeau de paille', sprite: 'paille' },
   { id: 'couronne', name: 'Couronne de géant', badge: 'geant', sprite: 'couronneHat' },
   { id: 'nemes', name: 'Némès du pharaon', badge: 'legende', sprite: 'nemes' },
   { id: 'parapluie', name: 'Parapluie', sprite: 'parapluie', dy: -3 },
@@ -1523,6 +1525,7 @@ const UNLOCKS = {
   'ball:uranium': { text: 'Rentre 10 fois dans le terrier', prog: p => [p.stats.terriers, 10] },
   'hat:parapluie': { text: 'Joue 5 parties du jour sous la pluie', prog: p => [counter(p, 'rain'), 5] },
   'hat:lunettes': { secret: true, flag: 'presque', got: 'Le terrier raté de 3 cm ou moins' },
+  'hat:paille': { secret: true, prog: p => [p.collection.coquillage || 0, 50], got: '50 coquillages avalés : prêt à prendre la mer !' },
   'hat:charlotte': { price: 200 },
   'hat:casqueKevin': { mystery: 'Il paraît que Kevin a perdu quelque chose…', flag: 'kevin', got: 'Percuté par Kevin et sa trottinette' },
   'trail:eclairs': { text: 'Sois 3 fois « Le sprinteur » du jour', prog: p => [counter(p, 't_sprint'), 3] },
@@ -1986,7 +1989,7 @@ function annSeen() {
 function rewardLine(type, item) {
   // « Cadre du podium », « Boule diamant » : le nom dit déjà le type, on ne garde que l'icône
   const [icon, word] = (REWARD_TYPE[type] || ' ').split(' '), name = type === 'title' ? `« ${item.name} »` : item.name;
-  return { txt: `${icon} ${word && !item.name.toLowerCase().startsWith(word.toLowerCase()) ? word + ' ' : ''}${name}${item.secret ? ' 🤫' : ''}`, why: item.how || item.text || '' };
+  return { txt: `${icon} ${word && !item.name.toLowerCase().startsWith(word.toLowerCase()) ? word + ' ' : ''}${name}${item.secret ? ' 🤫' : ''}`, why: item.how || item.text || item.got || '' };
 }
 function frameCls(look) { const f = findCos('frame', look && look.frame); return f.id === 'aucun' ? '' : `fr fr-${f.id}`; }
 function podiumHtml(top, opts = {}) {
