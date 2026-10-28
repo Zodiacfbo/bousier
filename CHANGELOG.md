@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.18.7 — Titres longs (28 octobre 2026)
+- Classements : un titre ne se coupe plus en morceaux (il passe en entier à la ligne si besoin), la couronne reste collée au pseudo.
+
 ## v1.18.6 — Tuto refait (28 octobre 2026)
 - « Comment jouer » en 7 pages, une idée par page, phrases raccourcies.
 - Deux nouvelles pages avec un exemple annoté : le classement du jour (toi, terrier raté, l'essai qui compte, ✨)
