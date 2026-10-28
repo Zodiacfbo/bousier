@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.20.0 — Accueil plus simple (29 octobre 2026)
+- Le bouton ROULER ! et le menu restent visibles en bas de l'accueil.
+- Les annonces (récompenses, podium, fêtes, annonces de l'organisateur…) sont rangées dans un seul encadré,
+  une à la fois, avec ◀ ▶ ; OK n'enlève que celle affichée.
+- Icônes du haut avec leur nom : Idées, News, Tuto, Série, Pièces.
+
 ## v1.19.1 — Cadres complets (29 octobre 2026)
 - Classements : deux cadres qui se suivent ne se recouvrent plus, chacun garde ses 4 côtés.
 

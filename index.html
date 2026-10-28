@@ -194,6 +194,23 @@ input, textarea {
 .panel.unread { box-shadow: inset 0 0 0 var(--u) var(--gold); }
 .new-tag { background: #e8423a; color: #fff; font-size: .75em; padding: 0 calc(var(--u) * 1.5); margin-left: calc(var(--u) * 2); }
 
+.topbar .chip.lab { display: flex; flex-direction: column; align-items: center; padding: var(--u) calc(var(--u) * 2); line-height: 1.1; }
+.topbar .chip.lab small { font-size: .68em; color: var(--muted); margin-top: calc(var(--u) * .5); }
+/* annonces de l'accueil : une à la fois */
+.ann-head { display: flex; align-items: center; justify-content: space-between; font-size: .75em; color: var(--muted); margin-bottom: calc(var(--u) * 2); }
+.ann-head b { color: var(--gold); }
+.ann-nav { display: flex; gap: calc(var(--u) * 2); }
+.ann-nav button { font: inherit; color: var(--ink); background: var(--panel2); border: var(--u) solid var(--line); padding: 0 calc(var(--u) * 3); cursor: pointer; }
+.ann > .banner { border: 0; box-shadow: none; padding: 0; background: none; width: 100%; }
+.ann > [hidden] { display: none; }
+.ann-dots { display: flex; gap: calc(var(--u) * 1.5); justify-content: center; margin-top: calc(var(--u) * 2); }
+.ann-dots i { width: calc(var(--u) * 3); height: calc(var(--u) * 3); background: #4a3a4a; }
+.ann-dots i.on { background: var(--gold); }
+/* accueil : ROULER ! et le menu restent visibles en bas */
+.foot { position: sticky; bottom: calc(var(--u) * -5 - var(--sb, 0px)); margin: auto calc(var(--u) * -5) calc(var(--u) * -5 - var(--sb, 0px));
+  padding: calc(var(--u) * 3) calc(var(--u) * 5) calc(var(--u) * 4 + var(--sb, 0px)); background: rgba(14, 8, 18, .94);
+  border-top: var(--u) solid var(--line); display: flex; flex-direction: column; gap: calc(var(--u) * 2.5); z-index: 5; }
+.foot .nav { margin-top: 0; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 3); }
 .card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--u); }
 .big-ico { font-size: 1.8em; min-height: calc(var(--u) * 24); display: flex; align-items: center; }
@@ -4690,7 +4707,27 @@ const App = {
     const sc = this.ui.querySelector('.screen'); if (sc) sc.scrollTop = 0;
     if (name === 'shop') this.startPreview();
     if (name === 'results') this.countCoins();
+    if (name === 'home') this.annInit();
     if (name === 'name') { const i = this.ui.querySelector('input'); if (i) setTimeout(() => i.focus(), 50); }
+  },
+
+  // Accueil : les annonces sont rangées dans un seul encadré, une à la fois (◀ ▶)
+  annInit() {
+    const box = this.ui.querySelector('.annbox'); if (!box) return;
+    const items = [...box.children];
+    if (items.length < 2) { if (items[0]) box.replaceWith(items[0]); else box.remove(); return; }
+    box.classList.add('banner', 'ann');
+    box.insertAdjacentHTML('afterbegin', `<div class="ann-head"><span>📬 <b>Annonces</b> · <span class="ann-n"></span></span><span class="ann-nav"><button data-a="annnav" data-v="-1" aria-label="Précédente">◀</button><button data-a="annnav" data-v="1" aria-label="Suivante">▶</button></span></div>`);
+    box.insertAdjacentHTML('beforeend', `<div class="ann-dots">${items.map(() => '<i></i>').join('')}</div>`);
+    this.annShow(this.annIdx || 0);
+  },
+  annShow(i) {
+    const box = this.ui.querySelector('.ann'); if (!box) return;
+    const items = [...box.children].filter(e => !e.matches('.ann-head, .ann-dots')), n = items.length;
+    this.annIdx = ((i % n) + n) % n;
+    items.forEach((e, k) => { e.hidden = k !== this.annIdx; });
+    box.querySelector('.ann-n').textContent = `${this.annIdx + 1}/${n}`;
+    box.querySelectorAll('.ann-dots i').forEach((e, k) => e.classList.toggle('on', k === this.annIdx));
   },
 
   // Semaine Halloween : menus aux couleurs de la fête ; toiles, chauves-souris et araignée sur l'accueil
@@ -4749,6 +4786,7 @@ const App = {
       colsel: () => { this.colSel = v; this.show('collection'); },
       resume: () => this.resume(),
       abandon: () => this.abandon(),
+      annnav: () => this.annShow((this.annIdx || 0) + +v),
       cvd: () => { CVD = !CVD; safeStorageSet('bousier_cvd', CVD ? '1' : ''); this.appEl.classList.toggle('cvd', CVD); this.show('profile'); },
       sound: () => { Sound.on = !Sound.on; Store.data.settings.sound = Sound.on; Store.save(); this.show('profile'); },
       switchp: () => this.switchTo(v),
@@ -5275,11 +5313,11 @@ const App = {
     return `<div class="topbar">
       <button class="chip" data-a="go" data-v="profile">${p.account ? '🔒' : '👤'} ${esc(p.name)}${this.champ === p.name ? ' 👑' : ''}</button>
       ${TIME_SHIFT ? `<button class="chip off" data-a="go" data-v="profile">🕰️ ${TIME_SHIFT.slice(8)}/${TIME_SHIFT.slice(5, 7)}</button>` : ''}
-      <button class="chip notif" data-a="go" data-v="ideas" aria-label="Boîte à idées">💡${this.ideasBadge ? `<span class="pill-n">${this.ideasBadge}</span>` : ''}</button>
-      <button class="chip notif" data-a="go" data-v="changelog" aria-label="Nouveautés">📰${unreadNews() ? `<span class="pill-n">${unreadNews()}</span>` : ''}</button>
-      <button class="chip" data-a="go" data-v="tuto" aria-label="Comment jouer">❓</button>
-      <span class="chip">🔥 ${Store.streakOf(p, this.today)}</span>
-      <span class="chip gold">🟡 ${p.coins}</span>
+      <button class="chip lab notif" data-a="go" data-v="ideas" aria-label="Boîte à idées"><span>💡</span><small>Idées</small>${this.ideasBadge ? `<span class="pill-n">${this.ideasBadge}</span>` : ''}</button>
+      <button class="chip lab notif" data-a="go" data-v="changelog" aria-label="Nouveautés"><span>📰</span><small>News</small>${unreadNews() ? `<span class="pill-n">${unreadNews()}</span>` : ''}</button>
+      <button class="chip lab" data-a="go" data-v="tuto" aria-label="Comment jouer"><span>❓</span><small>Tuto</small></button>
+      <span class="chip lab"><span>🔥 ${Store.streakOf(p, this.today)}</span><small>Série</small></span>
+      <span class="chip lab gold"><span>🟡 ${p.coins}</span><small>Pièces</small></span>
       ${this.isOffline() ? '<span class="chip off" title="Hors connexion">📴</span>' : ''}
     </div>`;
   },
@@ -5477,7 +5515,6 @@ const App = {
     }
     const leg = cfg.legend;
     const quests = cfg.quests.map(q => `<li class="${d.quests[q.id] ? 'done' : ''}">${d.quests[q.id] ? '✅' : '⬜'} ${esc(q.text)}</li>`).join('');
-    const dots = [...Array(tries).keys()].map(i => `<span class="dot ${i < d.attempts ? 'used' : ''}"></span>`).join('');
     const playBtn = left > 0
       ? `<button class="btn big pulse" data-a="play">ROULER ! <small>essai ${d.attempts + 1}/${tries}</small></button>`
       : `<div class="panel done-day">Essais terminés pour aujourd'hui.<br>Nouvelle dune dans <b id="countdown">${fmtCountdown(msToMidnight())}</b></div>`;
@@ -5489,6 +5526,7 @@ const App = {
         <div class="mascot bob tickle" data-a="tickle">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
         ${this.today >= EGG.from && cfg.weather.id === 'nuit' ? `<button class="moon" data-a="moon" aria-label="Lune">${spriteImg('luneHome', 3)}</button>` : ''}
       </div>
+      <div class="annbox">
       ${(p.inbox || []).length ? `<div class="banner gift"><b>🎁 Tes récompenses</b><ul class="quests">${p.inbox.map(e => `<li>${esc(e.txt)}${e.why ? `<div class="tiny why">${esc(e.why)}</div>` : ''}</li>`).join('')}</ul>
         <div class="gift-btns"><button class="btn ghost small" data-a="giftok">OK</button></div></div>` : ''}
       ${isHalloween(this.today) && safeStorageGet('bousier_hw_' + ONLINE_ENV) !== this.today ? `<div class="banner">🎃 <b>Semaine Halloween !</b> Citrouilles et chauves-souris dans la dune.<div class="tiny">${this.today === HALLOWEEN.night ? 'Ce soir, dune spéciale de nuit : rentre dans le terrier pour gagner le 🧙 Chapeau de sorcière !' : `Joue une dune pour gagner la 🎃 Boule citrouille. ${this.today < HALLOWEEN.night ? 'Samedi 31 : dune spéciale de nuit !' : ''}`}</div> <button class="btn ghost small" data-a="hwok">OK</button></div>` : ''}
@@ -5504,6 +5542,7 @@ const App = {
       ${news ? `<div class="banner">${esc(news)}</div>` : ''}
       ${!p.account ? '<button class="banner" data-a="go" data-v="profile">🔒 Choisis un mot de passe pour ne pas perdre ton pseudo →</button>' : ''}
       ${p.nameTaken ? '<div class="banner bad">Ce pseudo est déjà pris en ligne : tes scores ne sont pas envoyés. Crée un autre joueur.</div>' : ''}
+      </div>
       <div class="row2">
         <div class="panel card">
           <div class="label">Météo du jour</div>
@@ -5535,18 +5574,19 @@ const App = {
         <div class="tiny">👑 Titre « Roi des citrouilles 2026 » à gagner : avale le plus de citrouilles de la semaine ! Toi : <b>${hw.by[p.name] || 0} 🎃</b></div>
       </div>` : ''}
       <div class="play-zone">
-        <div class="dots">${dots}</div>
-        ${playBtn}
         ${d.best > 0 ? `<div class="tiny center">Ton record du jour : <b>${fmtSize(d.best)}</b>${rank ? ` · ${rank}${rank === 1 ? 'er' : 'e'} / ${lb.length}${lb.online ? '' : ' (hors ligne)'}` : ''}</div>` : ''}
         <button class="btn ghost" data-a="practice">🏜️ Entraînement libre</button>
         ${SURVIVAL_ON ? `<button class="btn" data-a="survival">🏃 La Grande Fuite <small>record ${p.survival.best} m</small></button>` : ''}
       </div>
-      <nav class="nav">
-        <button data-a="go" data-v="leaderboard"><span>🏆</span>Classement</button>
-        <button data-a="go" data-v="collection"><span>📖</span>Bousipédia</button>
-        <button data-a="go" data-v="shop"><span>🎨</span>Style</button>
-        <button data-a="go" data-v="badges"><span>🎖️</span>Badges</button>
-      </nav>
+      <div class="foot">
+        ${playBtn}
+        <nav class="nav">
+          <button data-a="go" data-v="leaderboard"><span>🏆</span>Classement</button>
+          <button data-a="go" data-v="collection"><span>📖</span>Bousipédia</button>
+          <button data-a="go" data-v="shop"><span>🎨</span>Style</button>
+          <button data-a="go" data-v="badges"><span>🎖️</span>Badges</button>
+        </nav>
+      </div>
     </div>`;
   },
 
