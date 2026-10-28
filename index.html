@@ -211,6 +211,11 @@ input, textarea {
   padding: calc(var(--u) * 3) calc(var(--u) * 5) calc(var(--u) * 4 + var(--sb, 0px)); background: rgba(14, 8, 18, .94);
   border-top: var(--u) solid var(--line); display: flex; flex-direction: column; gap: calc(var(--u) * 2.5); z-index: 5; }
 .foot .nav { margin-top: 0; }
+.foot-play { display: flex; gap: calc(var(--u) * 2.5); align-items: stretch; }
+.foot-play > :first-child { flex: 1 1 0; min-width: 0; margin: 0; }
+.foot .btn.practice { flex: 0 0 28%; width: auto; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--u); padding: calc(var(--u) * 1.5) calc(var(--u) * 3); margin: 0; }
+.foot .btn.practice span { font-size: 1.3em; line-height: 1; }
+.foot .btn.practice small { font-size: .6em; line-height: 1.15; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 3); }
 .card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--u); }
 .big-ico { font-size: 1.8em; min-height: calc(var(--u) * 24); display: flex; align-items: center; }
@@ -5436,7 +5441,7 @@ const App = {
       {
         title: 'Une dune par jour',
         pics: '🏜️<span class="tuto-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
-        text: 'Chaque jour, une nouvelle dune, <b>la même pour tout le monde</b>.<br><b>3 essais : seul le meilleur compte.</b><br><span class="tiny">Envie de t\'exercer ? 🏜️ Entraînement libre, sans limite.</span>',
+        text: 'Chaque jour, une nouvelle dune, <b>la même pour tout le monde</b>.<br><b>3 essais : seul le meilleur compte.</b><br><span class="tiny">Envie de t\'exercer ? 🎲 Entraînement aléatoire : une dune au hasard, sans limite.</span>',
       },
       {
         title: 'Le classement du jour',
@@ -5575,11 +5580,10 @@ const App = {
       </div>` : ''}
       <div class="play-zone">
         ${d.best > 0 ? `<div class="tiny center">Ton record du jour : <b>${fmtSize(d.best)}</b>${rank ? ` · ${rank}${rank === 1 ? 'er' : 'e'} / ${lb.length}${lb.online ? '' : ' (hors ligne)'}` : ''}</div>` : ''}
-        <button class="btn ghost" data-a="practice">🏜️ Entraînement libre</button>
         ${SURVIVAL_ON ? `<button class="btn" data-a="survival">🏃 La Grande Fuite <small>record ${p.survival.best} m</small></button>` : ''}
       </div>
       <div class="foot">
-        ${playBtn}
+        <div class="foot-play">${playBtn}<button class="btn ghost practice" data-a="practice" aria-label="Entraînement aléatoire"><span>🎲</span><small>Entraînement<br>aléatoire</small></button></div>
         <nav class="nav">
           <button data-a="go" data-v="leaderboard"><span>🏆</span>Classement</button>
           <button data-a="go" data-v="collection"><span>📖</span>Bousipédia</button>

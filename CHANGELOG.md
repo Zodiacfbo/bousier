@@ -12,6 +12,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Les annonces (récompenses, podium, fêtes, annonces de l'organisateur…) sont rangées dans un seul encadré,
   une à la fois, avec ◀ ▶ ; OK n'enlève que celle affichée.
 - Icônes du haut avec leur nom : Idées, News, Tuto, Série, Pièces.
+- Bouton « 🎲 Entraînement aléatoire » à côté de ROULER ! (remplace « 🏜️ Entraînement libre »).
 
 ## v1.19.1 — Cadres complets (29 octobre 2026)
 - Classements : deux cadres qui se suivent ne se recouvrent plus, chacun garde ses 4 côtés.
