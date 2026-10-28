@@ -117,6 +117,14 @@ button.banner { font: inherit; width: 100%; cursor: pointer; }
 .rx-add { font-size: .7em; margin-left: calc(var(--u) * 2); padding: 0 var(--u); border: var(--u) solid var(--panel2); color: var(--muted); white-space: nowrap; }
 .tuto { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 3); text-align: center; }
 .tuto .pics { display: flex; gap: calc(var(--u) * 6); align-items: center; justify-content: center; min-height: calc(var(--u) * 40); font-size: 2.4em; }
+.tuto .pics:has(.tuto-ex) { align-self: stretch; }
+.tuto .pics .tuto-ex { flex: 1; align-self: stretch; width: 100%; font-size: calc(var(--u) * 7); text-align: left; }
+.tuto-ex .lb td:first-child { width: calc(var(--u) * 14); }
+.tuto-ex .lb tr.tuto-notes td { border: 0; padding-top: var(--u); font-size: .9em; line-height: 1.2; color: var(--gold); vertical-align: top; }
+.tuto-notes div { display: flex; gap: calc(var(--u) * 1); text-align: center; }
+.tuto-notes div span { flex: 1; text-align: center; }
+.tuto-note { font-size: .9em; line-height: 1.3; color: var(--gold); text-align: center; margin-top: var(--u); }
+.tuto-cap { font-size: .9em; font-weight: 700; color: #e0d4ec; margin: calc(var(--u) * 2) 0 var(--u); }
 .tuto-dots { display: flex; gap: calc(var(--u) * 2); }
 .tuto .pics small { display: block; font-size: .35em; }
 .steps { display: flex; gap: calc(var(--u) * 2); justify-content: center; }
@@ -308,7 +316,7 @@ table { width: 100%; border-collapse: collapse; }
 .lb tr.fr.wk-main td { border-bottom: 0; }
 .lb tr.fr.wk-det td { border-top: 0; }
 .wkdet span { flex: 1; min-width: 0; text-align: center; font-size: .9em; line-height: 1.2; color: #6a5a6a; background: rgba(255,255,255,.04); padding: calc(var(--u) * 0.5) 0; }
-.wkdet span i { display: block; font-style: normal; font-size: .72em; opacity: .7; }
+.wkdet span i { display: block; font-style: normal; font-size: .8em; color: #d8c8e8; }
 .wkdet span.off { color: #8a7a8a; background: rgba(255,255,255,.07); }
 .wkdet span.on { color: #fff; background: rgba(255,255,255,.07); }
 .wkdet span.on b { font-weight: 700; text-decoration: underline; text-decoration-thickness: var(--u); text-underline-offset: var(--u); }
@@ -5365,32 +5373,45 @@ const App = {
       {
         title: 'Dirige ta boule',
         pics: `${pix(mascotUrl(SKINS[0], HATS[0], 10), 72, 76)}`,
-        text: 'Glisse ton doigt à gauche ou à droite pour diriger ta boule.<br><span class="tiny">Au clavier : ← → ou Q / D.</span>',
+        text: 'Glisse ton doigt à gauche ou à droite.<br><span class="tiny">Au clavier : ← → ou Q / D.</span>',
       },
       {
         title: 'Grossis !',
         pics: `<span class="good">${spriteImg('crottin', 4)}<small>✅ miam</small></span><span class="bad">${spriteImg('rock_12_0', 2)}<small>❌ aïe</small></span>`,
-        text: 'Avale ce qui est <b>plus petit que ta boule</b> pour grossir.<br>Ce qui est plus gros te freine et te fait maigrir. Attention aux cactus !<br><b>Entouré de rouge = encore trop gros pour toi.</b> Tout finit par se manger !',
+        text: `Avale ce qui est <b>plus petit que ta boule</b>.<br>Ce qui est plus gros te freine, les cactus te piquent.<br><b>${CVD ? 'Entouré de bleu ✖' : 'Entouré de rouge'} = encore trop gros pour toi.</b>`,
       },
       {
         title: 'Vise le terrier',
         pics: '🕳️',
-        text: 'Au bout de la dune, rentre dans le terrier : <b>sinon ton score est divisé par 2</b>.<br>Ton score = la taille de ta boule (+10 % à chaque essai où tu attrapes le trésor du jour).',
+        text: 'Ton score = <b>la taille de ta boule</b>.<br>Au bout de la dune, rentre dans le terrier : <b>sinon ton score est divisé par 2</b>.<br>✨ Attrape le trésor du jour : <b>+10 %</b>.',
       },
       {
         title: 'Une dune par jour',
         pics: '🏜️<span class="tuto-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
-        text: 'Chaque jour, une nouvelle dune, <b>la même pour tout le monde</b>.<br><b>3 essais par jour : seul ton meilleur résultat compte</b> au classement.<br><span class="tiny">Envie de t\'exercer ? 🏜️ Entraînement libre, sans limite.</span>',
+        text: 'Chaque jour, une nouvelle dune, <b>la même pour tout le monde</b>.<br><b>3 essais : seul le meilleur compte.</b><br><span class="tiny">Envie de t\'exercer ? 🏜️ Entraînement libre, sans limite.</span>',
       },
       {
-        title: 'Personnalise ton bousier',
+        title: 'Le classement du jour',
+        pics: `<div class="tuto-ex">
+          <table class="lb"><tr class="wk-main"><td>6.</td><td>${esc(this.p.name)}</td><td class="r">✨ 2,56 m</td></tr>
+          <tr class="wk-det"><td><span class="toi">toi</span></td><td colspan="2"><div class="wkdet daydet"><span class="off miss"><b>0,87</b></span><span class="on"><b>2,56</b></span><span class="off"><b>1,59</b></span></div></td></tr>
+          <tr class="tuto-notes"><td></td><td colspan="2"><div><span>↑ terrier raté</span><span>↑ il compte</span><span></span></div></td></tr></table>
+        </div>`,
+        text: 'Une case par essai : <b>seul ton meilleur compte</b>.<br><span class="toi">toi</span> = ta ligne · ✨ = trésor du jour attrapé.',
+      },
+      {
+        title: 'Le classement de la semaine',
+        pics: `<div class="tuto-ex">
+          <table class="lb"><tr class="wk-main"><td>4.</td><td>${esc(this.p.name)}</td><td class="tiny good">3/3</td><td class="r">7,57 m</td></tr>
+          <tr class="wk-det"><td><span class="toi">toi</span></td><td colspan="3"><div class="wkdet"><span class="on"><i>L</i><b>2,61</b></span><span class="off"><i>M</i><b>1,90</b></span><span class="on"><i>M</i><b>2,56</b></span><span><i>J</i><b>·</b></span><span class="on"><i>V</i><b>2,40</b></span><span><i>S</i><b>·</b></span><span><i>D</i><b>·</b></span></div></td></tr></table>
+          <div class="tuto-note">↑ une case par jour : <b>tes 3 meilleurs</b> sont soulignés</div>
+        </div>`,
+        text: 'Ton total = <b>tes 3 meilleurs jours additionnés</b>.<br>Pas besoin de jouer tous les jours !<br>Chaque lundi, le podium gagne <b>200 / 100 / 50 🟡</b> et le 1er porte la 👑 toute la semaine.',
+      },
+      {
+        title: 'À toi de jouer !',
         pics: `${pix(mascotUrl(findCos('ball', 'saturne') || SKINS[0], findCos('hat', 'charlotte') || HATS[0], 10, findCos('outfit', 'blouse') || OUTFITS[0]), 72, 76)}<span class="gold">🟡</span>`,
-        text: 'Gagne des pièces 🟡 en jouant et avec les <b>quêtes du jour</b>.<br>Dépense-les dans <b>🎨 Style</b> : boules, chapeaux, tenues, traînées…<br><span class="tiny">Certains objets se gagnent avec les badges 🎖️.</span>',
-      },
-      {
-        title: 'Ton avis compte',
-        pics: '💡',
-        text: 'Une idée, un bug, un message ?<br>Touche <b>💡</b> en haut de l\'accueil : <b>tes retours aident à améliorer le jeu !</b>',
+        text: 'Gagne des 🟡 en jouant et avec les <b>quêtes du jour</b>,<br>puis habille ton bousier dans <b>🎨 Style</b>.<br><span class="tiny">Une idée, un bug ? Touche 💡 sur l\'accueil : tes retours améliorent le jeu !</span>',
       },
     ];
     const s = steps[step] || steps[0], last = step >= steps.length - 1;

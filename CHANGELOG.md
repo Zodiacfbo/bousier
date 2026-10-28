@@ -7,6 +7,14 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.18.6 — Tuto refait (28 octobre 2026)
+- « Comment jouer » en 7 pages, une idée par page, phrases raccourcies.
+- Deux nouvelles pages avec un exemple annoté : le classement du jour (toi, terrier raté, l'essai qui compte, ✨)
+  et le classement de la semaine (3 meilleurs jours additionnés, podium du lundi, 👑).
+- « Personnalise » et « Ton avis compte » réunis dans « À toi de jouer ! ».
+- Mode daltonien : la page « Grossis ! » parle du contour bleu ✖ (et non rouge).
+- Classement de la semaine : lettres des jours plus grandes et plus claires.
+
 ## v1.18.5 — Classement plus lisible (28 octobre 2026)
 - Ma ligne : une étiquette « toi » sous le rang, à la place du pseudo en orange (les cosmétiques gardent leurs couleurs,
   le titre garde toute sa place). Jour, semaine et records.
