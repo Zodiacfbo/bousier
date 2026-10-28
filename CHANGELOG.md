@@ -8,8 +8,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 ---
 
 ## v1.18.5 — Classement plus lisible (28 octobre 2026)
-- Ma ligne : une étiquette « toi » à côté du pseudo, à la place du pseudo en orange (les cosmétiques gardent leurs couleurs).
-- Classement du jour : le meilleur essai est en blanc, gras et souligné, au lieu d'une case orange.
+- Ma ligne : une étiquette « toi » sous le rang, à la place du pseudo en orange (les cosmétiques gardent leurs couleurs,
+  le titre garde toute sa place). Jour, semaine et records.
+- Jour et semaine : les scores qui comptent sont en blanc, gras et soulignés, au lieu de cases orange.
 
 ## v1.18.4 — Admin : course aux citrouilles (27 octobre 2026)
 - Tableau de bord de l'admin : rubrique « 🎃 Semaine Halloween » (total, avancée du défi et du bonus, classement des

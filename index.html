@@ -219,8 +219,7 @@ table { width: 100%; border-collapse: collapse; }
 .lb td.r, .stats td:last-child { text-align: right; font-weight: 700; }
 .lb tr.me td { color: var(--gold); }
 /* ma ligne : une étiquette « toi », sans toucher aux couleurs ni au cadre choisis */
-.lb tr.me:has(.toi) td, .lb tr.me.wk-det td { color: inherit; }
-.toi { display: inline-block; margin-left: calc(var(--u) * 2); padding: 0 calc(var(--u) * 1.5); background: #fff; color: #1d1416; font-size: .7em; font-weight: 700; vertical-align: middle; }
+.toi { display: inline-block; padding: 0 calc(var(--u) * 1.5); background: #fff; color: #1d1416; font-size: .7em; font-weight: 700; line-height: 1.4; }
 
 .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(var(--u) * 2); }
 .grid.three { grid-template-columns: repeat(3, 1fr); }
@@ -305,19 +304,18 @@ table { width: 100%; border-collapse: collapse; }
 .wkdet { display: flex; gap: calc(var(--u) * 1); }
 .lb tr.wk-main td { border-bottom: 0; padding-bottom: 0; }
 .wkdet.daydet span { flex: 1; font-size: 1em; padding: calc(var(--u) * 1.5) 0; }
-.wkdet.daydet span.on { color: #fff; background: rgba(255,255,255,.07); box-shadow: none; }
-.wkdet.daydet span.on b { color: #fff; font-weight: 700; text-decoration: underline; text-decoration-thickness: var(--u); text-underline-offset: var(--u); }
-.wkdet.daydet span.off { color: #8a7a8a; }
 .lb tr.wk-det td { padding-top: calc(var(--u) * 1); }
 .lb tr.fr.wk-main td { border-bottom: 0; }
 .lb tr.fr.wk-det td { border-top: 0; }
 .wkdet span { flex: 1; min-width: 0; text-align: center; font-size: .9em; line-height: 1.2; color: #6a5a6a; background: rgba(255,255,255,.04); padding: calc(var(--u) * 0.5) 0; }
 .wkdet span i { display: block; font-style: normal; font-size: .72em; opacity: .7; }
-.wkdet span.off { color: #9a8a9a; background: rgba(255,255,255,.07); }
-.wkdet span.on { color: var(--gold); background: rgba(255, 210, 90, .1); box-shadow: inset 0 0 0 var(--u) var(--gold); }
+.wkdet span.off { color: #8a7a8a; background: rgba(255,255,255,.07); }
+.wkdet span.on { color: #fff; background: rgba(255,255,255,.07); }
+.wkdet span.on b { font-weight: 700; text-decoration: underline; text-decoration-thickness: var(--u); text-underline-offset: var(--u); }
 .wkdet span b { font-weight: inherit; }
 .wkdet span.today i { opacity: 1; color: #7ad8ff; text-decoration: underline; text-decoration-thickness: var(--u); }
 .wkdet span.miss b { text-decoration: line-through; }
+.wkdet span.on.miss b { text-decoration: underline line-through; }
 .ttl { display: inline; margin-left: calc(var(--u) * 2); font-size: .72em; color: var(--muted); font-style: italic; }
 .rainbow, .rainbow-bg { background: linear-gradient(90deg, #ff5a5a, #ffb85a, #ffe05a, #6aff8a, #5ad8ff, #c87aff, #ff5a5a); background-size: 200% 100%; animation: arcenciel 3s linear infinite; }
 .rainbow { -webkit-background-clip: text; background-clip: text; color: transparent !important; }
@@ -1950,8 +1948,7 @@ function weekDetail(det, wk, today) {
   return `<div class="wkdet">${weekDays(wk || weekKey(det[0].day)).map((k, i) => { const x = det.find(y => y.day === k);
     return `<span class="${x ? (top.includes(x) ? 'on' : 'off') : ''}${x && !x.terrier ? ' miss' : ''}${k === today ? ' today' : ''}"><i>${'LMMJVSD'[i]}</i><b>${x ? short(x.score) : '·'}</b></span>`; }).join('')}</div>`;
 }
-// Détail du jour : une case par essai ; le meilleur (celui qui compte) entouré en doré
-// Détail du jour : une grande case par essai ; le meilleur (celui qui compte) entouré en doré, barré = sans terrier
+// Détail du jour : une grande case par essai ; le meilleur (celui qui compte) souligné, barré = sans terrier
 function dayDetail(runs, best) {
   if (!runs || !runs.length || runs.some(r => r.score == null)) return '';  // scores envoyés avant la mise à jour : pas de détail
   const bi = runs.findIndex(r => r.score === best), m = v => (v / 100).toFixed(2).replace('.', ',');
@@ -5617,7 +5614,9 @@ const App = {
   async scr_leaderboard() {
     const tab = this.lbTab, me = this.p.name, champ = await Leaderboard.champion(this.today), looks = await this.looks();
     const crown = name => name === champ ? ' 👑' : '';
-    const who = (name, extra = '') => nameHtml(name, looks[name], crown(name) + (name === me ? '<span class="toi">toi</span>' : '') + extra), fr = name => frameCls(looks[name]) + (name === champ ? ' now' : '');
+    const who = (name, extra = '') => nameHtml(name, looks[name], crown(name) + extra), fr = name => frameCls(looks[name]) + (name === champ ? ' now' : '');
+    // ma ligne : étiquette « toi » sous le rang (le pseudo garde ses couleurs, le titre toute sa place)
+    const toi = name => name === me ? '<span class="toi">toi</span>' : '';
     let body = '', extra = '';
     if (tab === 'day') {
       const lb = await Leaderboard.day(this.today);
@@ -5625,9 +5624,9 @@ const App = {
       const rxTxt = id => { const c = rx && rx.counts[id]; return c ? `<span class="rx">${REACTIONS.filter(e => c[e]).map(e => e + c[e]).join(' ')}</span>` : ''; };
       body = lb.length ? lb.map((e, i) => {
         const pick = rx && e.name !== me;
-        const det = dayDetail(e.runs, e.score), attrs = `${pick ? `data-a="reactsel" data-v="${esc(e.id)}"` : ''}`, cls = `${e.name === me ? 'me' : ''} ${pick ? 'pick' : ''} ${fr(e.name)}`;
-        let row = `<tr class="${det ? 'wk-main' : ''} ${cls}" ${attrs}><td>${medal(i)}</td><td>${who(e.name, rxTxt(e.id) + (pick && !rx.mine[e.id] ? '<span class="rx-add">+👏</span>' : ''))}</td><td>${det ? '' : e.run && e.run.terrier ? '🕳️' : ''}</td><td class="r">${e.run && e.run.legend ? '✨ ' : ''}${fmtSize(e.score)}</td></tr>`;
-        if (det) row += `<tr class="wk-det ${cls}" ${attrs}><td></td><td colspan="3">${det}</td></tr>`;
+        const det = dayDetail(e.runs, e.score), attrs = `${pick ? `data-a="reactsel" data-v="${esc(e.id)}"` : ''}`, cls = `${pick ? 'pick' : ''} ${fr(e.name)}`;
+        let row = `<tr class="${det ? 'wk-main' : ''} ${cls}" ${attrs}><td>${medal(i)}${!det && e.name === me ? `<br>${toi(e.name)}` : ''}</td><td>${who(e.name, rxTxt(e.id) + (pick && !rx.mine[e.id] ? '<span class="rx-add">+👏</span>' : ''))}</td><td>${det ? '' : e.run && e.run.terrier ? '🕳️' : ''}</td><td class="r">${e.run && e.run.legend ? '✨ ' : ''}${fmtSize(e.score)}</td></tr>`;
+        if (det) row += `<tr class="wk-det ${cls}" ${attrs}><td>${toi(e.name)}</td><td colspan="3">${det}</td></tr>`;
         if (pick && this.reactSel === e.id) row += `<tr><td colspan="4"><div class="reacts">${REACTIONS.map(r => `<button class="${rx.mine[e.id] === r ? 'on' : ''}" data-a="react" data-v="${r}">${r}</button>`).join('')}</div></td></tr>`;
         return row;
       }).join('') : '<tr><td colspan="4" class="center tiny">Personne n\'a encore joué aujourd\'hui.</td></tr>';
@@ -5636,8 +5635,8 @@ const App = {
       if (rx && lb.some(e => e.name !== me)) extra += '<div class="tiny center">Touche la ligne d\'un collègue pour lui envoyer une réaction 👏 😂 💩 🔥</div>';
     } else if (tab === 'week') {
       const lb = await Leaderboard.week(weekKey(this.today));
-      body = lb.length ? lb.map((e, i) => `<tr class="wk-main ${e.name === me ? 'me' : ''} ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny ${e.played >= WEEK_BEST ? 'good' : ''}">${Math.min(e.played, WEEK_BEST)}/${WEEK_BEST}</td><td class="r">${fmtSize(e.total)}</td></tr>
-          <tr class="wk-det ${e.name === me ? 'me' : ''} ${fr(e.name)}"><td></td><td colspan="3">${weekDetail(e.det, weekKey(this.today), this.today)}</td></tr>`).join('')
+      body = lb.length ? lb.map((e, i) => `<tr class="wk-main ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny ${e.played >= WEEK_BEST ? 'good' : ''}">${Math.min(e.played, WEEK_BEST)}/${WEEK_BEST}</td><td class="r">${fmtSize(e.total)}</td></tr>
+          <tr class="wk-det ${fr(e.name)}"><td>${toi(e.name)}</td><td colspan="3">${weekDetail(e.det, weekKey(this.today), this.today)}</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Rien cette semaine.</td></tr>';
       extra = `<div class="tiny center">Semaine = tes ${WEEK_BEST} meilleurs jours additionnés (cases dorées, en m ; barré = sans terrier). Le vainqueur porte la 👑 toute la semaine suivante ; le podium gagne ${PODIUM_COINS.join(' / ')} 🟡.</div>`;
       const pod = await Leaderboard.podium(addDays(weekKey(this.today), -7));
@@ -5651,13 +5650,13 @@ const App = {
       extra = `<div class="tiny center">Moyenne par joueur sur la semaine. ${this.p.team ? '' : 'Rejoins une équipe depuis ton profil 👤.'}</div>`;
     } else if (tab === 'surv') {
       const lb = (await Online.survivalTop()) || [];
-      body = lb.length ? lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''} ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}</td><td></td><td class="r">${e.best} m</td></tr>`).join('')
+      body = lb.length ? lb.map((e, i) => `<tr class="${fr(e.name)}"><td>${medal(i)}${e.name === me ? `<br>${toi(e.name)}` : ''}</td><td>${who(e.name)}</td><td></td><td class="r">${e.best} m</td></tr>`).join('')
         : '<tr><td colspan="4" class="center tiny">Personne n\'a encore tenté La Grande Fuite.</td></tr>';
       extra = '<div class="tiny center">La Grande Fuite : le plus long parcours de chacun.</div>';
     } else {
       const lb = await Leaderboard.records();
       extra = '<div class="tiny center">Records = ta meilleure boule de tous les temps · 🔥 ta plus longue série · ✨ trésors trouvés.</div>';
-      body = lb.map((e, i) => `<tr class="${e.name === me ? 'me' : ''} ${fr(e.name)}"><td>${medal(i)}</td><td>${who(e.name)}</td><td class="tiny">🔥${e.bestStreak} ✨${e.legends}</td><td class="r">${fmtSize(e.best)}</td></tr>`).join('');
+      body = lb.map((e, i) => `<tr class="${fr(e.name)}"><td>${medal(i)}${e.name === me ? `<br>${toi(e.name)}` : ''}</td><td>${who(e.name)}</td><td class="tiny">🔥${e.bestStreak} ✨${e.legends}</td><td class="r">${fmtSize(e.best)}</td></tr>`).join('');
     }
     const tabs = [['day', 'Jour'], ['week', 'Semaine'], ...(TEAMS_ON ? [['teams', 'Équipes']] : []), ['all', 'Records'], ...(SURVIVAL_ON ? [['surv', 'Survie']] : [])]
       .map(([k, l]) => `<button class="tab ${tab === k ? 'on' : ''}" data-a="lbtab" data-v="${k}">${l}</button>`).join('');
