@@ -211,6 +211,12 @@ input, textarea {
   padding: calc(var(--u) * 3) calc(var(--u) * 5) calc(var(--u) * 4 + var(--sb, 0px)); background: rgba(14, 8, 18, .94);
   border-top: var(--u) solid var(--line); display: flex; flex-direction: column; gap: calc(var(--u) * 2.5); z-index: 5; }
 .foot .nav { margin-top: 0; }
+.foot::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: calc(var(--u) * 14); pointer-events: none;
+  background: linear-gradient(rgba(14,8,18,0), rgba(14,8,18,.9)); transition: opacity .3s; }
+.more { position: absolute; left: 50%; bottom: calc(100% + var(--u) * 2); transform: translateX(-50%); white-space: nowrap; font-size: .72em; pointer-events: none;
+  color: #2a1408; background: var(--gold); border: var(--u) solid var(--line); padding: calc(var(--u) * .5) calc(var(--u) * 3); animation: morebob 1.2s ease-in-out infinite; transition: opacity .3s; }
+@keyframes morebob { 50% { transform: translate(-50%, calc(var(--u) * 1.5)); } }
+.foot.end::before, .foot.end .more { opacity: 0; }
 .foot-play { display: flex; gap: calc(var(--u) * 2.5); align-items: stretch; }
 .foot-play > :first-child { flex: 1 1 0; min-width: 0; margin: 0; }
 .foot .btn.practice { flex: 0 0 28%; width: auto; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--u); padding: calc(var(--u) * 1.5) calc(var(--u) * 3); margin: 0; }
@@ -4712,7 +4718,7 @@ const App = {
     const sc = this.ui.querySelector('.screen'); if (sc) sc.scrollTop = 0;
     if (name === 'shop') this.startPreview();
     if (name === 'results') this.countCoins();
-    if (name === 'home') this.annInit();
+    if (name === 'home') { this.annInit(); this.moreInit(); }
     if (name === 'name') { const i = this.ui.querySelector('input'); if (i) setTimeout(() => i.focus(), 50); }
   },
 
@@ -4725,6 +4731,12 @@ const App = {
     box.insertAdjacentHTML('afterbegin', `<div class="ann-head"><span>📬 <b>Annonces</b> · <span class="ann-n"></span></span><span class="ann-nav"><button data-a="annnav" data-v="-1" aria-label="Précédente">◀</button><button data-a="annnav" data-v="1" aria-label="Suivante">▶</button></span></div>`);
     box.insertAdjacentHTML('beforeend', `<div class="ann-dots">${items.map(() => '<i></i>').join('')}</div>`);
     this.annShow(this.annIdx || 0);
+  },
+  // Accueil : l'étiquette « ▼ … plus bas » disparaît quand on arrive en bas (ou si tout tient à l'écran)
+  moreInit() {
+    const sc = this.ui.querySelector('.screen'), f = this.ui.querySelector('.foot'); if (!sc || !f) return;
+    const upd = () => f.classList.toggle('end', sc.scrollTop + sc.clientHeight > sc.scrollHeight - 40);
+    sc.addEventListener('scroll', upd, { passive: true }); upd();
   },
   annShow(i) {
     const box = this.ui.querySelector('.ann'); if (!box) return;
@@ -5583,6 +5595,7 @@ const App = {
         ${SURVIVAL_ON ? `<button class="btn" data-a="survival">🏃 La Grande Fuite <small>record ${p.survival.best} m</small></button>` : ''}
       </div>
       <div class="foot">
+        <div class="more">▼ ${hwTotal != null ? 'Quêtes et défi' : 'Quêtes du jour'} plus bas</div>
         <div class="foot-play">${playBtn}<button class="btn ghost practice" data-a="practice" aria-label="Entraînement aléatoire"><span>🎲</span><small>Entraînement<br>aléatoire</small></button></div>
         <nav class="nav">
           <button data-a="go" data-v="leaderboard"><span>🏆</span>Classement</button>

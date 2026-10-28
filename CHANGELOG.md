@@ -13,6 +13,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   une à la fois, avec ◀ ▶ ; OK n'enlève que celle affichée.
 - Icônes du haut avec leur nom : Idées, News, Tuto, Série, Pièces.
 - Bouton « 🎲 Entraînement aléatoire » à côté de ROULER ! (remplace « 🏜️ Entraînement libre »).
+- Étiquette « ▼ Quêtes du jour plus bas » au-dessus de ROULER !, qui disparaît une fois en bas de l'accueil.
 
 ## v1.19.1 — Cadres complets (29 octobre 2026)
 - Classements : deux cadres qui se suivent ne se recouvrent plus, chacun garde ses 4 côtés.
