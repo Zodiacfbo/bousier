@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.19.0 — Météo de demain (28 octobre 2026)
+- Accueil : la carte « Météo du jour » annonce la météo du lendemain (« Demain : 🌙 Nuit étoilée »).
+  Les météos spéciales restent cachées : « Demain : ❓ Météo spéciale ».
+
 ## v1.18.7 — Titres longs (28 octobre 2026)
 - Classements : un titre ne se coupe plus en morceaux (il passe en entier à la ligne si besoin), la couronne reste collée au pseudo.
 
