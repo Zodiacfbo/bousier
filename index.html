@@ -222,6 +222,15 @@ input, textarea {
 .foot .btn.practice { flex: 0 0 28%; width: auto; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--u); padding: calc(var(--u) * 1.5) calc(var(--u) * 3); margin: 0; }
 .foot .btn.practice span { font-size: 1.3em; line-height: 1; }
 .foot .btn.practice small { font-size: .6em; line-height: 1.15; }
+.shop-top { position: sticky; top: calc(var(--u) * -5 - var(--st, 0px)); z-index: 4; margin: calc(var(--u) * -2) calc(var(--u) * -5) 0; padding: calc(var(--u) * 2) calc(var(--u) * 5);
+  background: rgba(14, 8, 18, .94); border-bottom: var(--u) solid var(--line); display: flex; flex-direction: column; gap: calc(var(--u) * 2); }
+.shop-top .mascot { display: flex; justify-content: center; }
+.tabs.shoptabs { display: grid; grid-template-columns: repeat(3, 1fr); }
+.btn.afford { font-size: .75em; }
+.btn.afford.on { box-shadow: inset 0 0 0 var(--u) var(--gold); color: var(--gold); }
+.tile .cond { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2; }
+.panel.detail { position: sticky; top: calc(var(--u) * -5 - var(--st, 0px)); z-index: 4; }
+.colbar { margin: 0; flex-shrink: 0; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 3); }
 .card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--u); }
 .big-ico { font-size: 1.8em; min-height: calc(var(--u) * 24); display: flex; align-items: center; }
@@ -382,7 +391,13 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 
 .badges { display: flex; flex-direction: column; gap: calc(var(--u) * 2); }
 .bdg { display: flex; gap: calc(var(--u) * 3); align-items: center; padding: calc(var(--u) * 3); }
-.bdg.locked { opacity: .45; filter: grayscale(1); }
+.bdg.locked { background: rgba(26, 16, 32, .96); color: #b8a8c0; }
+.bdg.locked .bico { filter: grayscale(1); opacity: .5; }
+.bdg.locked b { color: #d8c8e0; }
+.bdg > div:last-child { flex: 1; min-width: 0; }
+.bbar { position: relative; height: calc(var(--u) * 8); margin-top: calc(var(--u) * 1.5); background: #2a1c33; border: var(--u) solid var(--line); }
+.bbar > div { position: absolute; inset: 0 auto 0 0; background: var(--gold); opacity: .7; }
+.bbar > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: .8em; font-weight: 700; color: #fff; text-shadow: var(--u) var(--u) 0 #1d1416; }
 .bico { font-size: 1.8em; width: calc(var(--u) * 18); text-align: center; }
 
 .result-head { text-align: center; padding: calc(var(--u) * 4) 0; }
@@ -4707,6 +4722,8 @@ const App = {
 
   // --- Navigation ------------------------------------------------------------
   async show(name, arg) {
+    // même écran redessiné (objet touché dans Style, Bousipédia…) : on garde la position dans la page
+    const old = this.ui.querySelector('.screen'), keep = this.screen === name && ['shop', 'collection', 'badges'].includes(name) && old ? old.scrollTop : 0;
     this.screen = name;
     this.halloweenDeco(name);
     this.appEl.classList.toggle('gate', ['name', 'create', 'login'].includes(name) && !Store.profile());
@@ -4715,7 +4732,7 @@ const App = {
     if (tok !== this.showTok) return;  // un autre écran a été demandé entre-temps
     this.ui.innerHTML = html;
     this.ui.classList.toggle('passive', name === 'none');
-    const sc = this.ui.querySelector('.screen'); if (sc) sc.scrollTop = 0;
+    const sc = this.ui.querySelector('.screen'); if (sc) sc.scrollTop = keep;
     if (name === 'shop') this.startPreview();
     if (name === 'results') this.countCoins();
     if (name === 'home') { this.annInit(); this.moreInit(); }
@@ -4804,6 +4821,7 @@ const App = {
       resume: () => this.resume(),
       abandon: () => this.abandon(),
       annnav: () => this.annShow((this.annIdx || 0) + +v),
+      shopafford: () => { this.shopAfford = !this.shopAfford; this.show('shop'); },
       cvd: () => { CVD = !CVD; safeStorageSet('bousier_cvd', CVD ? '1' : ''); this.appEl.classList.toggle('cvd', CVD); this.show('profile'); },
       sound: () => { Sound.on = !Sound.on; Store.data.settings.sound = Sound.on; Store.save(); this.show('profile'); },
       switchp: () => this.switchTo(v),
@@ -5805,15 +5823,23 @@ const App = {
         ${spriteImg(e.sprite, SPR[e.sprite].width > 20 ? 1 : 2, !e.n)}
         <span>${e.n ? esc(e.name) : '???'}</span></button>`;
     const hint = e => e.season ? '🎃 Semaine Halloween' : e.wx ? `Seulement par météo ${WEATHER[e.wx].icon}` : e.legend ? 'Trésor du jour' : '';
+    // indice pour un objet pas encore découvert : où le chercher, sa taille, sa rareté
+    const clue = e => {
+      const o = OBJ[e.id]; if (e.n || !o || e.legend) return e.legend && !e.n ? 'Caché entre deux cactus, un seul par jour. Il change chaque jour.' : '';
+      const where = o.tp < 0.33 ? 'plutôt au début de la dune' : o.tp < 0.66 ? 'plutôt au milieu de la dune' : 'plutôt vers la fin de la dune';
+      const big = o.rock ? 'Un obstacle : il faut une très grosse boule.' : o.r <= 3 ? 'Petit : facile à avaler.' : o.r <= 6 ? 'Moyen : il faut une boule déjà bien ronde.' : 'Gros : il faut une grosse boule.';
+      return `Se trouve ${where}. ${big}${o.w <= 0.6 ? ' Assez rare.' : ''}${o.move ? ' Il bouge !' : ''}`;
+    };
     const selEntry = all.find(e => e.id === this.colSel);
     return `<div class="screen">
       ${this.back('Bousipédia')}
-      <div class="tiny center">${classic.filter(e => e.n).length} / ${classic.length} découverts</div>
+      <div class="hwbar colbar"><div style="width:${classic.filter(e => e.n).length * 100 / classic.length}%"></div><span>${classic.filter(e => e.n).length} / ${classic.length} découverts</span></div>
       ${selEntry ? `<div class="panel detail">
         <div>${spriteImg(selEntry.sprite, 3, !sel)}</div>
         <div><b>${sel ? esc(sel.name) : '???'}</b><div class="tiny">${sel ? esc(sel.desc) : 'Pas encore découvert.'}</div>
-        <div class="tiny">${sel ? `Avalé ${sel.n} fois` : ''} ${esc(hint(selEntry))}</div></div>
+        <div class="tiny">${sel ? `Avalé ${sel.n} fois` : ''} ${esc(hint(selEntry))}</div>${!sel && clue(selEntry) ? `<div class="tiny gold">💡 ${esc(clue(selEntry))}</div>` : ''}</div>
       </div>` : ''}
+      ${selEntry ? '' : '<div class="tiny center">Touche un objet pour en savoir plus, même un « ??? » : un indice t\'aidera à le trouver.</div>'}
       <div class="label">Objets</div>
       <div class="grid">${list.map(tile).join('')}</div>
       <div class="label">Trésors légendaires</div>
@@ -5833,7 +5859,9 @@ const App = {
     const tab = this.shopTab, type = this.shopType(), rank = tab === 'rank';
     const shown = (t, it) => { const own = Store.owns(p, t, it); return (!it.secret || own) && (!it.survival || SURVIVAL_ON)
       && (!it.season || isHalloween(this.today) || own) && (!it.from || this.today >= it.from || own) && (!it.week || own) && (!it.gift || own) && (!it.devOnly || ONLINE_ENV === 'dev'); };
-    const items = rank ? [] : COSMETICS[tab].filter(it => shown(tab, it));
+    // filtre « ce que je peux acheter » : pas encore à moi, et assez de pièces
+    const afford = (t, it) => !this.shopAfford || (!Store.owns(p, t, it) && it.price && it.price <= p.coins);
+    const items = rank ? [] : COSMETICS[tab].filter(it => shown(tab, it) && afford(tab, it));
     const eq = t => findCos(t, p.equip[t]);
     const prev = this.shopSel ? findCos(type, this.shopSel) : null;
     const mascot = (skin, hat, outfit, trail, R, scale) => {
@@ -5846,10 +5874,10 @@ const App = {
     const status = (it, t) => {
       if (p.equip[t] === it.id) return '<span class="good">Équipé</span>';
       if (Store.owns(p, t, it)) return 'Possédé';
-      if (it.badge) return `🔒 ${BADGES.find(b => b.id === it.badge).icon}`;
+      if (it.badge) { const b = BADGES.find(x => x.id === it.badge); return `<span class="cond">🔒 Badge ${b.icon} ${esc(b.name)}</span>`; }
       if (it.price) return `${it.prestige ? '💎 ' : ''}🟡 ${it.price}`;
       if (it.mystery) return '❓ Mystère';
-      if (it.prog) { const [a, b] = it.prog(p); return `🔒 ${Math.min(a, b)}/${b}`; }
+      if (it.prog) { const [a, b] = it.prog(p); return `<span class="cond">${esc(it.text)}</span>${b > 1 ? ` <b>${Math.min(a, b)}/${b}</b>` : ''}`; }
       return '🔒';
     };
     const tile = (it, t = tab, act = 'shopitem', v = it.id) => {
@@ -5879,6 +5907,7 @@ const App = {
     }
     const tabs = [['ball', 'Boules'], ['hat', 'Chapeaux'], ['outfit', 'Tenues'], ['trail', 'Traînées'], ['theme', 'Décors'], ...(open ? [['rank', 'Classement']] : [])]
       .map(([k, l]) => `<button class="tab ${tab === k ? 'on' : ''}" data-a="shoptab" data-v="${k}">${l}</button>`).join('');
+    const filt = `<button class="btn ghost small afford ${this.shopAfford ? 'on' : ''}" data-a="shopafford">${this.shopAfford ? '✅' : '⬜'} 🟡 Seulement ce que je peux acheter</button>`;
     const found = Object.keys(COSMETICS).reduce((n, t) => n + COSMETICS[t].filter(it => it.secret && Store.owns(p, t, it)).length, 0);
     let top, body;
     if (rank) {
@@ -5887,38 +5916,50 @@ const App = {
       top = `<div class="panel"><div class="tiny center">Aperçu de ta ligne au classement</div>
         <table class="lb"><tr class="${frameCls(look)}${ONLINE_ENV === 'dev' ? ' now' : ''}"><td>🥇</td><td>${nameHtml(p.name, look)}</td><td class="r">${fmtSize(p.stats.best || 0)}</td></tr></table></div>`;
       // chaque catégorie : d'abord ce qui s'achète, puis ce qui se gagne (🏅)
-      const rstatus = (t, it) => !Store.owns(p, t, it) && it.prog ? `🏅 À gagner · ${Math.min(...it.prog(p))}/${it.prog(p)[1]}` : `${it.prog ? '🏅 ' : ''}${status(it, t)}`;
+      const rstatus = (t, it) => !Store.owns(p, t, it) && it.prog ? `🏅 ${status(it, t)}` : `${it.prog ? '🏅 ' : ''}${status(it, t)}`;
       const pill = (t, it) => `<button class="pill ${p.equip[t] === it.id ? 'on' : ''} ${this.shopSel === it.id && type === t ? 'sel2' : ''} ${Store.owns(p, t, it) ? '' : 'lock'} ${it.prog ? 'earn' : ''}" data-a="rankitem" data-v="${t}:${it.id}"><span class="pn">${t === 'color' ? `<span class="sw ${it.rainbow ? 'rainbow-bg' : ''}" style="${it.col ? 'background:' + it.col : ''}"></span> ` : t === 'frame' && it.col ? `<span class="sw" style="background:${it.col}"></span> ` : ''}${t === 'title' && it.id !== 'aucun' ? `« ${esc(it.name)} »` : esc(it.name)}</span><span class="tiny">${rstatus(t, it)}</span></button>`;
-      const group = t => { const l = COSMETICS[t].filter(it => shown(t, it)); return l.filter(it => !it.prog).concat(l.filter(it => it.prog)).map(it => pill(t, it)).join(''); };
-      body = `<div class="label">🖼️ Cadres</div><div class="pills rank">${group('frame')}</div>
-        <div class="label">🎨 Couleurs du pseudo</div><div class="pills rank">${group('color')}</div>
-        <div class="label">🏷️ Titres sous le pseudo</div><div class="pills rank">${group('title')}</div>
+      const group = t => { const l = COSMETICS[t].filter(it => shown(t, it) && afford(t, it)); return l.filter(it => !it.prog).concat(l.filter(it => it.prog)).map(it => pill(t, it)).join(''); };
+      const sect = (t, label) => { const g = group(t); return g ? `<div class="label">${label}</div><div class="pills rank">${g}</div>` : ''; };
+      body = (sect('frame', '🖼️ Cadres') + sect('color', '🎨 Couleurs du pseudo') + sect('title', '🏷️ Titres sous le pseudo')
+        || `<div class="tiny center">Rien à acheter ici pour l'instant avec tes ${p.coins} 🟡.</div>`) + `
         <div class="tiny center">🏅 = ne s'achète pas, se gagne. Visible par tout le monde dans les classements.</div>`;
     } else {
-      top = `<div class="mascot">${tab === 'theme' ? swatch(prev || eq('theme'), 3) : '<canvas id="preview" width="64" height="84" class="pix" style="width:calc(var(--u)*96);height:calc(var(--u)*126)"></canvas>'}</div>`;
-      body = `<div class="grid three">${items.map(it => tile(it)).join('')}</div>
+      top = `<div class="mascot">${tab === 'theme' ? swatch(prev || eq('theme'), 2) : '<canvas id="preview" width="64" height="84" class="pix" style="width:calc(var(--u)*48);height:calc(var(--u)*63)"></canvas>'}</div>`;
+      body = `${items.length ? `<div class="grid three">${items.map(it => tile(it)).join('')}</div>` : `<div class="tiny center">Rien à acheter ici pour l'instant avec tes ${p.coins} 🟡.</div>`}
         <div class="tiny center">Gagne des 🟡 en jouant, en finissant les quêtes et en trouvant les trésors. Certains objets se méritent autrement…</div>
         <div class="tiny center">🤫 Secrets trouvés : ${found} / ${SECRET_COUNT}</div>`;
     }
     return `<div class="screen">
       ${this.back('Style')}
       <div class="topbar end"><span class="chip gold">🟡 ${p.coins}</span></div>
-      ${top}
-      ${bar}
+      <div class="shop-top">${top}${bar}</div>
       ${wkHtml}
-      <div class="tabs">${tabs}</div>
+      <div class="tabs shoptabs">${tabs}</div>
+      ${filt}
       ${body}
     </div>`;
   },
 
   scr_badges() {
     const p = this.p, list = BADGES.filter(b => b.id !== 'tempetes' || this.today >= NEW_WX_FROM || p.badges[b.id]);
+    // progression des badges à paliers ; d'abord les badges gagnés, puis les plus proches d'être gagnés
+    const size = ((p.stats.rec || {}).size || {}).v || 0, streak = Math.max(p.streak || 0, Store.streakOf(p, this.today));
+    const prog = {
+      metre: [size, 100, 1], geant: [size, 200, 1], titan: [size, 300, 1],
+      archeo: [Object.keys(p.legends).length, 4], serie3: [streak, 3], serie7: [streak, 7], serie30: [streak, 30],
+      meteo: [WEATHERS.filter(w => p.weathers[w.id]).length, WEATHERS.length], tempetes: [WEEKLY_WEATHERS.filter(id => p.weathers[id]).length, WEEKLY_WEATHERS.length],
+      chameaux: [p.stats.camels || 0, 10], collection: [Store.discovered(p), 26],
+    };
+    const ratio = b => p.badges[b.id] ? 2 : prog[b.id] ? Math.min(1, prog[b.id][0] / prog[b.id][1]) : 0;
+    list.sort((a, b) => ratio(b) - ratio(a));
+    const bar = b => { const g = !p.badges[b.id] && prog[b.id]; if (!g) return ''; const [a, n, cm] = g, v = Math.min(a, n);
+      return `<div class="bbar"><div style="width:${v * 100 / n}%"></div><span>${cm ? `${fmtSize(v)} / ${fmtSize(n)}` : `${v} / ${n}`}</span></div>`; };
     return `<div class="screen">
       ${this.back('Badges')}
       <div class="tiny center">${list.filter(b => p.badges[b.id]).length} / ${list.length} obtenus</div>
       <div class="badges">${list.map(b => `<div class="panel bdg ${p.badges[b.id] ? '' : 'locked'}">
         <div class="bico">${b.icon}</div><div><b>${esc(b.name)}</b>${b.id === 'champion' && p.counters.champion ? ` <span class="gold">×${p.counters.champion}</span>` : ''}<div class="tiny">${esc(b.desc)}</div>
-        ${b.reward ? `<div class="tiny gold">Récompense : ${esc(b.reward)}</div>` : ''}</div></div>`).join('')}</div>
+        ${b.reward ? `<div class="tiny gold">Récompense : ${esc(b.reward)}</div>` : ''}${bar(b)}</div></div>`).join('')}</div>
     </div>`;
   },
 
@@ -5937,11 +5978,29 @@ const App = {
         <input id="spass" type="password" minlength="6" placeholder="Mot de passe (6 caractères min.)" autocomplete="new-password" onkeydown="if(event.key==='Enter')App.doSecure()">
         <div class="tiny bad form-err"></div>
         <button class="btn" data-a="secure">🔒 Choisir mon mot de passe</button>`;
+    const st = p.stats, rec = st.rec || {}, tot = st.tot || {};
+    const stats = [
+      ['🎮 Parties du jour jouées', Object.values(p.days || {}).reduce((n, d) => n + (d.runs || []).length, 0)],
+      ['🕳️ Terriers réussis', st.terriers || 0],
+      ['🏆 Meilleur score', fmtSize(st.best || 0)],
+      ['⚪ Plus grosse boule', rec.size ? fmtSize(rec.size.v) : '—'],
+      ['⚡ Terrier le plus rapide', rec.fast ? fmtTime(rec.fast.v) : '—'],
+      ['😋 Objets avalés', (st.absorbed || 0).toLocaleString('fr-FR')],
+      ['✨ Trésors trouvés', Object.values(p.legends || {}).reduce((n, v) => n + (+v || 0), 0)],
+      ['🔥 Meilleure série', `${Math.max(p.bestStreak || 0, p.streak || 0)} j`],
+      ['🐪 Chameaux avalés', st.camels || 0],
+      ['💥 Chocs contre les murs', tot.walls || 0],
+      ['🎲 Entraînements', st.practice || 0],
+    ];
     return `<div class="screen">
       ${this.back('Profil')}
       <div class="panel">
         <div class="label">Mon compte</div>
         ${account}
+      </div>
+      <div class="panel">
+        <div class="label">📊 Mes stats</div>
+        <table class="stats">${stats.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('')}</table>
       </div>
       ${inv && inv.left !== null ? `<div class="panel"><div class="label">🎟️ Inviter quelqu'un</div>
         <div>Fais découvrir Bousier : il te reste <b class="gold">${inv.left} invitation${inv.left > 1 ? 's' : ''}</b>.</div>
