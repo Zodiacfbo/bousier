@@ -218,6 +218,9 @@ table { width: 100%; border-collapse: collapse; }
 .lb td, .stats td { padding: calc(var(--u) * 1.5) var(--u); border-bottom: var(--u) solid rgba(255,255,255,.07); }
 .lb td.r, .stats td:last-child { text-align: right; font-weight: 700; }
 .lb tr.me td { color: var(--gold); }
+/* ma ligne : une étiquette « toi », sans toucher aux couleurs ni au cadre choisis */
+.lb tr.me:has(.toi) td, .lb tr.me.wk-det td { color: inherit; }
+.toi { display: inline-block; margin-left: calc(var(--u) * 2); padding: 0 calc(var(--u) * 1.5); background: #fff; color: #1d1416; font-size: .7em; font-weight: 700; vertical-align: middle; }
 
 .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(var(--u) * 2); }
 .grid.three { grid-template-columns: repeat(3, 1fr); }
@@ -302,7 +305,9 @@ table { width: 100%; border-collapse: collapse; }
 .wkdet { display: flex; gap: calc(var(--u) * 1); }
 .lb tr.wk-main td { border-bottom: 0; padding-bottom: 0; }
 .wkdet.daydet span { flex: 1; font-size: 1em; padding: calc(var(--u) * 1.5) 0; }
-.wkdet.daydet span.on b { color: var(--gold); }
+.wkdet.daydet span.on { color: #fff; background: rgba(255,255,255,.07); box-shadow: none; }
+.wkdet.daydet span.on b { color: #fff; font-weight: 700; text-decoration: underline; text-decoration-thickness: var(--u); text-underline-offset: var(--u); }
+.wkdet.daydet span.off { color: #8a7a8a; }
 .lb tr.wk-det td { padding-top: calc(var(--u) * 1); }
 .lb tr.fr.wk-main td { border-bottom: 0; }
 .lb tr.fr.wk-det td { border-top: 0; }
@@ -5612,7 +5617,7 @@ const App = {
   async scr_leaderboard() {
     const tab = this.lbTab, me = this.p.name, champ = await Leaderboard.champion(this.today), looks = await this.looks();
     const crown = name => name === champ ? ' 👑' : '';
-    const who = (name, extra = '') => nameHtml(name, looks[name], crown(name) + extra), fr = name => frameCls(looks[name]) + (name === champ ? ' now' : '');
+    const who = (name, extra = '') => nameHtml(name, looks[name], crown(name) + (name === me ? '<span class="toi">toi</span>' : '') + extra), fr = name => frameCls(looks[name]) + (name === champ ? ' now' : '');
     let body = '', extra = '';
     if (tab === 'day') {
       const lb = await Leaderboard.day(this.today);
