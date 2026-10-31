@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.21.4 — News merci Halloween (31 octobre 2026)
+- News du 2 novembre « Merci pour cette semaine Halloween ! » : le nombre de citrouilles est calculé automatiquement à l'affichage
+  (« Plus de 2 400 » si le calcul est impossible).
+
 ## v1.21.3 — Boutique de la semaine en pause (31 octobre 2026)
 - La boutique de la semaine (prévue le 9 novembre) et sa news sont mises en pause : le 9 novembre, place aux défis de la semaine.
 

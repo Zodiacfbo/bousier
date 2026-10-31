@@ -1606,6 +1606,8 @@ const CHANGELOG = [
   { v: 14, date: '2026-11-20', items: ['🎂 Bousier a 1 mois ! Merci à tous ceux qui roulent depuis le début : un gâteau vous attend sur la dune du jour, et un petit cadeau pour les fidèles du premier mois.'] },
   { v: 13, date: '2099-01-01',  // en pause avec la boutique de la semaine
     items: ['⭐ Nouveau dans 🎨 Style : la boutique de la semaine ! Chaque lundi, 3 objets introuvables ailleurs, dont un rare. Ils reviendront… un jour. Peut-être.'] },
+  // {citrouilles} : remplacé par le total de la semaine Halloween, calculé à l'affichage
+  { v: 12.1, date: '2026-11-02', items: ['🎃 Merci pour cette semaine Halloween ! {citrouilles} citrouilles avalées à vous tous : le défi et le défi bonus réussis haut la main !'] },
   { v: 12, date: '2026-11-02', items: ['⚡ Du nouveau dans la dune : de nouveaux événements surprise, et chaque semaine deux météos spéciales à découvrir… Ouvre l\'œil !'] },
   // 11.5 : entre la v11 (26 oct.) et la v12 (2 nov.), pour garder l'ordre des « non lues »
   { v: 11.9, date: '2026-10-28', items: ['✨ Interface améliorée : accueil plus simple, menus plus clairs, et tes stats dans ton profil !'] },
@@ -5450,12 +5452,17 @@ const App = {
     </div>`;
   },
 
-  scr_changelog() {
+  async scr_changelog() {
     const seen = Store.data.settings.seenVersion || 0;
     Store.data.settings.seenVersion = visibleNews()[0].v; Store.save();
+    let pumpkins = 'Plus de 2 400';
+    if (visibleNews().some(c => c.items.some(i => i.includes('{citrouilles}')))) {
+      const t = await Leaderboard.hwTotal().catch(() => null);
+      if (t) pumpkins = t.toLocaleString('fr-FR');
+    }
     return `<div class="screen">
       ${this.back('Nouveautés')}
-      ${visibleNews().map(c => `<div class="panel ${c.v > seen ? 'unread' : ''}"><div class="label">${esc(fmtDayLong(c.date))}${c.v > seen ? '<span class="new-tag">NOUVEAU</span>' : ''}</div><ul class="quests">${c.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
+      ${visibleNews().map(c => `<div class="panel ${c.v > seen ? 'unread' : ''}"><div class="label">${esc(fmtDayLong(c.date))}${c.v > seen ? '<span class="new-tag">NOUVEAU</span>' : ''}</div><ul class="quests">${c.items.map(i => `<li>${esc(i.replace('{citrouilles}', pumpkins))}</li>`).join('')}</ul></div>`).join('')}
     </div>`;
   },
 
