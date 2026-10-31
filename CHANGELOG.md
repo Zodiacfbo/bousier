@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.21.3 — Boutique de la semaine en pause (31 octobre 2026)
+- La boutique de la semaine (prévue le 9 novembre) et sa news sont mises en pause : le 9 novembre, place aux défis de la semaine.
+
 ## v1.21.2 — Aperçu plus grand (28 octobre 2026)
 - Style : aperçu du bousier (et des décors) agrandi ×1,5.
 

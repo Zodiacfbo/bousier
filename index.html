@@ -1384,7 +1384,7 @@ const THEMES = [
   { id: 'oasis', name: 'Oasis', badge: 'collection', sand: '#e2c98a', sandDark: '#c4a868', sandLight: '#f2e0aa', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
 ];
 // Prestige et personnalisation du classement : à partir du 26 octobre ; boutique de la semaine : à partir du 9 novembre
-const SHOP_FROM = '2026-10-26', WEEK_SHOP_FROM = '2026-11-09';
+const SHOP_FROM = '2026-10-26', WEEK_SHOP_FROM = '2099-01-01';  // boutique de la semaine : en pause (prévue au départ le 9 nov. 2026)
 // Pionniers : ceux qui ont joué une dune du jour pendant la première semaine (titre, cadre et 150 🟡, une seule fois)
 const PIONEER = { from: '2026-10-20', to: '2026-10-25', coins: 150 };
 // Bienvenue : 100 🟡 une seule fois pour chaque joueur qui n'a pas joué avant le 26 octobre (les pionniers ont leur cadeau)
@@ -1604,7 +1604,8 @@ const SECRET_COUNT = Object.values(UNLOCKS).filter(u => u.secret).length;
 // des joueurs qui ne l'ont pas encore vue.
 const CHANGELOG = [
   { v: 14, date: '2026-11-20', items: ['🎂 Bousier a 1 mois ! Merci à tous ceux qui roulent depuis le début : un gâteau vous attend sur la dune du jour, et un petit cadeau pour les fidèles du premier mois.'] },
-  { v: 13, date: '2026-11-09', items: ['⭐ Nouveau dans 🎨 Style : la boutique de la semaine ! Chaque lundi, 3 objets introuvables ailleurs, dont un rare. Ils reviendront… un jour. Peut-être.'] },
+  { v: 13, date: '2099-01-01',  // en pause avec la boutique de la semaine
+    items: ['⭐ Nouveau dans 🎨 Style : la boutique de la semaine ! Chaque lundi, 3 objets introuvables ailleurs, dont un rare. Ils reviendront… un jour. Peut-être.'] },
   { v: 12, date: '2026-11-02', items: ['⚡ Du nouveau dans la dune : de nouveaux événements surprise, et chaque semaine une météo spéciale à découvrir… Ouvre l\'œil !'] },
   // 11.5 : entre la v11 (26 oct.) et la v12 (2 nov.), pour garder l'ordre des « non lues »
   { v: 11.9, date: '2026-10-28', items: ['✨ Interface améliorée : accueil plus simple, menus plus clairs, et tes stats dans ton profil !'] },
