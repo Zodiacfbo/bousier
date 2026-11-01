@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.21.5 — Alarme incendie plus claire (1er novembre 2026)
+- Événement Alarme incendie : texte « LES EXTINCTEURS ARROSENT : CA GLISSE ! » et gyrophares rouges sur les bords de l'écran (3,5 s).
+
 ## v1.21.4 — News merci Halloween (31 octobre 2026)
 - News du 2 novembre « Merci pour cette semaine Halloween ! » : le nombre de citrouilles est calculé automatiquement à l'affichage
   (« Plus de 2 400 » si le calcul est impossible).

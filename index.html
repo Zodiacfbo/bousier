@@ -3005,7 +3005,7 @@ const EVENTS = {
   power: { name: 'COUPURE !', hint: 'PLUS DE COURANT : TIENS LE CAP', dur: 2.5, from: NEW_EVENTS_FROM },
   copier: { name: 'PHOTOCOPIEUSE !', hint: 'TOUT EN DOUBLE DEVANT TOI', dur: 0, from: NEW_EVENTS_FROM },
   coffee: { name: 'PAUSE CAFE !', hint: 'ATTRAPE LES TASSES : TURBO', dur: 0, from: NEW_EVENTS_FROM },
-  alarm: { name: 'ALARME INCENDIE !', hint: 'MOUSSE GLISSANTE DEVANT', dur: 0, from: NEW_EVENTS_FROM },
+  alarm: { name: 'ALARME INCENDIE !', hint: 'LES EXTINCTEURS ARROSENT : CA GLISSE !', dur: 0, from: NEW_EVENTS_FROM },
   chaser: { name: 'SCORPION !', hint: 'IL TE POURSUIT : ESQUIVE', dur: 5, from: NEW_EVENTS_FROM },
   magnet: { name: 'AIMANT !', hint: 'LES PETITS OBJETS VIENNENT A TOI', dur: 4, from: NEW_EVENTS_FROM },
   // semaine Halloween : une fois par dune, en plus des autres
@@ -3713,7 +3713,7 @@ class Game {
           const [L, R] = this.edge(y);
           for (let k = 0; k < 4; k++) blobs.push({ x: rng.range(L + 3, R - 3), y: y + rng.range(-4, 4), r: rng.int(4, 8) });
         }
-        this.foam = { y0, y1, blobs }; this.siren = 1.6;
+        this.foam = { y0, y1, blobs }; this.siren = 3.5;
         break;
       }
       case 'chaser': {
@@ -4025,7 +4025,14 @@ class Game {
       ctx.globalAlpha = 1;
       if (g.boo && g.t - g.delay < 2.2) drawText(ctx, 'BOUH !', W / 2, y - 12, '#ffffff', 2, '#1d1416', 'center');
     }
-    if (this.siren > 0 && this.frame % 20 < 10) { ctx.fillStyle = 'rgba(255,40,30,0.18)'; ctx.fillRect(0, 0, W, H); }
+    // gyrophares de l'alarme incendie : lueur rouge qui tourne d'un bord à l'autre de l'écran
+    if (this.siren > 0) {
+      const ph = (this.frame % 24) / 24, left = ph < 0.5, k = Math.sin((ph % 0.5) * 2 * Math.PI);
+      const g = ctx.createLinearGradient(left ? 0 : W, 0, left ? 34 : W - 34, 0);
+      g.addColorStop(0, `rgba(255,40,30,${0.55 * k})`); g.addColorStop(1, 'rgba(255,40,30,0)');
+      ctx.fillStyle = g; ctx.fillRect(left ? 0 : W - 34, 0, 34, H);
+      ctx.fillStyle = `rgba(255,40,30,${0.08 * k})`; ctx.fillRect(0, 0, W, H);
+    }
     ctx.save(); ctx.translate(0, -Math.round(camY));
     for (const t of this.texts) drawText(ctx, t.text, t.x, t.y, t.col, 1, '#1d1416', 'center');
     ctx.restore();
