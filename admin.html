@@ -132,7 +132,7 @@ svg text { fill: var(--muted); font-size: 10px; }
 
     <section id="tab-dunes" class="panel hidden">
       <h2>🌦️ Calendrier des dunes</h2>
-      <p class="muted">Météo et trésor de chaque dune, aujourd'hui et les 30 prochains jours (identiques pour tous les joueurs).</p>
+      <p class="muted">Météo, trésor et événements de chaque dune, aujourd'hui et les 30 prochains jours (identiques pour tous les joueurs). Le pourcentage indique où l'événement tombe dans la dune. À partir du 9 novembre, les événements tournent : chacun revient à peu près aussi souvent, jamais deux jours de suite.</p>
       <div class="scroll"><table id="mtable"></table></div>
       <h2>⚖️ Difficulté par météo</h2>
       <div class="scroll"><table id="wtable"></table></div>
@@ -597,14 +597,60 @@ function legendIdx(day) {
 }
 const legendOf = day => day === HALLOWEEN.night ? 'Crâne en sucre 🎃' : LEGENDS[legendIdx(day)];
 const dayNumber = k => Math.round((new Date(k + 'T12:00') - new Date(LAUNCH_DAY + 'T12:00')) / 86400000) + 1;
+// événements de la dune du jour : copie exacte du tirage de index.html (generateEvents, roulement)
+const EVENT_NAMES = { mirror: '🔄 Inversion', camels: '🐪 Chameaux', tornado: '🌪️ Tornade', kevin: '🛴 Kevin', meeting: '💬 Message', poop: '💩 Crottes', quake: '🌋 Séisme',
+  power: '🔌 Coupure', copier: '📠 Photocopieuse', coffee: '☕ Pause café', alarm: '🚨 Alarme incendie', chaser: '🦂 Scorpion', magnet: '🧲 Aimant', mirage: '🏝️ Mirage' };
+const NEW_EVENTS_FROM = '2026-11-02', EVENT_ROT_FROM = '2026-11-09', HOLE_Y = 5500;
+const ROT_EVENTS = ['mirror', 'camels', 'tornado', 'kevin', 'meeting', 'poop', 'quake', 'power', 'copier', 'coffee', 'alarm', 'chaser', 'magnet'];
+const kindsOf = day => ROT_EVENTS.filter((k, i) => i < 7 || day >= NEW_EVENTS_FROM);
+function makeRng(seed) {
+  const r = mulberry32(seed);
+  return { next: r, range: (a, b) => a + (b - a) * r(), int: (a, b) => Math.floor(a + (b - a + 1) * r()), chance: p => r() < p };
+}
+function eventBag(b) {
+  const r = mulberry32(hashStr('evbag|' + b)), a = ROT_EVENTS.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const eventAt = i => eventBag(Math.floor(i / ROT_EVENTS.length))[i % ROT_EVENTS.length];
+const eventCountOf = day => makeRng((hashStr('bousier|' + day) ^ 0x5eed1e) >>> 0).int(2, 3);
+const EV_ROT = { day: EVENT_ROT_FROM, pos: 0, wait: [], prev: [], list: {} };
+function rotatedEvents(day) {
+  if (EV_ROT.list[day]) return EV_ROT.list[day];
+  let { day: d, pos, wait, prev } = EV_ROT;
+  while (d <= day) {
+    const n = eventCountOf(d), out = [], later = [];
+    while (out.length < n) {
+      const k = wait.length ? wait.shift() : eventAt(pos++);
+      if (out.includes(k) || prev.includes(k)) later.push(k); else out.push(k);
+    }
+    wait = later.concat(wait); prev = out;
+    EV_ROT.list[d] = out; d = addDays(d, 1);
+    Object.assign(EV_ROT, { day: d, pos, wait, prev });
+  }
+  return EV_ROT.list[day];
+}
+// [type, position en % de la dune] (sans les fantômes d'Halloween)
+function dayEvents(day) {
+  const rng = makeRng((hashStr('bousier|' + day) ^ 0x5eed1e) >>> 0);
+  const pool = kindsOf(day), n = rng.int(2, 3), evs = [];
+  const rot = day >= EVENT_ROT_FROM ? rotatedEvents(day) : null;
+  for (let i = 0; i < n; i++) {
+    const type = rot ? rot[i] : pool.splice(rng.int(0, pool.length - 1), 1)[0];
+    evs.push([type, Math.round((0.18 + (i + rng.range(0.15, 0.85)) * 0.6 / n) * 100)]);
+    rng.int(1, 1e6);
+  }
+  if (rng.chance(0.35)) evs.push(['mirage', Math.round((1 - 650 / HOLE_Y) * 100)]);
+  return evs;
+}
 function renderMeteo() {
   const today = dayKey(), rows = [];
   for (let i = 0; i <= 30; i++) {
     const day = addDays(today, i), [icon, name] = ALL_WEATHERS[weatherIdx(day)];
     const date = new Date(day + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
-    rows.push(`<tr${i === 0 ? ' style="font-weight:700"' : ''}><td>${date}${i === 0 ? ' (aujourd\'hui)' : ''}</td><td class="r">#${dayNumber(day)}</td><td>${icon} ${name}</td><td class="muted">${esc(legendOf(day))}${isHalloween(day) ? ' · 🎃' : ''}</td></tr>`);
+    rows.push(`<tr${i === 0 ? ' style="font-weight:700"' : ''}><td>${date}${i === 0 ? ' (aujourd\'hui)' : ''}</td><td class="r">#${dayNumber(day)}</td><td>${icon} ${name}</td><td class="muted">${esc(legendOf(day))}${isHalloween(day) ? ' · 🎃' : ''}</td><td style="font-size:.85em">${dayEvents(day).map(([k, p]) => `${EVENT_NAMES[k]} <span class="muted">${p} %</span>`).join('<br>')}</td></tr>`);
   }
-  $('mtable').innerHTML = '<tr><th>Jour</th><th class="r">Dune</th><th>Météo</th><th>Trésor</th></tr>' + rows.join('');
+  $('mtable').innerHTML = '<tr><th>Jour</th><th class="r">Dune</th><th>Météo</th><th>Trésor</th><th>Événements <span class="muted">(où dans la dune)</span></th></tr>' + rows.join('');
 }
 renderMeteo();
 

@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.22.0 — Événements en roulement (4 novembre 2026)
+- À partir du 9 novembre, les événements de la dune du jour tournent comme la météo : chacun revient à peu près aussi
+  souvent, jamais deux fois dans la même dune ni deux jours de suite. Les dunes déjà jouées (et jusqu'au 8 novembre) ne changent pas.
+- Admin, calendrier des dunes : colonne « Événements » avec leur position dans la dune (copie exacte du tirage du jeu).
+
 ## v1.21.5 — Alarme incendie plus claire (1er novembre 2026)
 - Événement Alarme incendie : texte « LES EXTINCTEURS ARROSENT : CA GLISSE ! » et gyrophares rouges sur les bords de l'écran (3,5 s).
 
