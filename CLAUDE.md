@@ -4,6 +4,17 @@ Jeu quotidien en pixel art pour des collègues de labo, en un seul fichier HTML 
 avec une page d'administration (`admin.html`). Le propriétaire du projet est Florent.
 Lire aussi `README.md` (fonctionnement, Firebase) et `CHANGELOG.md` (historique des versions).
 
+## 0. Les commandes de Florent
+
+| Commande | Ce qu'elle déclenche |
+|---|---|
+| **« Parlons de Bousier »** | Début de conversation : lire les issues n° 8, 9 et 10 (surtout les derniers commentaires) et le haut de `CHANGELOG.md` ; résumer en 5 lignes maximum où en est le jeu, ce qui est en cours et ce qui attend une décision ; **rappeler ces 4 commandes** ; demander « De quoi on parle aujourd'hui ? » |
+| **« Publication sur dev »** (ou « go dev ») | Publier le travail validé sur `dev` (voir §2). |
+| **« Publication sur main »** (ou « go main ») | Publier sur `main`, la version des joueurs (voir §2). |
+| **« Fin de discussion »** | Noter dans l'issue qui convient tout ce qui a été décidé, mis de côté ou reste à faire (n° 10 aventure, n° 8 sécurité, n° 9 le reste, ou une nouvelle issue pour un nouveau gros chantier) ; mettre à jour ce `CLAUDE.md` si une règle ou l'état du projet a changé ; **publier les changements de `CLAUDE.md` seul sur `dev` et `main`** (exception validée : ce fichier ne change rien au jeu) ; résumer en 3 lignes ce qui a été noté. |
+
+Au début de toute conversation sur Bousier, même sans « Parlons de Bousier », rappeler ces 4 commandes en une ligne.
+
 ## 1. Règles de travail (à respecter toujours)
 
 **Langue et ton**
@@ -12,7 +23,7 @@ Lire aussi `README.md` (fonctionnement, Firebase) et `CHANGELOG.md` (historique 
 **Ne rien faire sans le go de Florent**
 - On **discute d'abord**, on propose, on fait une **maquette** (capture d'écran) avant de coder.
 - Quand Florent dit « pas d'action », « on en discute », « on en reparlera » : **aucune modification** (ni code, ni commit, ni push, ni publication).
-- **Aucun push vers `main`** sans un « go main » explicite. Même chose pour `dev` : attendre « go dev ».
+- **Aucun push vers `main`** sans « publication sur main » (ou « go main »). Même chose pour `dev` : attendre « publication sur dev » (ou « go dev »). Seule exception : « fin de discussion » publie les changements du `CLAUDE.md` seul.
   Une question ou une approbation d'une idée n'est pas un go de publication.
 - Un go donné pour un contenu ne vaut pas pour un autre : redemander si le contenu change.
 
@@ -90,7 +101,15 @@ Lire aussi `README.md` (fonctionnement, Firebase) et `CHANGELOG.md` (historique 
 - Sécurité : règles Firestore en **phase 1** (lecture ouverte). La phase 2 (lecture réservée aux membres) se fera quand le compteur de « cartes de membre » de l'admin sera presque plein. Point faible connu : la date du téléphone permet de voir la dune du lendemain.
 - Accès sur **invitation** (liens, quotas par joueur, parrainage). Le sondage « ouvrir aux proches » a donné une majorité de « non » : on reste entre collègues pour le moment.
 
-## 6. Habitudes qui plaisent à Florent
+## 6. Façon de travailler (pour économiser du temps et des tokens)
+
+- **Une conversation courte par chantier** (« accueil de dev », « volcan de l'aventure »…), fermée par « fin de discussion ». Tout ce qui doit survivre est écrit dans les issues et ce fichier, jamais seulement dans la conversation.
+- Coder à **un seul endroit à la fois** ; discuter en parallèle est sans risque.
+- Réponses **courtes** par défaut ; listes de 5 idées maximum, sauf demande.
+- Maquettes : proposer d'emblée **2 ou 3 variantes** quand c'est un choix ; Florent regroupe ses retours.
+- Ne pas répondre à côté pendant un travail en cours : finir, puis traiter le message suivant.
+
+## 7. Habitudes qui plaisent à Florent
 
 - Maquettes d'abord, avec les **vrais scores** quand c'est possible.
 - Présenter les choix avec des **avantages / inconvénients** et **donner un avis clair** (« mon conseil : … »).
