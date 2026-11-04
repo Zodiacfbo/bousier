@@ -439,6 +439,76 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 }
 #toast.on { transform: translate(-50%, 0); }
 
+/* Mode aventure (dev seulement pour l'instant) */
+.sv-title { text-align:center; font-size: calc(var(--u)*13); font-weight:700; color:#ffb04a; text-shadow: calc(var(--u)*1.5) calc(var(--u)*1.5) 0 #120a16; line-height:1; }
+.sv-sub { text-align:center; color: var(--muted); font-size:.8em; }
+.lvl { display:flex; align-items:center; gap: calc(var(--u)*3); }
+.lvl .n { background: var(--gold); color:#2a1408; font-weight:700; padding: var(--u) calc(var(--u)*2.5); white-space:nowrap; }
+.lvl .bar { flex:1; position:relative; height: calc(var(--u)*8); background:#1a1020; border: var(--u) solid var(--line); }
+.lvl .bar > div { height:100%; background: linear-gradient(90deg,#5ab4e6,#8ae0ff); }
+.lvl .bar > span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.75em; font-weight:700; color:#fff; text-shadow: var(--u) var(--u) 0 #1d1416; }
+.seeds { white-space:nowrap; color:#c8ff8a; font-weight:700; }
+.map { position:relative; height: calc(var(--u)*150); }
+.map svg { position:absolute; inset:0; width:100%; height:100%; }
+.node { position:absolute; transform: translate(-50%,-50%); text-align:center; width: calc(var(--u)*46); }
+.node .ic { width: calc(var(--u)*22); height: calc(var(--u)*22); margin: 0 auto; display:flex; align-items:center; justify-content:center; font-size: 1.5em; background: var(--panel2); border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) #7a5a8a; }
+.node.done .ic { background:#3a6a3a; box-shadow: inset 0 0 0 var(--u) #8ad86a; }
+.node.cur .ic { background:#6a4a1a; box-shadow: inset 0 0 0 calc(var(--u)*1.5) var(--gold), 0 0 calc(var(--u)*5) rgba(255,210,90,.7); }
+.node.lock .ic { background:#1a1020; box-shadow:none; }
+.node.lock .ic span { filter: brightness(0); opacity:.55; }
+.node b { display:block; font-size:.72em; margin-top: var(--u); }
+.node i { display:block; font-style:normal; font-size:.6em; color: var(--muted); }
+.node.cur b { color: var(--gold); }
+.go { display:flex; gap: calc(var(--u)*2); }
+.go .btn.big { flex:1; margin:0; }
+.wsel { display:flex; gap: calc(var(--u)*2); }
+.wsel span { flex:1; text-align:center; padding: calc(var(--u)*2) 0; border: var(--u) solid var(--line); background: var(--panel); font-size:.8em; }
+.wsel span.on { background: var(--gold); color:#2a1408; font-weight:700; }
+.wsel span.off { opacity:.45; }
+.menu4 { display:grid; grid-template-columns: repeat(4,1fr); gap: calc(var(--u)*2); }
+.menu4 button { font: inherit; font-size:.68em; color: var(--ink); background: var(--panel); border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) var(--panel2); padding: calc(var(--u)*2) 0; display:flex; flex-direction:column; align-items:center; gap: var(--u); position:relative; }
+.menu4 button span { font-size:1.6em; }
+.menu4 .pill-n { top: calc(var(--u)*-2); right: calc(var(--u)*-1); }
+.mis li { display:flex; gap: calc(var(--u)*2); align-items:center; }
+.mis li > div { flex:1; }
+.mis .pb { position:relative; height: calc(var(--u)*5); background:#1a1020; border: var(--u) solid var(--line); margin-top: calc(var(--u)*.5); }
+.mis .pb > div { height:100%; background: var(--gold); opacity:.75; }
+.mis .rw { color:#c8ff8a; font-size:.75em; white-space:nowrap; }
+.big-dist { text-align:center; font-size: calc(var(--u)*24); font-weight:700; color:#fff; text-shadow: calc(var(--u)*2) calc(var(--u)*2) 0 #120a16; line-height:1; }
+.next { text-align:center; background: rgba(90,180,230,.15); border: var(--u) solid #5ab4e6; padding: calc(var(--u)*2.5); }
+.unl { display:flex; gap: calc(var(--u)*3); align-items:center; padding: calc(var(--u)*2); background: rgba(255,210,90,.1); border: var(--u) solid var(--gold); }
+.unl .c { width: calc(var(--u)*18); height: calc(var(--u)*24); display:flex; align-items:center; justify-content:center; font-size:1.4em; background: linear-gradient(160deg,#fff4a8,#ffb84a); border: var(--u) solid #6a4a1a; }
+.taken { font-size: 1.2em; letter-spacing: calc(var(--u)*1); }
+.up { display:flex; gap: calc(var(--u)*3); align-items:center; padding: calc(var(--u)*2.5); background: var(--panel); border: var(--u) solid var(--line); }
+.up .ic { font-size:1.5em; width: calc(var(--u)*14); text-align:center; }
+.up > div { flex:1; }
+.up .dots { display:flex; gap: calc(var(--u)*1); justify-content:flex-start; margin-top: var(--u); }
+.up .dots i { width: calc(var(--u)*4); height: calc(var(--u)*4); background:#4a3a4a; }
+.up .dots i.on { background:#c8ff8a; }
+.up .btn { width:auto; flex:0 0 auto; margin:0; font-size:.75em; padding: calc(var(--u)*2) calc(var(--u)*3); white-space:nowrap; }
+.up.lockd { opacity:.5; }
+.tabs3 { display:flex; gap: var(--u); }
+.tabs3 span { flex:1; text-align:center; padding: calc(var(--u)*2) 0; border: var(--u) solid var(--line); background: rgba(18,10,22,.85); font-size:.8em; color: var(--muted); }
+.tabs3 span.on { background: var(--accent); color:#2a1408; font-weight:700; }
+.wtag { display:inline-block; padding: 0 calc(var(--u)*1.5); font-size:.7em; background: var(--panel2); margin-left: calc(var(--u)*1.5); }
+.lvtag { display:inline-block; padding: 0 calc(var(--u)*1.5); font-size:.7em; background: var(--gold); color:#2a1408; font-weight:700; margin-left: calc(var(--u)*1.5); }
+.pillars { display:grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u)*3); }
+.pillar { font: inherit; color: var(--ink); background: var(--panel); border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) var(--gold); padding: calc(var(--u)*3) calc(var(--u)*2); display:flex; flex-direction:column; align-items:center; gap: var(--u); cursor:pointer; }
+.pillar.adv { box-shadow: inset 0 0 0 var(--u) #5ab4e6; background: rgba(30,40,70,.92); }
+.pillar .pi { font-size: 1.8em; } .pillar b { color: var(--gold); } .pillar.adv b { color: #8ae0ff; } .pillar small { font-size: .7em; color: var(--muted); text-align:center; }
+.menu2 { display:grid; grid-template-columns: repeat(2,1fr); gap: calc(var(--u)*2); }
+.menu2 button { font: inherit; font-size:.72em; color: var(--ink); background: var(--panel); border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) var(--panel2); padding: calc(var(--u)*2) 0; display:flex; flex-direction:column; align-items:center; gap: var(--u); position:relative; cursor:pointer; }
+.menu2 button span:first-child { font-size:1.6em; }
+.panel.test { display:flex; flex-direction:column; gap: calc(var(--u)*2); border-style: dashed; }
+.wsel span { cursor:pointer; }
+.node .ic span { filter: brightness(0); opacity:.55; }
+.confetti { font-size: 1.6em; text-align:center; letter-spacing: calc(var(--u)*2); animation: bob 1s steps(2) infinite; }
+.world-big { text-align:center; font-size: calc(var(--u)*13); font-weight:700; color:#ffd25a; line-height:1.1; text-shadow: calc(var(--u)*1.5) calc(var(--u)*1.5) 0 #120a16; }
+.world-big span { font-size: .8em; color:#fff4a8; }
+.panel.welcome { display:flex; flex-direction:column; gap: calc(var(--u)*2.5); text-align:left; }
+.panel.welcome .row { display:flex; gap: calc(var(--u)*3); align-items:flex-start; font-size:.85em; line-height:1.3; }
+.panel.welcome .ic { font-size: 1.4em; width: calc(var(--u)*12); text-align:center; }
+.panel.welcome img { vertical-align: middle; }
 </style>
 </head>
 <body>
@@ -5122,7 +5192,7 @@ const App = {
   startSurvival() {
     this.mode = 'survival';
     this.survCfg = survivalConfig();
-    this.launch(this.survCfg, [], 'GRANDE FUITE');
+    this.launch(this.survCfg, [], 'AVENTURE');
   },
 
   // Halte : la course est en pause, on choisit 1 bonus parmi 3
@@ -5822,7 +5892,7 @@ const App = {
       extra = '<div class="tiny center">Records = ta meilleure boule de tous les temps · 🔥 ta plus longue série · ✨ trésors trouvés.</div>';
       body = lb.map((e, i) => `<tr class="${fr(e.name)}"><td>${medal(i)}${e.name === me ? `<br>${toi(e.name)}` : ''}</td><td>${who(e.name)}</td><td class="tiny">🔥${e.bestStreak} ✨${e.legends}</td><td class="r">${fmtSize(e.best)}</td></tr>`).join('');
     }
-    const tabs = [['day', 'Jour'], ['week', 'Semaine'], ...(TEAMS_ON ? [['teams', 'Équipes']] : []), ['all', 'Records'], ...(SURVIVAL_ON ? [['surv', 'Survie']] : [])]
+    const tabs = [['day', 'Jour'], ['week', 'Semaine'], ...(TEAMS_ON ? [['teams', 'Équipes']] : []), ['all', 'Records']]
       .map(([k, l]) => `<button class="tab ${tab === k ? 'on' : ''}" data-a="lbtab" data-v="${k}">${l}</button>`).join('');
     return `<div class="screen">
       ${this.back('Classement')}
@@ -6207,6 +6277,548 @@ window.addEventListener('load', () => { Online.connect(); App.init(); });
 if ('serviceWorker' in navigator && location.protocol.startsWith('http'))
   navigator.serviceWorker.register('sw.js').catch(() => { });
 
+</script>
+<script>
+// Mode aventure (remplace La Grande Fuite) : seulement sur dev pour l'instant, invisible sur main
+if (SURVIVAL_ON) (() => {
+  // --- Sprites des mondes ---------------------------------------------------
+  const SP = {
+    datte: ['.nB.', 'nbBn', 'nbbn', 'nbbn', '.nn.'],
+    coco: ['..AAAAA..', '.AaAAaAA.', 'AAaAAAaAA', 'AaAAkAAaA', 'AAAkAkAAA', 'AaAAAAAaA', 'AAaAAaAAA', '.AAaAAAA.', '..AAAAA..'],
+    nenuphar: ['...EEEEEEE..', '.EEllllllEE.', 'Ellllpplll..', 'ElllpwwplllE', 'ElllpwwplllE', 'Ellllpplllll', '.EEllllllEE.', '...EEEEEEE..'],
+    crabe: ['R.........R', 'RR.R...R.RR', '.RrrrrrrrR.', 'RrrwkrwkrrR', '.RrrrrrrrR.', 'R.R.R.R.R.R'],
+    crabeF: ['.R.......R.', 'RR.R...R.RR', '.RrrrrrrrR.', 'RrrkwrkwrrR', '.RrrrrrrrR.', '.R.R.R.R.R.'],
+    palmL: ['......E.E......', '..EEeeEeEeeEE..', '.EeellEeElllE..', 'Eel..EeleE..lE.', 'e....EeBeE....e', '.....E.Bb......', '.......bB......', '.......Bb......', '......bB.......', '......Bb.......', '......bB.......', '.....nBbn......', '....nbBbBn.....'],
+    roseaux: ['.b...b.', '.B.b.B.', '.e.B.e.', '.e.e.e.', 'ee.e.e.', '.e.eee.', '.eeEe.e', 'EeEeEeE'],
+    puits: ['.bbbbbbbbb.', '.b.......b.', '.b...k...b.', '.b...k...b.', 'GgGgGgGgGgG', 'gWgWgWgWgWg', 'GgCcCcCcCgG', 'gWgWgWgWgWg', 'GgGgGgGgGgG'],
+    flamant: ['..pp...', '.pkp...', '..pp...', '...p...', '...p...', '..ppp..', '.ppppp.', '.pppppp', '..ppp..', '...p...', '...p...'],
+    palmeDeco: ['..EE.e.EE..', '.EeeEeEeeE.', 'Ee..EEE..eE', 'e...bBb...e', '....bBb....', '....nBb....', '....bBn....', '....bBb....', '...nbBbn...'],
+  };
+  for (const k in SP) SPR[k] = spriteFromRows(SP[k]);
+  const mossy = key => {
+    const mk = 'moss_' + key; if (SPR[mk]) return mk;
+    const src = SPR[key]; if (!src) return key;
+    const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+    const x = c.getContext('2d'); x.drawImage(src, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height), px = d.data;
+    for (let j = 0; j < c.height * 0.55; j++) for (let i = 0; i < c.width; i++) {
+      const p = (j * c.width + i) * 4; if (px[p + 3] < 200) continue;
+      const above = j === 0 || px[((j - 1) * c.width + i) * 4 + 3] < 200;
+      if (above || ((i * 7 + j * 13) % 5 < 2 && j < c.height * 0.4)) { const g = (i + j) % 3 ? [95, 158, 63] : [143, 207, 106]; px[p] = g[0]; px[p + 1] = g[1]; px[p + 2] = g[2]; }
+    }
+    x.putImageData(d, 0, 0); SPR[mk] = c; return mk;
+  };
+  // palme au premier plan (dessinée devant la boule, sur le bord de l'écran)
+  const FROND = (() => {
+    const c = document.createElement('canvas'); c.width = 48; c.height = 30; const x = c.getContext('2d');
+    for (let i = 0; i <= 44; i++) {
+      const t = i / 44, sy = Math.round(5 + 17 * t * t);
+      x.fillStyle = '#1d3f22'; x.fillRect(i, sy, 1, 2);
+      if (i % 2 === 0 && i > 2) { const L = Math.round(9 * (1 - t) + 3); for (let j = 1; j <= L; j++) { x.fillStyle = j === 1 ? '#2f6b33' : '#1f4a24'; x.fillRect(i - Math.round(j * 0.4), sy - j, 1, 1); x.fillRect(i - Math.round(j * 0.4), sy + 1 + j, 1, 1); } }
+    }
+    const f = document.createElement('canvas'); f.width = 48; f.height = 30; const y = f.getContext('2d'); y.translate(48, 0); y.scale(-1, 1); y.drawImage(c, 0, 0);
+    return [c, f];
+  })();
+  const D = {
+    datte: { id: 'datte', name: 'Datte', sprite: 'datte', r: 2 },
+    coco: { id: 'coco', name: 'Noix de coco', sprite: 'coco', r: 4.5 },
+    nenuphar: { id: 'nenuphar', name: 'Nénuphar', sprite: 'nenuphar', r: 5.5 },
+    grenouille: { id: 'grenouille', name: 'Grenouille', sprite: 'grenouille', r: 3.5, move: 'side' },
+    crabe: { id: 'crabe', name: 'Crabe', sprite: 'crabe', r: 5, hazard: true, prickly: true, move: 'side' },
+  };
+
+  // --- Les mondes -----------------------------------------------------------
+  const WORLDS = [
+    { icon: '🏜️', name: 'Le désert', short: 'Désert', up: 'LE DESERT', theme: 'doree', len: 2500, hunger: 1, speed: 1, wx: ['calme', 'tempete', 'canicule', 'ventarriere'] },
+    { icon: '🌴', name: 'L\'oasis', short: 'Oasis', up: 'L\'OASIS', theme: 'oasis', len: 3000, hunger: 1, speed: 1, wx: ['pluie', 'calme'],
+      rule: 'Les flaques d\'eau font glisser… mais elles calment ta faim.', obstacle: 'des crabes qui pincent et qui bougent',
+      objs: ['datte', 'coco', 'nenuphar', 'grenouille'] },
+    { icon: '🌋', name: 'Le volcan', short: 'Volcan', soon: true },
+    { icon: '🌙', name: 'La Lune', short: 'Lune', soon: true },
+  ];
+  const PLAYABLE = WORLDS.filter(w => !w.soon).length;
+  const OASIS_CARDS = [
+    { id: 'source', icon: '💧', name: 'Source fraîche', desc: 'Ta faim s\'arrête pendant 12 s', dur: 12 },
+    { id: 'cocos', icon: '🥥', name: 'Pluie de noix de coco', desc: 'Des noix de coco tombent devant toi', dur: 0 },
+  ];
+  const UPS = [
+    { id: 'estomac', icon: '🍽️', name: 'Estomac', desc: 'La faim monte moins vite', max: 10, fx: n => `−${Math.round((1 - 0.92 ** n) * 100)} %` },
+    { id: 'provisions', icon: '🎒', name: 'Provisions', desc: 'Départ avec une boule plus grosse', max: 10, fx: n => `+${n * 12} %` },
+    { id: 'cartes', icon: '🃏', name: 'Cartes en plus', desc: 'Plus de cartes à chaque halte', max: 2, fx: n => `${3 + n} cartes` },
+    { id: 'durable', icon: '⏱️', name: 'Bonus durables', desc: 'Les bonus durent plus longtemps', max: 10, fx: n => `+${n * 15} %` },
+    { id: 'bouclier', icon: '🛡️', name: 'Bouclier de départ', desc: 'Chocs gratuits au départ', max: 5, fx: n => `${n} choc${n > 1 ? 's' : ''}` },
+  ];
+  const PACT_LEVEL = 3;
+  const ADV = { run: null };
+  const prof = () => Store.profile();
+  const adv = () => { const p = prof(); p.adv = p.adv || { xp: 0, spent: {}, unlocked: 0, best: {}, sel: 0, short: false }; return p.adv; };
+  const k = () => (adv().short ? 0.1 : 1);
+  const len = w => Math.round(WORLDS[w].len * k());
+  const startOf = w => { let s = 0; for (let i = 0; i < w; i++) s += len(i); return s; };
+  const need = L => 150 + 100 * (L - 1);
+  const levelOf = xp => { let L = 1; while (xp >= need(L)) { xp -= need(L); L++; } return { L, cur: xp, next: need(L) }; };
+  const spent = () => Object.values(adv().spent).reduce((a, b) => a + b, 0);
+  const points = () => levelOf(adv().xp).L - 1 - spent();
+  const up = id => adv().spent[id] || 0;
+  const themeOf = w => findCos('theme', WORLDS[Math.min(w, PLAYABLE - 1)].theme);
+  const fmt = m => `${Math.floor(m).toLocaleString('fr-FR')} m`;
+  // repères de la partie, en unités de la dune (10 unités = 1 m), comptés depuis le monde de départ
+  const yEnd = w => (startOf(w + 1) - startOf(ADV.run.world)) * 10;
+  const yStart = w => (startOf(w) - startOf(ADV.run.world)) * 10;
+  const worldAtY = y => { for (let i = ADV.run.world; i < PLAYABLE; i++) if (y < yEnd(i)) return i; return PLAYABLE; };
+  const transLen = w => Math.min(2000, len(w) * 10 * 0.6);  // zone de transition : 200 m
+
+  // --- La dune : objets, flaques et repères du monde suivant -----------------
+  const oGen = window.generateSurvivalCourse;
+  window.generateSurvivalCourse = function (seed, weather) {
+    const c = oGen(seed, weather);
+    if (!ADV.run) return c;
+    const rng = makeRng((seed ^ 0xa5a5) >>> 0), w0 = ADV.run.world;
+    // part du monde « oasis » à la hauteur y : 0 dans le désert, monte dans la transition, 1 dans l'oasis
+    const oasisAt = y => {
+      if (w0 >= 1) return 1;
+      const b = yEnd(0), T = transLen(0);
+      return y >= b ? 1 : y <= b - T ? 0 : (y - (b - T)) / T;
+    };
+    const mk = (def, x, y) => ({ def, x, x0: x, y, r: def.r, sprite: def.sprite, dead: false, hitT: -9, phase: rng.range(0, 6.28),
+      amp: def.move === 'side' ? rng.range(6, 14) : 0, w: def.move === 'side' ? rng.range(1, 2) : 0 });
+    const edge = y => [c.Lx[Math.max(0, Math.min(c.len - 1, y | 0))], c.Rx[Math.max(0, Math.min(c.len - 1, y | 0))]];
+    c.objects = c.objects.map(o => {
+      const t = oasisAt(o.y);
+      if (!t || o.def.pickup || !rng.chance(t)) return o;
+      let def = null;
+      if (o.def.hazard) def = D.crabe;
+      else if (o.def.rock) { o.sprite = mossy(o.sprite); return o; }
+      else if (o.r <= 2.2) def = D.datte;
+      else if (o.r <= 3.4) def = rng.chance(0.5) ? D.grenouille : D.datte;
+      else if (o.r <= 5.2) def = D.coco;
+      else if (o.r <= 7) def = D.nenuphar;
+      if (!def) return o;
+      const n = mk(def, o.x, o.y), [L, R] = edge(o.y);
+      n.x = n.x0 = Math.max(L + def.r + n.amp + 2, Math.min(R - def.r - n.amp - 2, o.x));
+      return n;
+    });
+    // flaques d'eau (avec un nénuphar dessus de temps en temps)
+    c.puddles = [];
+    for (let y = 400; y < c.len - 300; y += rng.range(320, 620)) {
+      const t = oasisAt(y);
+      if (!t || !rng.chance(t)) continue;
+      const [L, R] = edge(y), rx = rng.range(12, 22), ry = rng.range(6, 10);
+      if (R - L < rx * 2 + 16) continue;
+      const x = rng.range(L + rx + 6, R - rx - 6);
+      c.puddles.push({ x, y, rx, ry });
+      if (rng.chance(0.5)) c.objects.push(mk(D.nenuphar, x + rng.range(-rx / 3, rx / 3), y));
+    }
+    c.objects.sort((a, b) => a.y - b.y);
+    c.adv = { w0 };
+    return c;
+  };
+
+  const oasisFrac = y => { if (!ADV.run) return 0; if (ADV.run.world !== 0 || worldAtY(y) >= 1) return 1; const b = yEnd(0), T = transLen(0); return y <= b - T ? 0 : (y - (b - T)) / T; };
+  const isOasisAt = y => { const t = oasisFrac(y); return t >= 1 || (t > 0 && ((((y | 0) * 7919) % 100 + 100) % 100) / 100 < t); };
+  const EARTH_D = pack([84, 56, 30]), EARTH = pack([128, 92, 52]), EARTH_L = pack([152, 114, 68]);
+  // --- Couleurs du sol, ligne par ligne (fondu d'un monde à l'autre) ----------
+  const KEYS = ['sand', 'sandDark', 'sandLight', 'wall', 'wallDark', 'wallLight'];
+  function palRGB(theme, wx) {
+    const tint = wx && wx.id === 'pluie' ? ['#34466e', 0.2] : wx && wx.id === 'canicule' ? ['#ff8a30', 0.1] : wx && wx.storm ? ['#20284a', 0.3] : null;
+    const o = {}; for (const key of KEYS) { let c = hexToRgb(theme[key]); if (tint) c = mixRgb(c, hexToRgb(tint[0]), tint[1]); o[key] = c; }
+    return o;
+  }
+  Game.prototype.advPalettes = function () {
+    this.advPals = WORLDS.slice(0, PLAYABLE).map((_, i) => palRGB(themeOf(i), this.wx));
+    this.advPacked = this.advPals.map(p => Object.fromEntries(KEYS.map(key => [key, pack(p[key])])));
+  };
+  Game.prototype.palAt = function (wy) {
+    if (!ADV.run || !this.surv || !this.advPals) return this.pal;
+    const w = Math.min(worldAtY(wy), PLAYABLE - 1), b = yEnd(w), T = transLen(w);
+    if (w + 1 < PLAYABLE && wy > b - T) {
+      const t = Math.round(((wy - (b - T)) / T) * 8) / 8;  // fondu en 8 paliers, façon pixel
+      const a = this.advPals[w], z = this.advPals[w + 1], o = {};
+      for (const key of KEYS) o[key] = pack(mixRgb(a[key], z[key], t));
+      return o;
+    }
+    return this.advPacked[w];
+  };
+  Game.prototype.drawBackground = function (camY) {
+    const buf = this.buf, H = this.H, Lx = this.course.Lx, Rx = this.course.Rx, len = this.course.len;
+    const heat = this.wx && this.wx.id === 'canicule';
+    const T = this.t || 0;
+    for (let sy = 0; sy < H; sy++) {
+      const wy = camY + sy, yi = wy < 0 ? 0 : wy >= len ? len - 1 : wy;
+      const P = this.palAt(wy), oz = this.surv && this.course.adv && isOasisAt(wy);
+      const L = Lx[yi] | 0, R = Rx[yi] | 0;
+      const off = heat ? Math.round(Math.sin(wy * 0.3 + T * 5) * 0.9) : 0;
+      const wyo = wy + 1000000;
+      let p = sy * W;
+      for (let x = 0; x < W; x++, p++) {
+        const wx = x + off;
+        if (wx < L || wx > R) {
+          const d = wx < L ? L - wx : wx - R;
+          if (oz) {
+            // berge : rebord de terre, puis herbe haute
+            if (d <= 1) buf[p] = EARTH_D;
+            else if (d <= 3) buf[p] = ((wy + wx) % 5 === 0) ? EARTH_L : EARTH;
+            else if (d === 4) buf[p] = P.wallDark;
+            else { const s = (wx * 7 + (wyo >> 1) * 3 + RIP[(wx * 5 + wyo) & 255]) % 11; buf[p] = s === 0 ? P.wallDark : s < 3 ? P.wallLight : P.wall; }
+            continue;
+          }
+          if (d <= 1) buf[p] = P.wallDark;
+          else if (d <= 4) buf[p] = P.wallLight;
+          else {
+            const s = (wyo + wx * (wx < L ? 2 : -2) + RIP[(wx * 3) & 255] * 3) % 28;
+            buf[p] = s < 2 ? P.wallDark : s < 4 && ((x + sy) & 1) ? P.wallDark : P.wall;
+          }
+        } else {
+          const e = wx - L < R - wx ? wx - L : R - wx;
+          if (e < 3) { buf[p] = (e < 2 || ((x + sy) & 1)) ? P.sandDark : P.sand; continue; }
+          const s = (wyo + RIP[(wx + (wyo >> 4) * 5) & 255]) % 13;
+          buf[p] = s === 0 ? P.sandDark : s === 1 ? P.sandLight : P.sand;
+        }
+      }
+    }
+    this.ctx.putImageData(this.img, 0, 0);
+    if (ADV.run && this.surv && this.course.adv) this.drawWorldDeco(camY);
+  };
+  // décor posé sur le sol : herbe, flaques, palmiers, panneau et porte du monde suivant
+  Game.prototype.drawWorldDeco = function (camY) {
+    const ctx = this.ctx, H = this.H, c = this.course, sy = y => Math.round(y - camY);
+    const isOasis = isOasisAt;
+    // touffes d'herbe sur le sable
+    for (let y = Math.floor(camY / 23) * 23; y < camY + H; y += 23) {
+      if (!isOasis(y)) continue;
+      const [L, R] = this.edge(y), x = L + 6 + ((y * 37) % 97) / 97 * (R - L - 12);
+      ctx.fillStyle = '#5f9e3f'; ctx.fillRect(Math.round(x), sy(y), 1, 2); ctx.fillRect(Math.round(x) + 2, sy(y) - 1, 1, 3); ctx.fillRect(Math.round(x) + 4, sy(y), 1, 2);
+    }
+    // décor des côtés : roseaux le long de la berge, puis un grand élément par bloc
+    ctx.imageSmoothingEnabled = false;
+    const hash = n => (Math.imul(n, 2654435761) >>> 0) % 1000;
+    for (let y = Math.floor((camY - 20) / 13) * 13; y < camY + H + 20; y += 13) {
+      if (!isOasis(y)) continue;
+      const [L, R] = this.edge(y), sp = SPR.roseaux, hh = hash(y);
+      if (hh % 3) ctx.drawImage(sp, Math.round(L - 4 - sp.width - (hh % 4)), sy(y) - sp.height);
+      if ((hh >> 2) % 3) ctx.drawImage(sp, Math.round(R + 4 + (hh % 3)), sy(y) - sp.height);
+    }
+    for (let n = Math.floor((camY - 80) / 44); n * 44 < camY + H + 80; n++) {
+      const h = hash(n), y = n * 44 + (h % 15);
+      if (!isOasis(y)) continue;
+      const [L, R] = this.edge(y), left = n % 2 === 0, bw = left ? L : W - R;
+      const put = (key, k = 2, inset = 6) => {
+        const sp = SPR[key]; if (!sp) return;
+        const w = sp.width * k, hgt = sp.height * k;
+        let cx = left ? L - inset - w / 2 : R + inset + w / 2;
+        cx = left ? Math.max(w * 0.15, cx) : Math.min(W - w * 0.15, cx);
+        ctx.fillStyle = 'rgba(20,50,15,0.22)'; ctx.fillRect(Math.round(cx - w * 0.35), sy(y) - 2, Math.round(w * 0.7), 3);
+        ctx.drawImage(sp, Math.round(cx - w / 2), sy(y) - hgt, w, hgt);
+      };
+      const roll = h % 100;
+      if (bw < 12) continue;
+      if (roll < 34) put(bw >= 30 ? 'palmier' : 'palmL', bw >= 30 ? 1 : 2, 4);
+      else if (roll < 46) put('tente', 2, 5);
+      else if (roll < 56) put('chameau', 2, 5);
+      else if (roll < 66) put('puits', 2, 5);
+      else if (roll < 86 && bw >= 22) {
+        // mare, avec un poisson qui saute et parfois un flamant rose
+        const rx = Math.min(20, Math.floor((bw - 8) / 2)), cx = left ? L - rx - 6 : R + rx + 6, cy = y - 6;
+        const ell = (ax, ay, col) => { ctx.fillStyle = col; for (let j = -ay; j <= ay; j++) { const hw = Math.round(ax * Math.sqrt(Math.max(0, 1 - (j / (ay + 0.5)) ** 2))); ctx.fillRect(Math.round(cx - hw), sy(cy + j), hw * 2 + 1, 1); } };
+        ell(rx + 2, 9, '#6b4a2a'); ell(rx, 8, '#3f7fb0'); ell(rx - 3, 6, '#5ab4e6');
+        ctx.fillStyle = '#bfe8ff'; ctx.fillRect(Math.round(cx - rx / 2 + Math.sin(this.t * 2 + n) * 3), sy(cy - 3), 5, 1);
+        const ph = (this.t * 0.7 + n * 1.37) % 4;
+        if (ph < 0.9) { ctx.fillStyle = '#ff9a3a'; ctx.fillRect(Math.round(cx - 6 + ph * 12), sy(cy) - Math.round(10 * Math.sin(ph / 0.9 * Math.PI)), 3, 2); }
+        if (h % 2 === 0) { const f = SPR.flamant; ctx.drawImage(f, Math.round(cx + (left ? -rx : rx - 12)), sy(cy) - f.height * 2 + 4, f.width * 2, f.height * 2); }
+      } else put('roseaux', 2, 3);
+    }
+    // flaques d'eau
+    for (const p of c.puddles || []) {
+      if (p.y + p.ry < camY || p.y - p.ry > camY + H) continue;
+      const ell = (rx, ry, col) => { ctx.fillStyle = col; for (let j = -ry; j <= ry; j++) { const hw = Math.round(rx * Math.sqrt(Math.max(0, 1 - (j / (ry + 0.5)) ** 2))); ctx.fillRect(Math.round(p.x - hw), sy(p.y + j), hw * 2 + 1, 1); } };
+      ell(p.rx, p.ry, '#3f7fb0'); ell(p.rx - 2, p.ry - 1, '#5ab4e6');
+      ctx.fillStyle = '#bfe8ff'; const sh = Math.round(Math.sin(this.t * 2 + p.x) * 3);
+      ctx.fillRect(Math.round(p.x - p.rx / 3 + sh), sy(p.y - p.ry / 2), 4, 1); ctx.fillRect(Math.round(p.x + p.rx / 4 - sh), sy(p.y + 1), 3, 1);
+    }
+    // panneau puis porte vers le monde suivant
+    for (let w = ADV.run.world; w < PLAYABLE; w++) {
+      const next = WORLDS[w + 1]; if (!next || next.soon && w + 1 >= PLAYABLE) {
+        // fin des mondes jouables : une barrière « en construction »
+        const b = yEnd(w); if (b > camY - 20 && b < camY + H + 20) { const [L, R] = this.edge(b);
+          for (let x = L; x < R; x += 6) { ctx.fillStyle = ((x - L) / 6) % 2 ? '#1d1416' : '#ffd25a'; ctx.fillRect(Math.round(x), sy(b) - 3, 6, 4); }
+          drawText(ctx, 'EN CONSTRUCTION', W / 2, sy(b) - 12, '#ffd25a', 1, '#1d1416', 'center'); }
+        continue;
+      }
+      const b = yEnd(w), sgn = b - 900;
+      if (sgn > camY - 30 && sgn < camY + H + 30) {
+        const [L] = this.edge(sgn), x = Math.max(4, L - 2);
+        ctx.fillStyle = '#6b4226'; ctx.fillRect(x + 6, sy(sgn) - 2, 2, 12);
+        ctx.fillStyle = '#c99a5a'; ctx.fillRect(x, sy(sgn) - 9, 34, 9); ctx.fillStyle = '#6b4226'; ctx.fillRect(x, sy(sgn) - 9, 34, 1); ctx.fillRect(x, sy(sgn) - 1, 34, 1);
+        drawText(ctx, next.up.replace('L\'', ''), x + 17, sy(sgn) - 7, '#3a2410', 1, null, 'center');
+      }
+      if (b > camY - 40 && b < camY + H + 40) {
+        const [L, R] = this.edge(b), top = sy(b) - 26;
+        for (const px of [L - 1, R - 5]) { ctx.fillStyle = '#6b4226'; ctx.fillRect(Math.round(px), top, 6, 28); ctx.fillStyle = '#8f5a32'; ctx.fillRect(Math.round(px) + 1, top, 2, 28); ctx.fillStyle = '#5f9e3f'; ctx.fillRect(Math.round(px) - 2, top - 3, 10, 4); }
+        ctx.fillStyle = '#c99a5a'; ctx.fillRect(Math.round(L), top, Math.round(R - L), 10); ctx.fillStyle = '#6b4226'; ctx.fillRect(Math.round(L), top + 9, Math.round(R - L), 1);
+        drawText(ctx, `MONDE ${w + 2} : ${next.up}`, (L + R) / 2, top + 2, '#3a2410', 1, null, 'center');
+      }
+    }
+  };
+
+  const oRender = Game.prototype.render;
+  Game.prototype.render = function () {
+    oRender.call(this);
+    if (ADV.run && this.surv && this.course && this.course.adv && this.state === 'run') this.drawForeground();
+  };
+  Game.prototype.drawForeground = function () {
+    const ctx = this.ctx, H = this.H, camY = this.ball.y - H * 0.3;
+    if (!isOasisAt(camY + H * 0.5)) return;
+    // palmes au premier plan : elles défilent plus vite que le sol (effet de profondeur)
+    const P = camY * 1.35;
+    for (let n = Math.floor((P - 60) / 520); n * 520 - P < H + 40; n++) {
+      const y = Math.round(n * 520 + 60 - P), left = n % 2 === 0;
+      if (y < -40 || !isOasisAt(camY + y)) continue;
+      ctx.drawImage(FROND[left ? 0 : 1], left ? -6 : W - 42, y);
+    }
+    // oiseaux qui traversent le ciel
+    this.birds = this.birds || [];
+    if (!this.nextBird || this.t > this.nextBird) {
+      this.nextBird = this.t + 7 + Math.random() * 8;
+      const dir = Math.random() < 0.5 ? 1 : -1, y0 = 30 + Math.random() * H * 0.5;
+      for (let i = 0; i < 3; i++) this.birds.push({ t0: this.t, dir, x0: dir > 0 ? -10 - i * 7 : W + 10 + i * 7, y: y0 + (i % 2) * 5 + i * 2 });
+    }
+    this.birds = this.birds.filter(b => this.t - b.t0 < 7);
+    ctx.fillStyle = '#2a1c22';
+    for (const b of this.birds) {
+      const x = Math.round(b.x0 + b.dir * (this.t - b.t0) * 38), y = Math.round(b.y), up = Math.floor((this.t + b.x0) * 7) % 2;
+      ctx.fillRect(x, y, 1, 1);
+      if (up) { ctx.fillRect(x - 1, y - 1, 1, 1); ctx.fillRect(x + 1, y - 1, 1, 1); ctx.fillRect(x - 2, y - 1, 1, 1); ctx.fillRect(x + 2, y - 1, 1, 1); }
+      else { ctx.fillRect(x - 1, y, 1, 1); ctx.fillRect(x + 1, y, 1, 1); ctx.fillRect(x - 2, y + 1, 1, 1); ctx.fillRect(x + 2, y + 1, 1, 1); }
+    }
+  };
+
+  // --- Le jeu ----------------------------------------------------------------
+  const pickWx = (w, rng = Math.random) => WEATHER[WORLDS[w].wx[Math.floor(rng() * WORLDS[w].wx.length)]];
+  const oStart = Game.prototype.start;
+  Game.prototype.start = function (config, opts) {
+    oStart.call(this, config, opts);
+    if (!this.surv || !ADV.run) return;
+    const sv = this.surv, w = ADV.run.world, b = this.ball;
+    sv.dist = startOf(w); sv.world = w;
+    b.area *= 1 + 0.12 * up('provisions'); b.r = Math.sqrt(b.area);
+    sv.shields += up('bouclier');
+    sv.hunger *= 0.92 ** up('estomac') * WORLDS[w].hunger;
+    sv.speedPact *= WORLDS[w].speed;
+    if (!WORLDS[w].wx.includes(this.wx.id)) this.wx = pickWx(w);
+    this.advPalettes(); this.setPalette(themeOf(w), this.wx);
+    this.notice(`MONDE ${w + 1} : ${WORLDS[w].up}`, '#fff4a8', 2.5, 4);
+    setTimeout(() => { App.hud.tryEl.textContent = `MONDE ${w + 1} · ${WORLDS[w].short.toUpperCase()}`; App.hud.wx.textContent = this.wx.icon; }, 0);
+  };
+  function enterWorld(g, w) {
+    const sv = g.surv, prev = WORLDS[sv.world];
+    sv.world = w;
+    const a = adv(); a.unlocked = Math.max(a.unlocked, Math.min(w, PLAYABLE - 1)); Store.save();
+    if (w >= PLAYABLE) {
+      g.phase = 'miss'; g.phaseT = 0; g.alert = null;
+      g.notice('BIENTOT LA SUITE !', '#fff4a8', 3, 4); Sound.play('unlock');
+      return;
+    }
+    sv.hunger = sv.hunger / prev.hunger * WORLDS[w].hunger;
+    sv.speedPact = sv.speedPact / prev.speed * WORLDS[w].speed;
+    // la porte : pause, grande annonce, puis on repart dans le nouveau monde
+    g.paused = true; ADV.welcome = w;
+    Sound.play('unlock');
+    App.show('monde');
+  }
+  App.resumeWorld = function () {
+    const g = this.game, w = ADV.welcome; ADV.welcome = null;
+    g.wx = pickWx(w); g.advPalettes(); g.setPalette(themeOf(w), g.wx);
+    this.hud.wx.textContent = g.wx.icon; this.hud.tryEl.textContent = `MONDE ${w + 1} · ${WORLDS[w].short.toUpperCase()}`;
+    g.notice(`MONDE ${w + 1} : ${WORLDS[w].up}`, '#fff4a8', 3, 4);
+    g.burst(g.ball.x, g.ball.y, 40, ['#ffd25a', '#ff6a8a', '#5ab4e6', '#9be27a', '#ffffff'], 140);
+    g.paused = false; g.last = 0;
+    this.show('none');
+  };
+  const oStep = Game.prototype.stepSurvival;
+  Game.prototype.stepSurvival = function (b) {
+    const sv = this.surv;
+    if (sv && ADV.run) {
+      ADV.lastY = b.y;
+      // faim : la source fraîche l'arrête, les flaques la calment
+      const hunger = (0.9 + sv.dist / 1800) * sv.hunger * (sv.fx.pacteFeu ? 2 : 1) * TICK * (1 + b.r * 0.04);
+      const pud = (this.course.puddles || []).find(p => ((b.x - p.x) / p.rx) ** 2 + ((b.y - p.y) / p.ry) ** 2 < 1);
+      if (sv.fx.source) b.area += hunger;
+      else if (pud) b.area += hunger * 0.7;
+      if (pud) {
+        if (!this.foam || this.foam.adv) this.foam = { y0: b.y - 3, y1: b.y + 3, blobs: [], adv: true };
+        if (pud !== this.lastPud) { this.floatText('SPLASH !', b.x, b.y - b.r - 10, '#bfe8ff'); this.burst(b.x, b.y, 10, ['#5ab4e6', '#bfe8ff', '#ffffff'], 60); }
+        if (this.frame % 4 === 0) this.burst(b.x, b.y + b.r * 0.6, 1, ['#bfe8ff', '#5ab4e6'], 30);
+      } else if (this.foam && this.foam.adv) this.foam = null;
+      this.lastPud = pud;
+    }
+    oStep.call(this, b);
+    if (!sv || !ADV.run || this.phase !== 'play' || this.paused) return;
+    const w = worldAtY(b.y);
+    if (w !== sv.world) enterWorld(this, w);
+  };
+  const oBonus = Game.prototype.applyBonus;
+  Game.prototype.applyBonus = function (bon, fromTube) {
+    oBonus.call(this, bon, fromTube);
+    if (!this.surv || !bon) return;
+    if (bon.dur && bon.id !== 'mystere' && up('durable')) this.surv.fx[bon.id] = (this.surv.fx[bon.id] || 0) + bon.dur * 0.15 * up('durable');
+    if (bon.id === 'cocos') {
+      const b = this.ball;
+      for (let i = 0; i < 14; i++) { const y = b.y + 50 + i * 12, [L, R] = this.edge(y); this.spawn(D.coco, L + 8 + Math.random() * (R - L - 16), y, D.coco.r); }
+    }
+  };
+  const oCards = Game.prototype.drawCards;
+  Game.prototype.drawCards = function () {
+    let cards = oCards.call(this);
+    const pacts = levelOf(adv().xp).L >= PACT_LEVEL;
+    const pool = () => BONUSES.filter(x => !cards.includes(x));
+    cards = cards.map(c => (c.pact && !pacts ? null : c)).filter(Boolean);
+    while (cards.length < 3 + up('cartes')) { const l = pool(); cards.push(l[Math.floor(Math.random() * l.length)]); }
+    // dans l'oasis, ses cartes à elle
+    if (ADV.run && this.surv && this.surv.world === 1) cards[0] = OASIS_CARDS[Math.floor(Math.random() * OASIS_CARDS.length)];
+    return cards;
+  };
+
+  const oSurv = App.startSurvival;
+  App.startSurvival = function () { if (!ADV.run) { const w = Math.min(adv().sel, adv().unlocked, PLAYABLE - 1); ADV.run = { world: w, offset: startOf(w) }; ADV.lastY = 0; } return oSurv.call(this); };
+  // --- Lancer une partie -------------------------------------------------------
+  function play() {
+    const w = Math.min(adv().sel, adv().unlocked, PLAYABLE - 1);
+    ADV.run = { world: w, offset: startOf(w) }; ADV.lastY = 0;
+    App.startSurvival();
+  }
+
+  // --- Écrans ----------------------------------------------------------------
+  const head = (t, right = '') => `<div class="head"><button class="btn ghost small" data-adv="back">◀</button><h2>${t}</h2><span style="margin-left:auto">${right}</span></div>`;
+  const lvlBox = () => {
+    const l = levelOf(adv().xp), pts = points();
+    const nextTxt = l.L + 1 === PACT_LEVEL ? `Niveau ${PACT_LEVEL} : les pactes 😈 apparaissent aux haltes` : `Niveau ${l.L + 1} : +1 point de compétence`;
+    return `<div class="panel"><div class="lvl"><span class="n">Niv. ${l.L}</span><div class="bar"><div style="width:${Math.round(l.cur * 100 / l.next)}%"></div><span>${l.cur} / ${l.next} XP</span></div></div>
+      <div class="tiny" style="margin-top:var(--u)">${nextTxt}</div>
+      ${pts ? `<button class="btn" data-adv="skills" style="margin-top:calc(var(--u)*2)">🎯 ${pts} point${pts > 1 ? 's' : ''} à placer</button>` : ''}</div>`;
+  };
+  const POS = [[22, 86], [72, 68], [28, 49], [72, 30], [38, 11]];
+  function mapHtml() {
+    const a = adv();
+    const nodes = POS.map(([x, y], i) => {
+      const W0 = WORLDS[i], done = W0 && !W0.soon && i < a.unlocked, cur = W0 && !W0.soon && i === a.unlocked, next = W0 && !W0.soon && i === a.unlocked + 1;
+      const st = done ? 'done' : cur ? 'cur' : 'lock';
+      const ic = !W0 ? '❓' : done || cur ? W0.icon : W0.soon ? '🚧' : `<span>${W0.icon}</span>`;
+      const nm = !W0 ? '???' : W0.name;
+      const sub = !W0 ? '🔒' : done ? '✅ terminé' : cur ? (a.best[i] ? `📍 record ${fmt(a.best[i])}` : '📍 à découvrir') : W0.soon ? 'en construction' : next ? `🔒 au bout de ${WORLDS[i - 1].name.toLowerCase()}` : '🔒';
+      return `<div class="node ${st}" style="left:${x}%;top:${y}%"><div class="ic">${ic}</div><b>${nm}</b><i>${sub}</i></div>`;
+    }).join('');
+    const pts = POS.map(([x, y]) => `${x},${y}`).join(' ');
+    const gold = POS.slice(0, a.unlocked + 1).map(([x, y]) => `${x},${y}`).join(' ');
+    return `<div class="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="#7a5a8a" stroke-width="1.2" stroke-dasharray="3 2.5" vector-effect="non-scaling-stroke"/>${a.unlocked > 0 ? `<polyline points="${gold}" fill="none" stroke="#ffd25a" stroke-width="2.4" vector-effect="non-scaling-stroke"/>` : ''}</svg>${nodes}</div>`;
+  }
+  App.scr_aventure = function () {
+    const a = adv(), sel = Math.min(a.sel, a.unlocked, PLAYABLE - 1);
+    return `<div class="screen">
+      ${head('Aventure')}
+      <div class="sv-title">MODE AVENTURE</div><div class="sv-sub">Roule le plus loin possible… avant que ta boule ne fonde !</div>
+      ${lvlBox()}
+      <div class="panel"><div class="label">🗺️ Les mondes</div>${mapHtml()}</div>
+      <div class="label">Départ</div>
+      <div class="wsel">${WORLDS.map((w, i) => !w.soon && i <= a.unlocked ? `<span class="${i === sel ? 'on' : ''}" data-adv="sel" data-w="${i}">${w.icon} ${w.short}</span>` : `<span class="off">${w.soon ? '🚧' : '🔒'}</span>`).join('')}</div>
+      <button class="btn big pulse" data-adv="play">ROULER ! <small>départ : ${WORLDS[sel].name}</small></button>
+      <div class="menu2"><button data-adv="skills"><span>🎯</span>Compétences${points() ? '<span class="pill-n">' + points() + '</span>' : ''}</button><button data-adv="records"><span>🏆</span>Records</button></div>
+      <div class="panel test"><div class="label">🧪 Outils de test (dev seulement)</div>
+        <button class="btn ghost small" data-adv="short">${a.short ? '✅' : '⬜'} Mondes 10× plus courts (${fmt(len(0))} le désert)</button>
+        <button class="btn ghost small" data-adv="xp">+300 XP</button>
+        <button class="btn ghost small" data-adv="reset">Tout remettre à zéro</button>
+</div>
+    </div>`;
+  };
+  App.scr_monde = function () {
+    const w = ADV.welcome ?? 1, W1 = WORLDS[w];
+    return `<div class="screen center dim">
+      <div class="confetti">🎉 ✨ 🎊 ✨ 🎉</div>
+      <div class="sv-sub">NOUVEAU MONDE</div>
+      <div class="world-big">${W1.icon}<br>MONDE ${w + 1}<br><span>${W1.name.toUpperCase()}</span></div>
+      <div class="panel welcome">
+        <div class="row"><span class="ic">📜</span><span><b>La règle d'ici</b><br>${W1.rule}</span></div>
+        <div class="row"><span class="ic">⚠️</span><span><b>Attention</b><br>${W1.obstacle} ${spriteImg('crabe', 2)}</span></div>
+        <div class="row"><span class="ic">😋</span><span><b>À découvrir</b><br>${W1.objs.map(o => `${spriteImg(o === 'grenouille' ? 'grenouille' : o, 2)} ${D[o].name}`).join(' · ')}</span></div>
+        <div class="row"><span class="ic">🃏</span><span><b>Nouvelles cartes aux haltes</b><br>${OASIS_CARDS.map(c => `${c.icon} ${c.name}`).join(' · ')}</span></div>
+        <div class="row"><span class="ic">🌦️</span><span><b>Météo</b><br>${W1.wx.map(id => `${WEATHER[id].icon} ${WEATHER[id].name}`).join(' ou ')}</span></div>
+      </div>
+      <button class="btn big" data-adv="resume">C'est parti !</button>
+    </div>`;
+  };
+  App.scr_competences = function () {
+    const pts = points();
+    return `<div class="screen">${head('Compétences', `<span class="seeds">🎯 ${pts} point${pts > 1 ? 's' : ''}</span>`)}
+      <div class="tiny center">1 point à chaque niveau. Les compétences ne servent que dans le mode aventure.</div>
+      ${UPS.map(u => { const n = up(u.id), full = n >= u.max; return `<div class="up ${!pts && !full ? 'lockd' : ''}"><span class="ic">${u.icon}</span><div><b>${u.name}</b> <span class="tiny">niv. ${n}/${u.max}</span><div class="tiny">${u.desc}</div><div class="tiny" style="color:#c8ff8a">${u.fx(n)}${full ? '' : ' → ' + u.fx(n + 1)}</div></div>${full ? '<span class="tiny">MAX</span>' : `<button class="btn ${pts ? '' : 'ghost'}" data-adv="buy" data-u="${u.id}" ${pts ? '' : 'disabled'}>+1</button>`}</div>`; }).join('')}
+    </div>`;
+  };
+  App.scr_advrecords = async function () {
+    const a = adv(), top = ((await Online.survivalTop()) || []).slice(0, 10), me = this.p.name;
+    return `<div class="screen">${head('Records')}
+      ${top.length ? `<div class="label">🏆 Les plus loin</div><div class="panel"><table class="lb">${top.map((e, i) => `<tr><td>${medal(i)}${e.name === me ? '<br><span class="toi">toi</span>' : ''}</td><td>${esc(e.name)}</td><td class="r">${fmt(e.best)}</td></tr>`).join('')}</table></div>` : ''}
+      <div class="label">📍 Mes records par monde</div>
+      <div class="panel"><table class="lb">${WORLDS.map((w, i) => `<tr><td>${w.icon}</td><td>${w.name}</td><td class="r">${w.soon ? '🚧' : a.best[i] ? fmt(a.best[i]) : i <= a.unlocked ? '—' : '🔒'}</td></tr>`).join('')}</table></div>
+    </div>`;
+  };
+  // fin de partie
+  App.scr_survResults = function () {
+    const r = this.lastRes, run = r.run, a = adv();
+    if (!r.adv) {
+      const from = ADV.run ? ADV.run.world : 0, y = ADV.lastY || 0, w = worldAtY(y);
+      const gained = Math.max(0, Math.floor(run.dist - (ADV.run ? ADV.run.offset : 0)));
+      const before = levelOf(a.xp).L;
+      a.xp += gained;
+      const wb = Math.min(w, PLAYABLE - 1), inWorld = Math.floor((y - yStart(wb)) / 10);
+      const rec = inWorld > (a.best[wb] || 0); if (rec) a.best[wb] = inWorld;
+      a.unlocked = Math.max(a.unlocked, Math.min(w, PLAYABLE - 1));
+      r.adv = { gained, from, w, wb, before, after: levelOf(a.xp).L, rec, newWorld: w > from, left: Math.max(0, Math.ceil((yEnd(wb) - y) / 10)) };
+      Store.save();
+    }
+    const x = r.adv, l = levelOf(a.xp), end = x.w >= PLAYABLE, W1 = WORLDS[x.wb], N = WORLDS[x.wb + 1];
+    return `<div class="screen">
+      <div class="result-head ${x.newWorld ? 'win' : 'lose'}"><div class="title small">MODE AVENTURE</div>
+        <div class="sv-sub">${end ? '🚧 Fin des mondes jouables !' : `${W1.icon} ${W1.name} · plus de boule !`}</div>
+        <div class="big-dist">${fmt(x.gained)}</div>${x.rec ? '<div class="badge-new">Record dans ce monde !</div>' : ''}</div>
+      ${end ? '<div class="next">🚧 Tu as atteint la fin des mondes jouables ! Le volcan et la Lune sont en construction.</div>'
+        : x.newWorld ? `<div class="next">🎉 <b>Monde ${x.w + 1} débloqué : ${WORLDS[x.w].name}</b> ! Tu peux maintenant y commencer directement.</div>`
+        : `<div class="next">🏁 Plus que <b>${fmt(x.left)}</b> avant ${N && !N.soon ? `<b>${N.icon} ${N.name}</b>` : 'la fin des mondes jouables'} !</div>`}
+      <div class="panel"><div class="lvl"><span class="n">Niv. ${x.before}${x.after > x.before ? ' → ' + x.after : ''}</span><div class="bar"><div style="width:${Math.round(l.cur * 100 / l.next)}%"></div><span>${l.cur} / ${l.next} XP</span></div></div>
+        <div class="tiny" style="margin-top:var(--u);color:#c8ff8a">+${x.gained} XP${x.after > x.before ? ` · ⬆️ Niveau supérieur ! +${x.after - x.before} point${x.after - x.before > 1 ? 's' : ''} de compétence` : ''}</div></div>
+      ${x.after >= PACT_LEVEL && x.before < PACT_LEVEL ? '<div class="unl"><div class="c">😈</div><div><b>Nouveau : les pactes !</b><div class="tiny">Des cartes très puissantes… avec une contrepartie. Elles peuvent maintenant sortir aux haltes.</div></div></div>' : ''}
+      <div class="panel"><table class="stats"><tr><td>Bonus pris</td><td class="taken">${(run.taken || []).join(' ') || '—'}</td></tr><tr><td>Objets avalés</td><td>${run.absorbed}</td></tr><tr><td>Temps</td><td>${fmtTime(run.time)}</td></tr></table></div>
+      <div class="col"><button class="btn big" data-adv="play">Rejouer</button>${points() ? `<button class="btn" data-adv="skills">🎯 Placer mes points (${points()})</button>` : ''}<button class="btn ghost" data-adv="hub">Menu de l'aventure</button></div>
+    </div>`;
+  };
+  // accueil : les deux piliers
+  const oHome = App.scr_home;
+  App.scr_home = async function () {
+    let h = await oHome.call(this);
+    h = h.replace(/<button class="btn" data-a="survival">[\s\S]*?<\/button>/, '');
+    const a = adv(), l = levelOf(a.xp), w = Math.min(a.unlocked, PLAYABLE - 1);
+    const pillars = `<div class="pillars"><button class="pillar" data-a="play"><span class="pi">🏆</span><b>Dune du jour</b><small>classée · 3 essais</small></button>
+      <button class="pillar adv" data-adv="hub"><span class="pi">🗺️</span><b>Aventure</b><small>Monde ${w + 1} · ${WORLDS[w].short} · niv. ${l.L}</small></button></div>`;
+    return h.replace('<div class="annbox">', pillars + '<div class="annbox">');
+  };
+
+  // --- Clics -------------------------------------------------------------------
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-adv]'); if (!el) return;
+    e.stopPropagation(); Sound.init(); Sound.play('click');
+    const a = adv(), act = el.dataset.adv;
+    if (act === 'back') return App.show(['competences', 'advrecords'].includes(App.screen) ? 'aventure' : 'home');
+    if (act === 'hub') return App.show('aventure');
+    if (act === 'play') return play();
+    if (act === 'resume') return App.resumeWorld();
+    if (act === 'sel') { a.sel = +el.dataset.w; Store.save(); return App.show('aventure'); }
+    if (act === 'skills') return App.show('competences');
+    if (act === 'records') return App.show('advrecords');
+    if (act === 'buy') { const u = el.dataset.u, U = UPS.find(x => x.id === u); if (points() > 0 && up(u) < U.max) { a.spent[u] = up(u) + 1; Store.save(); } return App.show('competences'); }
+    if (act === 'short') { a.short = !a.short; Store.save(); return App.show('aventure'); }
+    if (act === 'xp') { a.xp += 300; Store.save(); return App.show('aventure'); }
+    if (act === 'reset') { if (confirm('Remettre l\'aventure à zéro ?')) { const p = prof(); delete p.adv; Store.save(); } return App.show('aventure'); }
+  }, true);
+
+})();
 </script>
 </body>
 </html>

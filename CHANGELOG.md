@@ -7,6 +7,15 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.23.0 — Mode aventure (dev seulement) (4 novembre 2026)
+- Sur dev uniquement (invisible sur main) : le mode aventure remplace La Grande Fuite.
+  Accueil à deux piliers (Dune du jour / Aventure), menu de l'aventure avec la carte des mondes, niveaux (XP),
+  compétences (1 point par niveau), choix du monde de départ, records.
+- Mondes : le désert, puis l'oasis (décor, berges, mares, flaques qui calment la faim, crabes, dattes, noix de coco,
+  nénuphars, grenouilles, cartes Source fraîche et Pluie de noix de coco), passage progressif avec panneau et porte,
+  grande annonce du nouveau monde. Volcan et Lune « en construction ».
+- L'onglet « Survie » quitte le classement principal (le classement est dans le menu de l'aventure).
+
 ## v1.22.0 — Événements en roulement (4 novembre 2026)
 - À partir du 9 novembre, les événements de la dune du jour tournent comme la météo : chacun revient à peu près aussi
   souvent, jamais deux fois dans la même dune ni deux jours de suite. Les dunes déjà jouées (et jusqu'au 8 novembre) ne changent pas.
