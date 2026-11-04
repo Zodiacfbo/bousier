@@ -440,6 +440,18 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 #toast.on { transform: translate(-50%, 0); }
 
 /* Mode aventure (dev seulement pour l'instant) */
+.foot-play.half > :first-child, .foot-play.half > .advbtn { flex: 1 1 0 !important; width: auto; }
+.foot .btn.practice.advbtn { position: relative; overflow: visible; color: #eaf6ff; background: linear-gradient(#3a6aa8, #2a4f86); box-shadow: inset 0 calc(var(--u)*-2) 0 #1c3560, inset 0 var(--u) 0 #6a9ad8, 0 calc(var(--u)*1.5) 0 rgba(0,0,0,.5); }
+.advbtn span:first-child { font-size: 1.3em; font-weight: 700; }
+.advbtn small { font-size: .75em !important; font-weight: 700; }
+.advbtn .pill-n { position: absolute; top: calc(var(--u)*-2.5); right: calc(var(--u)*-2.5); }
+.row2.cmp .big-ico { min-height: calc(var(--u)*13); font-size: 1.5em; }
+.row2.cmp .card { gap: calc(var(--u)*.5); padding: calc(var(--u)*3); cursor: pointer; }
+.row2.cmp .card:not(.open) > .tiny:not(.wx-next) { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.row2.cmp .big-ico img { transform: scale(.7); }
+.intro { display: flex; flex-direction: column; gap: calc(var(--u)*3); }
+.intro .r { display: flex; gap: calc(var(--u)*3); align-items: flex-start; font-size: .88em; line-height: 1.3; }
+.intro .r .i { font-size: 1.5em; width: calc(var(--u)*13); text-align: center; }
 .sv-title { text-align:center; font-size: calc(var(--u)*13); font-weight:700; color:#ffb04a; text-shadow: calc(var(--u)*1.5) calc(var(--u)*1.5) 0 #120a16; line-height:1; }
 .sv-sub { text-align:center; color: var(--muted); font-size:.8em; }
 .lvl { display:flex; align-items:center; gap: calc(var(--u)*3); }
@@ -6713,14 +6725,26 @@ if (SURVIVAL_ON) (() => {
   }
   App.scr_aventure = function () {
     const a = adv(), sel = Math.min(a.sel, a.unlocked, PLAYABLE - 1);
+    if (!a.introSeen || ADV.intro) return `<div class="screen">
+      <div class="sv-title" style="margin-top:calc(var(--u)*6)">MODE AVENTURE</div><div class="sv-sub">Bienvenue, explorateur !</div>
+      <div class="panel intro">
+        <div class="r"><span class="i">🍽️</span><span><b>Ta boule fond sans arrêt</b><br>Mange pour survivre et roule le plus loin possible. La partie s'arrête quand il ne reste plus rien.</span></div>
+        <div class="r"><span class="i">🃏</span><span><b>Une halte tous les 250 m</b><br>Choisis un bonus parmi plusieurs cartes. Certaines sont risquées 😈</span></div>
+        <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Au bout du désert, l'oasis… et d'autres encore. Une fois atteint, tu peux y commencer directement.</span></div>
+        <div class="r"><span class="i">📈</span><span><b>Tu progresses à chaque partie</b><br>Chaque mètre rapporte de l'XP. À chaque niveau, un point de compétence pour devenir plus fort.</span></div>
+        <div class="r"><span class="i">🎲</span><span><b>Ne compte pas au classement</b><br>Joue autant que tu veux : c'est aussi le meilleur entraînement pour la dune du jour !</span></div>
+      </div>
+      <button class="btn big" data-adv="introok">C'est parti !</button>
+    </div>`;
     return `<div class="screen">
-      ${head('Aventure')}
+      ${head('Aventure', '<button class="btn ghost small" data-adv="intro" aria-label="Comment ça marche">?</button>')}
       <div class="sv-title">MODE AVENTURE</div><div class="sv-sub">Roule le plus loin possible… avant que ta boule ne fonde !</div>
       ${lvlBox()}
       <div class="panel"><div class="label">🗺️ Les mondes</div>${mapHtml()}</div>
       <div class="label">Départ</div>
       <div class="wsel">${WORLDS.map((w, i) => !w.soon && i <= a.unlocked ? `<span class="${i === sel ? 'on' : ''}" data-adv="sel" data-w="${i}">${w.icon} ${w.short}</span>` : `<span class="off">${w.soon ? '🚧' : '🔒'}</span>`).join('')}</div>
       <button class="btn big pulse" data-adv="play">ROULER ! <small>départ : ${WORLDS[sel].name}</small></button>
+      <button class="btn ghost" data-adv="practice">🎲 Partie d'entraînement <small style="display:block;font-size:.6em;opacity:.8">une dune au hasard, ne compte pas</small></button>
       <div class="menu2"><button data-adv="skills"><span>🎯</span>Compétences${points() ? '<span class="pill-n">' + points() + '</span>' : ''}</button><button data-adv="records"><span>🏆</span>Records</button></div>
       <div class="panel test"><div class="label">🧪 Outils de test (dev seulement)</div>
         <button class="btn ghost small" data-adv="short">${a.short ? '✅' : '⬜'} Mondes 10× plus courts (${fmt(len(0))} le désert)</button>
@@ -6795,18 +6819,22 @@ if (SURVIVAL_ON) (() => {
     let h = await oHome.call(this);
     h = h.replace(/<button class="btn" data-a="survival">[\s\S]*?<\/button>/, '');
     const a = adv(), l = levelOf(a.xp), w = Math.min(a.unlocked, PLAYABLE - 1);
-    const pillars = `<div class="pillars"><button class="pillar" data-a="play"><span class="pi">🏆</span><b>Dune du jour</b><small>classée · 3 essais</small></button>
-      <button class="pillar adv" data-adv="hub"><span class="pi">🗺️</span><b>Aventure</b><small>Monde ${w + 1} · ${WORLDS[w].short} · niv. ${l.L}</small></button></div>`;
-    return h.replace('<div class="annbox">', pillars + '<div class="annbox">');
+    const advBtn = `<button class="btn ghost practice advbtn" data-adv="hub" aria-label="Aventure"><span>🗺️ AVENTURE</span><small>Monde ${w + 1} · ${WORLDS[w].short} · niv. ${l.L}</small>${points() ? `<span class="pill-n">${points()}</span>` : ''}</button>`;
+    h = h.replace(/<button class="btn ghost practice" data-a="practice"[\s\S]*?<\/button>/, advBtn);
+    return h.replace('<div class="foot-play">', '<div class="foot-play half">').replace('<div class="row2">', '<div class="row2 cmp">');
   };
 
   // --- Clics -------------------------------------------------------------------
   document.addEventListener('click', e => {
+    const card = e.target.closest('.row2.cmp .card'); if (card) { card.classList.toggle('open'); return; }
     const el = e.target.closest('[data-adv]'); if (!el) return;
     e.stopPropagation(); Sound.init(); Sound.play('click');
     const a = adv(), act = el.dataset.adv;
     if (act === 'back') return App.show(['competences', 'advrecords'].includes(App.screen) ? 'aventure' : 'home');
     if (act === 'hub') return App.show('aventure');
+    if (act === 'intro') { ADV.intro = true; return App.show('aventure'); }
+    if (act === 'introok') { ADV.intro = false; a.introSeen = true; Store.save(); return App.show('aventure'); }
+    if (act === 'practice') { ADV.run = null; return App.startPractice(); }
     if (act === 'play') return play();
     if (act === 'resume') return App.resumeWorld();
     if (act === 'sel') { a.sel = +el.dataset.w; Store.save(); return App.show('aventure'); }
