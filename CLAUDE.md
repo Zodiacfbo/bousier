@@ -11,7 +11,7 @@ Lire aussi `README.md` (fonctionnement, Firebase) et `CHANGELOG.md` (historique 
 | **« Parlons de Bousier »** | Début de conversation : lire les issues n° 8, 9 et 10 (surtout les derniers commentaires) et le haut de `CHANGELOG.md` ; résumer en 5 lignes maximum où en est le jeu, ce qui est en cours et ce qui attend une décision ; **rappeler ces 4 commandes** ; demander « De quoi on parle aujourd'hui ? » |
 | **« Publication sur dev »** (ou « go dev ») | Publier le travail validé sur `dev` (voir §2). |
 | **« Publication sur main »** (ou « go main ») | Publier sur `main`, la version des joueurs (voir §2). |
-| **« Fin de discussion »** | Noter dans l'issue qui convient tout ce qui a été décidé, mis de côté ou reste à faire (n° 10 aventure, n° 8 sécurité, n° 9 le reste, ou une nouvelle issue pour un nouveau gros chantier) ; mettre à jour ce `CLAUDE.md` si une règle ou l'état du projet a changé ; **publier les changements de `CLAUDE.md` seul sur `dev` et `main`** (exception validée : ce fichier ne change rien au jeu) ; résumer en 3 lignes ce qui a été noté. |
+| **« Fin de discussion »** | Noter dans l'issue qui convient tout ce qui a été décidé, mis de côté ou reste à faire (n° 10 aventure, n° 8 sécurité, n° 9 le reste, ou une nouvelle issue pour un nouveau gros chantier) ; mettre à jour ce `CLAUDE.md` si une règle ou l'état du projet a changé ; **publier les changements de `CLAUDE.md` seul sur `dev` et `main`** (exception validée : ce fichier ne change rien au jeu) ; résumer en 3 lignes ce qui a été noté ; **rappeler à Florent de supprimer à la main la branche de la session, en donnant son nom exact** (je ne peux pas supprimer de branche distante). |
 
 Au début de toute conversation sur Bousier, même sans « Parlons de Bousier », rappeler ces 4 commandes en une ligne.
 
@@ -56,7 +56,7 @@ Au début de toute conversation sur Bousier, même sans « Parlons de Bousier »
 - **« go dev »** : `git push -u origin <branche>` puis `git push origin HEAD:dev`.
 - **« go main »** : en plus `git push origin HEAD:main` puis `git push origin HEAD:refs/heads/versions/v1.XX` (archive de la version).
 - Avant chaque publication :
-  1. vérifier la syntaxe du script de `index.html` (extraire les `<script>` et les passer à `new Function` avec Node) ;
+  1. vérifier la syntaxe des scripts : `node scripts/check-syntax.mjs` (vérifie `index.html` et `admin.html` ; la même vérification tourne automatiquement à chaque push via `.github/workflows/check.yml`, croix rouge si erreur, sans bloquer la publication) ;
   2. tester les écrans touchés dans un navigateur (Playwright, voir §4), **sur téléphone et sur PC** ;
   3. ajouter une entrée en tête de `CHANGELOG.md` (numéro de version, date, liste courte).
 - Après un push, vérifier avec `git log --oneline -1 origin/main` (ou `origin/dev`). GitHub Pages peut mettre jusqu'à 10 minutes à servir la nouvelle version.
