@@ -7,6 +7,13 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.23.3 — Aventure : La rivière sauvage (dev seulement) (5 novembre 2026)
+- Sur dev : nouveau monde 3, « La rivière sauvage », à la suite de l'oasis (transition de 200 m, panneau et porte comme les autres mondes).
+- Plus de sable : toute la dune devient une rivière. Le courant pousse la boule de côté (sens qui alterne tous les ~280 m),
+  fort au milieu (eau claire, écume, flèches blanches), calme près des berges.
+- Obstacles : rochers, troncs d'arbre (3 morceaux) et crocodiles fixes. Faim identique à l'oasis.
+- Le volcan et la Lune restent « en construction ».
+
 ## v1.23.1 — Accueil avec l'aventure (dev seulement) (4 novembre 2026)
 - Sur dev : l'accueil reprend celui de main ; le bouton « Aventure » remplace « Entraînement aléatoire », à moitié de
   la largeur avec ROULER !, avec une pastille quand un point de compétence est à placer. Les piliers disparaissent.
