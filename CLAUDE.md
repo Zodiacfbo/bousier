@@ -90,10 +90,11 @@ Au début de toute conversation sur Bousier, même sans « Parlons de Bousier »
 - Lire les vraies données du jeu officiel : lectures publiques de l'API REST Firestore (`envs/prod/…`), tant que la phase 1 des règles est active.
 - Ranger les scripts et captures de test **hors du dépôt**.
 
-## 5. Où en est le projet (au 4 novembre 2026)
+## 5. Où en est le projet (au 5 novembre 2026)
 
-- **Version 1.22 sur `main`** : nouvelles météos spéciales (lundi et vendredi), 6 nouveaux événements, **événements en roulement à partir du 9 novembre** (comme la météo), calendrier des événements dans l'admin.
-- **Sur `dev` seulement (v1.23.2)** : le **mode aventure**, qui remplace La Grande Fuite. Tout son suivi est dans l'**issue GitHub n° 10**. Il reste invisible sur `main`.
+- **Version 1.22.1 sur `main`** : nouvelles météos spéciales (lundi et vendredi), 6 nouveaux événements, **événements en roulement à partir du 9 novembre** (comme la météo), calendrier des événements dans l'admin.
+- **Sur `dev` seulement (v1.23.4)** : le **mode aventure**, qui remplace La Grande Fuite (désert, oasis, **rivière sauvage** avec courant). Tout son suivi est dans l'**issue GitHub n° 10**. Il reste invisible sur `main`.
+- **Règle de l'aventure** : un seul obstacle par monde, toujours un animal jamais avalable (scorpion, crabe, crocodile ; volcan et Lune à trouver) ; tout le reste est un objet avalable selon la taille de la boule.
 - **Boutique de la semaine : en pause** (`WEEK_SHOP_FROM = '2099-01-01'` et news correspondante datée 2099). Pour la relancer : remettre un vrai lundi aux deux endroits.
 - **Le 20 novembre** : 1 mois de Bousier (gâteau et cadeau, déjà programmés).
 - **Idées en discussion, rien de développé** : défis quotidiens variés et nouveau classement en points (mis en pause, à mûrir) ; ligues ; améliorations de l'alarme incendie.
