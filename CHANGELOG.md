@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.23.2 — Palmes sans clignotement (dev seulement) (5 novembre 2026)
+- Aventure : les grandes palmes du premier plan ne clignotent plus pendant la transition entre le désert et l'oasis ; elles apparaissent en fondu, une par une.
+
 ## v1.23.1 — Accueil avec l'aventure (dev seulement) (4 novembre 2026)
 - Sur dev : l'accueil reprend celui de main ; le bouton « Aventure » remplace « Entraînement aléatoire », à moitié de
   la largeur avec ROULER !, avec une pastille quand un point de compétence est à placer. Les piliers disparaissent.
