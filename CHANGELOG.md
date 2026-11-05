@@ -14,6 +14,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Un seul obstacle par monde, toujours un animal : scorpion dans le désert (il remplace les pics et les barils), crabe dans l'oasis, crocodile fixe dans la rivière. Les troncs d'arbre et les rochers sont des objets, avalables si la boule est assez grosse. Faim identique à l'oasis.
 - Le volcan et la Lune restent « en construction ».
 
+## v1.23.2 — Palmes sans clignotement (dev seulement) (5 novembre 2026)
+- Aventure : les grandes palmes du premier plan ne clignotent plus pendant la transition entre le désert et l'oasis ; elles apparaissent en fondu, une par une.
+
 ## v1.23.1 — Accueil avec l'aventure (dev seulement) (4 novembre 2026)
 - Sur dev : l'accueil reprend celui de main ; le bouton « Aventure » remplace « Entraînement aléatoire », à moitié de
   la largeur avec ROULER !, avec une pastille quand un point de compétence est à placer. Les piliers disparaissent.
