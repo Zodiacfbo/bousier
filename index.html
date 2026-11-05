@@ -6474,6 +6474,7 @@ if (SURVIVAL_ON) (() => {
   const riverFrac = y => { if (!ADV.run) return 0; if (ADV.run.world >= 2 || worldAtY(y) >= 2) return 1; const b = yEnd(1), T = transLen(1); return y <= b - T ? 0 : (y - (b - T)) / T; };
   const isRiverAt = y => { const t = riverFrac(y); return t >= 1 || (t > 0 && ((((y | 0) * 6007) % 100 + 100) % 100) / 100 < t); };
   // le courant : sens qui alterne tous les ~280 m ; fort au milieu de la rivière, calme près des berges
+  const hash2 = (a, b) => ((Math.imul(a * 73856093 ^ b * 19349663, 2654435761) >>> 0) >>> 8) % 1000;
   const flowDir = (y, ph) => Math.sin(y / 450 + ph);
   const BEACH = pack([226, 201, 138]), BEACH_D = pack([196, 168, 104]), FOAM = pack([225, 240, 255]);
   const EARTH_D = pack([84, 56, 30]), EARTH = pack([128, 92, 52]), EARTH_L = pack([152, 114, 68]);
@@ -6507,6 +6508,8 @@ if (SURVIVAL_ON) (() => {
       const wy = camY + sy, yi = wy < 0 ? 0 : wy >= len ? len - 1 : wy;
       const P = this.palAt(wy), oz = this.surv && this.course.adv && isOasisAt(wy), rv = oz && isRiverAt(wy);
       const L = Lx[yi] | 0, R = Rx[yi] | 0;
+      const mid = (L + R) / 2, half = Math.max(1, (R - L) / 2);
+      const deep = rv ? (255 << 24 | Math.round((P.sandDark >> 16 & 255) * 0.8) << 16 | Math.round((P.sandDark >> 8 & 255) * 0.8) << 8 | Math.round((P.sandDark & 255) * 0.8)) >>> 0 : 0;
       const off = heat ? Math.round(Math.sin(wy * 0.3 + T * 5) * 0.9) : 0;
       const wyo = wy + 1000000;
       let p = sy * W;
@@ -6531,13 +6534,15 @@ if (SURVIVAL_ON) (() => {
         } else {
           const e = wx - L < R - wx ? wx - L : R - wx;
           if (rv) {
-            // eau : plus claire et rayée d'écume au milieu (le courant), plus sombre près des berges
-            if (e < 3) { buf[p] = (e < 2 || ((x + sy) & 1)) ? BEACH_D : BEACH; continue; }
-            const u = Math.abs(wx - (L + R) / 2) / ((R - L) / 2), core = u < 0.6;
-            const sp = Math.floor(T * (core ? 50 : 14)), s = (wyo - sp + RIP[(wx + ((wyo - sp) >> 4) * 5) & 255]) % 13;
-            if (core && ((wyo - sp * 2) + RIP[(wx * 3 + 7) & 255] * 5) % 31 < 1) { buf[p] = FOAM; continue; }
-            const base = u < 0.3 ? P.sandLight : u < 0.6 ? P.sand : P.sandDark;
-            buf[p] = s === 0 ? (u < 0.3 ? P.sand : P.sandDark) : s === 1 ? (u < 0.6 ? P.sandLight : P.sand) : base;
+            // eau : 4 tons (bord sombre -> centre clair, transitions tramées), berge de sable fin, filet d'écume, paillettes
+            if (e < 2) { buf[p] = BEACH; continue; }
+            if (e < 3) { buf[p] = BEACH_D; continue; }
+            const dep = Math.min(1, (e - 3) / (half * 0.8)), tone = dep * 3, k = tone | 0, f = tone - k;
+            let col = [deep, P.sandDark, P.sand, P.sandLight][Math.min(3, k + (f > (((x + wy) & 1) ? 0.5 : 0.25) ? 1 : 0))];
+            const side = wx < mid ? 1 : 2, fw = 1 + Math.round(Math.sin(wy * 0.35 + T * 2 + side * 1.5) * 0.6 + 0.6);
+            if (e < 2 + fw && hash2(wy >> 1, side) < 550) col = FOAM;
+            else if (hash2(wx, wy) < 4 && (Math.floor(T * 3 + hash2(wx >> 1, wy >> 1) / 100) & 1)) col = FOAM;
+            buf[p] = col;
             continue;
           }
           if (e < 3) { buf[p] = (e < 2 || ((x + sy) & 1)) ? P.sandDark : P.sand; continue; }
@@ -6596,14 +6601,6 @@ if (SURVIVAL_ON) (() => {
         if (ph < 0.9) { ctx.fillStyle = '#ff9a3a'; ctx.fillRect(Math.round(cx - 6 + ph * 12), sy(cy) - Math.round(10 * Math.sin(ph / 0.9 * Math.PI)), 3, 2); }
         if (h % 2 === 0) { const f = SPR.flamant; ctx.drawImage(f, Math.round(cx + (left ? -rx : rx - 12)), sy(cy) - f.height * 2 + 4, f.width * 2, f.height * 2); }
       } else put('roseaux', 2, 3);
-    }
-    // flèches du courant au milieu de la rivière (sens et force lisibles sans la couleur)
-    for (let y = Math.floor(camY / 70) * 70; y < camY + H + 20; y += 70) {
-      if (riverFrac(y) < 0.6) continue;
-      const fl = flowDir(y, c.rvPh || 0); if (Math.abs(fl) < 0.3) continue;
-      const [L, R] = this.edge(y), d = fl > 0 ? 1 : -1, n = Math.abs(fl) > 0.7 ? 3 : 2, x0 = (L + R) / 2 - d * 7 * (n - 1) / 2 - 2;
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      for (let i = 0; i < n; i++) { const px = Math.round(x0 + d * i * 7); ctx.fillRect(px, sy(y), 5, 1); ctx.fillRect(px + (d > 0 ? 4 : 0), sy(y) - 1, 1, 3); ctx.fillRect(px + (d > 0 ? 3 : 1), sy(y) - 2, 1, 5); }
     }
     // flaques d'eau
     for (const p of c.puddles || []) {

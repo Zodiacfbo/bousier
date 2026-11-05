@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.23.5 — Rivière plus belle (dev seulement) (5 novembre 2026)
+- Aventure, rivière : flèches du courant et pointillés blancs supprimés. Eau en 4 tons (bord sombre, centre clair),
+  berge de sable fin avec un filet d'écume, quelques paillettes de soleil. Le courant, lui, ne change pas (réglage de l'affichage, sans news).
+
 ## v1.23.4 — Tuto sans les cactus (5 novembre 2026)
 - Tuto de la dune du jour : on ne dit plus que les cactus piquent (réglage de texte, sans news).
 
