@@ -6320,7 +6320,7 @@ if (SURVIVAL_ON) (() => {
     }
     x.putImageData(d, 0, 0); SPR[mk] = c; return mk;
   };
-  // crocodile (fixe) et tronc d'arbre (3 tronçons accolés) pour la rivière
+  // crocodile (fixe, seul obstacle de la rivière) et tronc d'arbre (un objet comme les autres : on l'avale s'il est assez petit)
   SPR.croc = (() => {
     const [c, x] = newCanvas(34, 11), R = (col, a, b, w, h) => { x.fillStyle = col; x.fillRect(a, b, w, h); };
     R('#2c5a22', 0, 6, 6, 3); R('#3b7a2e', 5, 3, 21, 7); R('#4f9a3c', 7, 4, 17, 2); R('#3b7a2e', 25, 4, 9, 5);
@@ -6329,8 +6329,9 @@ if (SURVIVAL_ON) (() => {
     return c;
   })();
   SPR.tronc = (() => {
-    const [c, x] = newCanvas(9, 9), R = (col, a, b, w, h) => { x.fillStyle = col; x.fillRect(a, b, w, h); };
-    R('#52331a', 0, 6, 9, 2); R('#7a4e26', 0, 1, 9, 6); R('#a06a34', 0, 2, 9, 2); R('#5a3a1c', 3, 4, 2, 1);
+    const [c, x] = newCanvas(16, 8), R = (col, a, b, w, h) => { x.fillStyle = col; x.fillRect(a, b, w, h); };
+    R('#52331a', 1, 6, 14, 2); R('#7a4e26', 1, 1, 14, 6); R('#a06a34', 1, 2, 14, 2); R('#5a3a1c', 5, 4, 2, 1); R('#5a3a1c', 10, 3, 2, 1);
+    R('#7a4e26', 0, 2, 1, 4); R('#c89a5c', 15, 2, 1, 4); R('#e0b878', 14, 3, 1, 2);
     return c;
   })();
   // palme au premier plan (dessinée devant la boule, sur le bord de l'écran)
@@ -6351,7 +6352,7 @@ if (SURVIVAL_ON) (() => {
     grenouille: { id: 'grenouille', name: 'Grenouille', sprite: 'grenouille', r: 3.5, move: 'side' },
     crabe: { id: 'crabe', name: 'Crabe', sprite: 'crabe', r: 5, hazard: true, prickly: true, move: 'side' },
     croc: { id: 'croc', name: 'Crocodile', sprite: 'croc', r: 7, hazard: true, prickly: true },
-    tronc: { id: 'tronc', name: 'Tronc', sprite: 'tronc', r: 4, hazard: true },
+    tronc: { id: 'tronc', name: 'Tronc', sprite: 'tronc', r: 5 },
   };
 
   // --- Les mondes -----------------------------------------------------------
@@ -6362,7 +6363,7 @@ if (SURVIVAL_ON) (() => {
       objs: ['datte', 'coco', 'nenuphar', 'grenouille'], haz: 'crabe', cards: true },
     { icon: '🌊', name: 'La rivière sauvage', short: 'Rivière', up: 'LA RIVIERE SAUVAGE', sign: 'RIVIERE', len: 3500, hunger: 1, speed: 1, wx: ['pluie', 'calme'],
       theme: { id: 'riviere', sand: '#3f93cc', sandDark: '#2f7fb8', sandLight: '#58aee0', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
-      rule: 'Plus de sable : le courant te pousse ! Il est fort au milieu, calme près des berges.', obstacle: 'des crocodiles, des rochers et des troncs',
+      rule: 'Plus de sable : le courant te pousse ! Il est fort au milieu, calme près des berges.', obstacle: 'des crocodiles : impossible de les avaler !',
       objs: ['tronc', 'nenuphar', 'coco'], haz: 'croc' },
     { icon: '🌋', name: 'Le volcan', short: 'Volcan', soon: true },
     { icon: '🌙', name: 'La Lune', short: 'Lune', soon: true },
@@ -6436,14 +6437,13 @@ if (SURVIVAL_ON) (() => {
       n.x = n.x0 = Math.max(L + def.r + n.amp + 2, Math.min(R - def.r - n.amp - 2, o.x));
       return n;
     });
-    // troncs d'arbre : 3 tronçons en travers du courant
+    // troncs d'arbre flottants (des objets : mangeables si la boule est assez grosse)
     for (let y = 400; y < c.len - 300; y += rng.range(240, 480)) {
       const t = riverAt(y);
       if (t < 0.5 || !rng.chance(t)) continue;
-      const [L, R] = edge(y), slope = rng.range(-2.2, 2.2), x0 = rng.range(L + 12, R - 12 - 14);
-      const part = [0, 1, 2].map(i => mk(D.tronc, x0 + i * 7, y + slope * i));
-      if (c.objects.some(q => part.some(pp => Math.hypot(q.x - pp.x, q.y - pp.y) < q.r + 12))) continue;
-      c.objects.push(...part);
+      const [L, R] = edge(y), lg = mk(D.tronc, rng.range(L + 14, R - 14), y);
+      if (c.objects.some(q => Math.hypot(q.x - lg.x, q.y - lg.y) < q.r + 12)) continue;
+      c.objects.push(lg);
     }
     // flaques d'eau (avec un nénuphar dessus de temps en temps)
     c.puddles = [];
