@@ -11,7 +11,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Sur dev : nouveau monde 3, « La rivière sauvage », à la suite de l'oasis (transition de 200 m, panneau et porte comme les autres mondes).
 - Plus de sable : toute la dune devient une rivière. Le courant pousse la boule de côté (sens qui alterne tous les ~280 m),
   fort au milieu (eau claire, écume, flèches blanches), calme près des berges.
-- Un seul obstacle par monde (les animaux) : crocodiles fixes ici. Les troncs d'arbre et les rochers sont des objets, avalables si la boule est assez grosse. Faim identique à l'oasis.
+- Un seul obstacle par monde, toujours un animal : scorpion dans le désert (il remplace les pics et les barils), crabe dans l'oasis, crocodile fixe dans la rivière. Les troncs d'arbre et les rochers sont des objets, avalables si la boule est assez grosse. Faim identique à l'oasis.
 - Le volcan et la Lune restent « en construction ».
 
 ## v1.23.1 — Accueil avec l'aventure (dev seulement) (4 novembre 2026)

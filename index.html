@@ -6351,6 +6351,7 @@ if (SURVIVAL_ON) (() => {
     nenuphar: { id: 'nenuphar', name: 'Nénuphar', sprite: 'nenuphar', r: 5.5 },
     grenouille: { id: 'grenouille', name: 'Grenouille', sprite: 'grenouille', r: 3.5, move: 'side' },
     crabe: { id: 'crabe', name: 'Crabe', sprite: 'crabe', r: 5, hazard: true, prickly: true, move: 'side' },
+    scorpion: { id: 'scorpion', name: 'Scorpion', sprite: 'scorpion', r: 4.5, hazard: true, prickly: true, move: 'side' },
     croc: { id: 'croc', name: 'Crocodile', sprite: 'croc', r: 7, hazard: true, prickly: true },
     tronc: { id: 'tronc', name: 'Tronc', sprite: 'tronc', r: 5 },
   };
@@ -6423,6 +6424,12 @@ if (SURVIVAL_ON) (() => {
     const edge = y => [c.Lx[Math.max(0, Math.min(c.len - 1, y | 0))], c.Rx[Math.max(0, Math.min(c.len - 1, y | 0))]];
     c.objects = c.objects.map(o => {
       const t = oasisAt(o.y);
+      // désert : le scorpion est le seul obstacle (les pics et les barils deviennent des scorpions)
+      if (o.def.hazard && !o.def.pickup && !(t && rng.chance(t))) {
+        const n = mk(D.scorpion, o.x, o.y), [L, R] = edge(o.y);
+        n.x = n.x0 = Math.max(L + n.r + n.amp + 2, Math.min(R - n.r - n.amp - 2, o.x));
+        return n;
+      }
       if (!t || o.def.pickup || !rng.chance(t)) return o;
       let def = null;
       const rv = riverAt(o.y);
