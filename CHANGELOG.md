@@ -7,6 +7,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.23.4 — Tuto sans les cactus (5 novembre 2026)
+- Tuto de la dune du jour : on ne dit plus que les cactus piquent (réglage de texte, sans news).
+
 ## v1.23.3 — Aventure : La rivière sauvage (dev seulement) (5 novembre 2026)
 - Sur dev : nouveau monde 3, « La rivière sauvage », à la suite de l'oasis (transition de 200 m, panneau et porte comme les autres mondes).
 - Plus de sable : toute la dune devient une rivière. Le courant pousse la boule de côté (sens qui alterne tous les ~280 m),
