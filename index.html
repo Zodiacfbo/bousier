@@ -1935,6 +1935,7 @@ const Store = {
       const o = older.days[k], d = m.days[k];
       if (!d) { m.days[k] = { ...o, ghost: null }; continue; }
       d.attempts = Math.max(d.attempts || 0, o.attempts || 0);
+      d.bonus = Math.max(d.bonus || 0, o.bonus || 0);
       if ((o.runs || []).length > (d.runs || []).length) d.runs = o.runs;
       if ((o.best || 0) > (d.best || 0)) { d.best = o.best; d.bestRun = o.bestRun; }
       d.quests = { ...(d.quests || {}) };
@@ -2050,7 +2051,8 @@ const PODIUM_COINS = [200, 100, 50];
 const BOOST_MIN = 4, BOOST_COUNT = 2, BOOST2_FROM = '2026-10-26';
 // joueurs qui reçoivent le coup de pouce à l'issue d'une semaine (anciens podiums : un seul « last »)
 const boosted = pod => !pod ? [] : pod.lasts || (pod.last ? [pod.last] : []);
-const maxAttempts = (p, day) => p && p.boostWeek === weekKey(day) ? 4 : 3;
+// 3 essais (4 avec le coup de pouce) + les essais offerts par l'organisateur pour ce jour (d.bonus)
+const maxAttempts = (p, day) => (p && p.boostWeek === weekKey(day) ? 4 : 3) + ((p && p.days && p.days[day] && p.days[day].bonus) || 0);
 const FIRST_WEEK = '2026-10-19';
 function fmtWeek(wk) {
   const f = k => dayFromKey(k).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
@@ -2497,6 +2499,8 @@ const Online = {
         const [type, id] = key.split(':'), item = COSMETICS[type] && COSMETICS[type].find(it => it.id === id);
         if (item && !Store.owns(p, type, item)) p.owned[type].push(id);
       }
+      // essai offert pour un jour précis (jamais pour un jour passé)
+      if (g.bonusTry && g.bonusDay && g.bonusDay >= dayKey()) { const d = Store.dayData(p, g.bonusDay); d.bonus = (d.bonus || 0) + g.bonusTry; }
       await c.fb.deleteDoc(ref);
       return g;
     }, 8000);
@@ -4636,7 +4640,7 @@ const App = {
     const g = p && await Online.claimGifts(p);
     if (g) {
       this.addRewards([{ txt: `🎁 Cadeau de l'organisateur${g.coins ? ` : +${g.coins} 🟡` : ''}` },
-        ...(g.items || []).map(k => { const [t, id] = k.split(':'); return rewardLine(t, findCos(t, id)); }), ...(g.msg ? [{ txt: `💬 « ${g.msg} »` }] : [])]);
+        ...(g.items || []).map(k => { const [t, id] = k.split(':'); return rewardLine(t, findCos(t, id)); }), ...(g.bonusTry && g.bonusDay && g.bonusDay >= dayKey() ? [{ txt: `🎲 Un essai en plus pour la dune du ${g.bonusDay === dayKey() ? 'jour' : g.bonusDay}` }] : []), ...(g.msg ? [{ txt: `💬 « ${g.msg} »` }] : [])]);
       Store.save(); Sound.play('unlock'); this.toast('🎁 Un cadeau t\'attend !');
       if (this.screen === 'home') this.show('home');
     }
