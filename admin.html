@@ -112,6 +112,7 @@ svg text { fill: var(--muted); font-size: 10px; }
           <label>Pièces <input id="gcoins" type="number" min="0" max="5000" value="0" style="width:100px"></label>
           <label>Objet <select id="gitem"><option value="">— aucun —</option></select></label>
         </div>
+        <p id="gtryrow"><label><input type="checkbox" id="gtry"> 🎲 Un essai en plus pour la dune d'aujourd'hui (pour un joueur qui a perdu un essai)</label></p>
         <p><input id="gmsg" maxlength="80" placeholder="Petit mot (facultatif), ex. « Bravo pour le concours ! »" style="width:100%"></p>
         <div class="row"><button class="main" id="gsend">Envoyer</button><button id="gcancel">Annuler</button></div>
         <p class="muted">Le joueur le reçoit à sa prochaine ouverture du jeu, avec un message.</p>
@@ -905,7 +906,7 @@ $('ptable').onclick = async e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.fiche) return openFiche(b.dataset.fiche);
   const p = players.find(x => x.key === (b.dataset.gift || b.dataset.forgot || b.dataset.free)); if (!p) return;
-  if (b.dataset.gift) { selected = p; $('gname').textContent = p.name; $('gift').classList.remove('hidden'); $('gift').scrollIntoView({ behavior: 'smooth' }); }
+  if (b.dataset.gift) { selected = p; $('gtryrow').classList.remove('hidden'); $('gname').textContent = p.name; $('gift').classList.remove('hidden'); $('gift').scrollIntoView({ behavior: 'smooth' }); }
   if (b.dataset.forgot) { document.querySelector('[data-tab="password"]').click(); $('fname').value = p.name; $('fcheck').click(); }
   if (b.dataset.free && confirm(`Libérer le pseudo « ${p.name} » ? Il disparaît des records et devient disponible pour un autre joueur.`)) { await freeName(p); toast('Pseudo libéré'); refresh(); }
 };
@@ -913,12 +914,13 @@ $('gcancel').onclick = () => $('gift').classList.add('hidden');
 // joueurs de la version affichée (comptes qui ont déjà joué ici)
 const giftTargets = () => players.filter(p => p.uid && (env === 'prod' || p.rec));
 $('giftall').onclick = () => {
-  selected = 'ALL'; $('gname').textContent = `tout le monde (${giftTargets().length} joueurs)`;
+  selected = 'ALL'; $('gtryrow').classList.add('hidden'); $('gtry').checked = false; $('gname').textContent = `tout le monde (${giftTargets().length} joueurs)`;
   $('gift').classList.remove('hidden'); $('gift').scrollIntoView({ behavior: 'smooth' });
 };
 $('gsend').onclick = async () => {
   const coins = Math.max(0, Math.min(5000, parseInt($('gcoins').value, 10) || 0)), item = $('gitem').value, msg = $('gmsg').value.trim();
-  if (!coins && !item) return toast('Choisis des pièces ou un objet.');
+  const retry = selected !== 'ALL' && $('gtry').checked;
+  if (!coins && !item && !retry) return toast('Choisis des pièces, un objet ou un essai en plus.');
   const all = selected === 'ALL', targets = all ? giftTargets() : [selected];
   if (all && !confirm(`Envoyer ce cadeau à ${targets.length} joueurs ?`)) return;
   $('gsend').disabled = true;
@@ -927,10 +929,11 @@ $('gsend').onclick = async () => {
       const ref = envRef('gifts', p.uid + '_' + encodeURIComponent(p.key));
       // on cumule avec un cadeau pas encore récupéré
       const prev = await fb.getDoc(ref), g = prev.exists() ? prev.data() : { coins: 0, items: [] };
-      await fb.setDoc(ref, { coins: (g.coins || 0) + coins, items: [...(g.items || []), ...(item ? [item] : [])], msg: msg || g.msg || '', at: Date.now() });
+      await fb.setDoc(ref, { coins: (g.coins || 0) + coins, items: [...(g.items || []), ...(item ? [item] : [])], msg: msg || g.msg || '', at: Date.now(),
+        ...(retry ? { bonusTry: ((g.bonusDay === dayKey() && g.bonusTry) || 0) + 1, bonusDay: dayKey() } : {}) });
     }
   } finally { $('gsend').disabled = false; }
-  $('gift').classList.add('hidden'); $('gcoins').value = 0; $('gitem').value = ''; $('gmsg').value = '';
+  $('gift').classList.add('hidden'); $('gcoins').value = 0; $('gitem').value = ''; $('gmsg').value = ''; $('gtry').checked = false;
   toast(all ? `🎁 Cadeau envoyé à ${targets.length} joueurs` : `🎁 Cadeau envoyé à ${selected.name}`);
 };
 async function freeName(p) {
