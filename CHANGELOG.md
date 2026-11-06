@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.22.2 — Essai offert par l'organisateur (6 novembre 2026)
+- Admin : dans le cadeau d'un joueur, case « Un essai en plus pour la dune d'aujourd'hui » (pour un essai perdu). Le joueur
+  le reçoit à sa prochaine ouverture du jeu et voit « essai 3/4 ». Valable pour le jour d'envoi seulement (outil d'admin, sans news).
+
 ## v1.22.1 — Tuto sans les cactus (5 novembre 2026)
 - Tuto de la dune du jour : on ne dit plus que les cactus piquent (réglage de texte, sans news).
 
