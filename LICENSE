@@ -1,0 +1,19 @@
+Copyright (c) 2026 zodiacfbo. Tous droits réservés.
+
+Le jeu Bousier (code, graphismes, textes et contenu) est la propriété de zodiacfbo.
+Aucune autorisation n'est accordée pour copier, modifier, redistribuer ou réutiliser
+tout ou partie de ce dépôt sans l'accord écrit de l'auteur.
+
+Composants tiers, qui gardent leur propre licence :
+- vendor/firebase.js : Firebase JavaScript SDK, © Google LLC, licence Apache 2.0
+  (texte complet : vendor/FIREBASE-LICENSE.txt)
+- fonts/vt323-latin.woff2 : police VT323, SIL Open Font License 1.1
+  (texte complet : fonts/VT323-LICENSE.txt)
+- police Pixelify Sans, chargée depuis Google Fonts : SIL Open Font License 1.1
+
+---
+
+Copyright (c) 2026 zodiacfbo. All rights reserved.
+No permission is granted to copy, modify, distribute or reuse any part of this
+repository without the author's written consent, except for the third-party
+components listed above, which remain under their own licenses.
