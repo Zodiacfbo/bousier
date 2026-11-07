@@ -708,7 +708,7 @@ function renderStats() {
     ['Parties jouées', runs], ['Jours joués (cumul)', sum('days')], ['Taille de boule cumulée', fmtSize(sum('size'))],
     ['Taille moyenne par partie', fmtSize(runs ? sum('size') / runs : 0)], ['Objets avalés', sum('absorbed').toLocaleString('fr-FR')],
     ['Temps passé à rouler', fmtDur(sum('time'))], ['Terriers réussis', `${ok} (${ok + ko ? Math.round(ok * 100 / (ok + ko)) : 0} %)`], ['Terriers ratés', ko],
-    ['Trésors trouvés', sum('legends')], ['Chocs', sum('bumps')], ['Piqûres de cactus', sum('pricks')], ['Bords touchés', sum('walls')],
+    ['Trésors trouvés', sum('legends')], ['Chocs', sum('bumps')], ['Piqûres', sum('pricks')], ['Bords touchés', sum('walls')],
     ['Chameaux avalés', sum('camels')], ['Parties d\'entraînement', sum('practice')], ['Pièces en poche', sum('coins').toLocaleString('fr-FR')],
   ].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('');
   // records, avec le pseudo de leur détenteur

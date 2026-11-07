@@ -2127,7 +2127,7 @@ function runSummary(run) {
   return {
     score: run.score, sizeCm: Math.round(run.sizeCm * 10) / 10, terrier: run.terrier, legend: run.legend,
     time: Math.round(run.time * 10) / 10, absorbed: run.absorbed, bumps: run.bumps, wallHits: run.wallHits,
-    pricks: run.pricks, weather: run.weather,
+    pricks: run.pricks, weather: run.weather, cactus: (run.byType && run.byType.cactus) || 0,
     // distance au centre du terrier (réussi) ou au bord (raté), pour les titres du jour
     holeOff: run.holeOff != null ? Math.round(run.holeOff * 10) / 10 : null,
     missBy: run.missBy != null ? Math.round(run.missBy * 10) / 10 : null,
@@ -6280,7 +6280,9 @@ function dayTitles(lb, day = dayKey()) {
     ['🐢', 'Le plus lent', top(r => r.time), v => fmtTime(v), 'slow'],
     ['💥', 'Roi des chocs', top(r => (r.bumps || 0) + (r.wallHits || 0)), v => v + ' chocs', 'bumps'],
     ['🧲', 'L\'aspirateur', top(r => r.absorbed), v => v + ' objets', 'vacuum'],
-    ['🌵', 'L\'ami des cactus', top(r => r.pricks || 0), v => v + ' piqûre' + (v > 1 ? 's' : ''), 'cactus'],
+    // à partir du 9 novembre, le cactus ne pique plus : le titre compte les cactus avalés
+    day >= CACTUS_SOFT_FROM ? ['🌵', 'L\'ami des cactus', top(r => r.cactus || 0), v => v + ' cactus avalé' + (v > 1 ? 's' : ''), 'cactus']
+      : ['🌵', 'L\'ami des cactus', top(r => r.pricks || 0), v => v + ' piqûre' + (v > 1 ? 's' : ''), 'cactus'],
     ['⚡', 'Le sprinteur', fresh && low(r => r.terrier && r.time ? r.time : null), v => fmtTime(v), 'sprint'],
     ['📈', 'La remontada', fresh && remont && remont.v >= 30 ? remont : null, v => '+' + fmtSize(v), 'remontada'],
     ['🧘', 'Le zen', fresh && zenBest, () => '0 choc', 'zen'],

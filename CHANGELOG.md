@@ -13,6 +13,8 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Aventure : le cactus ne pique plus, c'est un objet avalable comme les autres (un seul obstacle par monde : le scorpion dans le désert).
 - Dune du jour : à partir du 9 novembre, le cactus ne pique plus non plus (choc normal si la boule est trop petite, avalé sinon).
   Les dunes d'avant ne changent pas. Sans news.
+- Titre du jour « 🌵 L'ami des cactus » : à partir du 9 novembre, il va à celui qui a avalé le plus de cactus (avant : le plus de piqûres).
+  Le chapeau Fleur de cactus (3 fois ce titre) ne change pas. Admin : « Piqûres de cactus » devient « Piqûres ».
 
 ## v1.23.5 — Rivière plus belle (dev seulement) (5 novembre 2026)
 - Aventure, rivière : flèches du courant et pointillés blancs supprimés. Eau en 4 tons (bord sombre, centre clair),
