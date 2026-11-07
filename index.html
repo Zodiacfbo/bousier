@@ -1364,6 +1364,10 @@ const EGG = { from: '2026-10-26', plots: 25, practice: 50, tickle: 100, moon: 13
   plot: { id: 'plot', name: 'Plot', sprite: 'plot', r: 2.5, plot: true } };
 function isFriday13(day) { return day.slice(8) === '13' && dayFromKey(day).getDay() === 5; }
 const OBJ = Object.fromEntries(OBJECTS.concat(SEASON_OBJECTS).map(o => [o.id, o]));
+// À partir du 9 novembre 2026, le cactus ne pique plus : c'est un objet comme les autres (les dunes d'avant ne changent pas)
+const CACTUS_SOFT_FROM = '2026-11-09';
+const CACTUS_SOFT = { ...OBJ.cactus, prickly: false, desc: 'Une fois avalé, quel panache !' };
+if (dayKey() >= CACTUS_SOFT_FROM) OBJ.cactus.desc = CACTUS_SOFT.desc;
 
 const WEATHERS = [
   { id: 'calme', name: 'Grand calme', icon: '☀️', desc: 'Pas un souffle. Conditions idéales pour un record.' },
@@ -3066,6 +3070,7 @@ function generateCourse(seed, weather, legend, day = dayKey(), daily = false, pr
   }
   // 1 mois : un gâteau au bord du départ
   if (daily && day === EGG.month1) { final.push({ deco: true, def: { id: 'gateau' }, x: Lx[230] + 14, y: 230, r: 3, sprite: 'gateau', amp: 0 }); final.sort((a, b) => a.y - b.y); }
+  if (day >= CACTUS_SOFT_FROM) for (const o of final) if (o.def === OBJ.cactus) o.def = CACTUS_SOFT;
   const cat = daily && isFriday13(day) ? { y: Math.round(holeY * makeRng(hashStr(day + '|chat')).range(0.35, 0.6)) } : null;
   return {
     seed, weather, legend, len, holeY, holeX, Lx, Rx, objects: final, counts, cat,
@@ -3787,7 +3792,7 @@ class Game {
         }
         for (let i = 0; i < 2; i++) {
           const y = ev.y + 120 + i * 90, [L, R] = this.edge(y);
-          this.spawn(OBJ.cactus, rng.range(L + 12, R - 12), y, OBJ.cactus.r);
+          this.spawn((this.config.day || dayKey()) >= CACTUS_SOFT_FROM ? CACTUS_SOFT : OBJ.cactus, rng.range(L + 12, R - 12), y, OBJ.cactus.r);
         }
         break;
       }
@@ -6385,7 +6390,6 @@ if (SURVIVAL_ON) (() => {
     { id: 'bouclier', icon: '🛡️', name: 'Bouclier de départ', desc: 'Chocs gratuits au départ', max: 5, fx: n => `${n} choc${n > 1 ? 's' : ''}` },
   ];
   const PACT_LEVEL = 3;
-  const CACTUS_SOFT = { ...OBJ.cactus, prickly: false };
   // pièces : +10 à la première partie du jour, puis 1 tous les 100 m, 50 par jour au plus
   const COINS = { first: 10, per: 100, max: 50 };
   const ADV = { run: null };

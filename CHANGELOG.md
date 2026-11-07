@@ -11,7 +11,8 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Aventure : +10 🟡 à la première partie du jour, puis 1 🟡 tous les 100 m, 50 🟡 par jour au plus (avant : 1 🟡 / 25 m sans limite).
   Le gain et le compteur du jour s'affichent à l'écran de fin.
 - Aventure : le cactus ne pique plus, c'est un objet avalable comme les autres (un seul obstacle par monde : le scorpion dans le désert).
-  Dans la dune du jour, rien ne change.
+- Dune du jour : à partir du 9 novembre, le cactus ne pique plus non plus (choc normal si la boule est trop petite, avalé sinon).
+  Les dunes d'avant ne changent pas. Sans news.
 
 ## v1.23.5 — Rivière plus belle (dev seulement) (5 novembre 2026)
 - Aventure, rivière : flèches du courant et pointillés blancs supprimés. Eau en 4 tons (bord sombre, centre clair),
