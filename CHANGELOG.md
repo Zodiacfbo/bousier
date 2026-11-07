@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.23.6 — Aventure : pièces plafonnées, cactus avalable (dev seulement) (7 novembre 2026)
+- Aventure : +10 🟡 à la première partie du jour, puis 1 🟡 tous les 100 m, 50 🟡 par jour au plus (avant : 1 🟡 / 25 m sans limite).
+  Le gain et le compteur du jour s'affichent à l'écran de fin.
+- Aventure : le cactus ne pique plus, c'est un objet avalable comme les autres (un seul obstacle par monde : le scorpion dans le désert).
+  Dans la dune du jour, rien ne change.
+
 ## v1.23.5 — Rivière plus belle (dev seulement) (5 novembre 2026)
 - Aventure, rivière : flèches du courant et pointillés blancs supprimés. Eau en 4 tons (bord sombre, centre clair),
   berge de sable fin avec un filet d'écume, quelques paillettes de soleil. Le courant, lui, ne change pas (réglage de l'affichage, sans news).

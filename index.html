@@ -5381,8 +5381,7 @@ const App = {
       res.dist = run.dist; res.prevBest = sv.best; res.newRecord = run.dist > sv.best;
       sv.runs++;
       if (res.newRecord) sv.best = run.dist;
-      res.coins = Math.floor(run.dist / 25);
-      p.coins += res.coins;
+      res.coins = 0;  // aventure : les pièces sont comptées à l'écran de fin (plafond par jour)
       Store.save();
       if (res.newRecord) await Online.submitSurvival(p);
       res.top = await Online.survivalTop();
@@ -6386,6 +6385,9 @@ if (SURVIVAL_ON) (() => {
     { id: 'bouclier', icon: '🛡️', name: 'Bouclier de départ', desc: 'Chocs gratuits au départ', max: 5, fx: n => `${n} choc${n > 1 ? 's' : ''}` },
   ];
   const PACT_LEVEL = 3;
+  const CACTUS_SOFT = { ...OBJ.cactus, prickly: false };
+  // pièces : +10 à la première partie du jour, puis 1 tous les 100 m, 50 par jour au plus
+  const COINS = { first: 10, per: 100, max: 50 };
   const ADV = { run: null };
   const prof = () => Store.profile();
   const adv = () => { const p = prof(); p.adv = p.adv || { xp: 0, spent: {}, unlocked: 0, best: {}, sel: 0, short: false }; return p.adv; };
@@ -6427,6 +6429,7 @@ if (SURVIVAL_ON) (() => {
     };
     const edge = y => [c.Lx[Math.max(0, Math.min(c.len - 1, y | 0))], c.Rx[Math.max(0, Math.min(c.len - 1, y | 0))]];
     c.objects = c.objects.map(o => {
+      if (o.def.id === 'cactus') o.def = CACTUS_SOFT;  // en aventure, le cactus ne pique pas : c'est un objet comme les autres
       const t = oasisAt(o.y);
       // désert : le scorpion est le seul obstacle (les pics et les barils deviennent des scorpions)
       if (o.def.hazard && !o.def.pickup && !(t && rng.chance(t))) {
@@ -6884,7 +6887,10 @@ if (SURVIVAL_ON) (() => {
       const wb = Math.min(w, PLAYABLE - 1), inWorld = Math.floor((y - yStart(wb)) / 10);
       const rec = inWorld > (a.best[wb] || 0); if (rec) a.best[wb] = inWorld;
       a.unlocked = Math.max(a.unlocked, Math.min(w, PLAYABLE - 1));
-      r.adv = { gained, from, w, wb, before, after: levelOf(a.xp).L, rec, newWorld: w > from, left: Math.max(0, Math.ceil((yEnd(wb) - y) / 10)) };
+      const p = prof(), cd = a.coins && a.coins.day === this.today ? a.coins : (a.coins = { day: this.today, n: 0 });
+      const coins = Math.max(0, Math.min(COINS.max - cd.n, (cd.n ? 0 : COINS.first) + Math.floor(gained / COINS.per)));
+      cd.n += coins; p.coins += coins; r.coins = coins;
+      r.adv = { gained, from, w, wb, before, after: levelOf(a.xp).L, rec, newWorld: w > from, left: Math.max(0, Math.ceil((yEnd(wb) - y) / 10)), coins, today: cd.n };
       Store.save();
     }
     const x = r.adv, l = levelOf(a.xp), end = x.w >= PLAYABLE, W1 = WORLDS[x.wb], N = WORLDS[x.wb + 1];
@@ -6898,6 +6904,7 @@ if (SURVIVAL_ON) (() => {
       <div class="panel"><div class="lvl"><span class="n">Niv. ${x.before}${x.after > x.before ? ' → ' + x.after : ''}</span><div class="bar"><div style="width:${Math.round(l.cur * 100 / l.next)}%"></div><span>${l.cur} / ${l.next} XP</span></div></div>
         <div class="tiny" style="margin-top:var(--u);color:#c8ff8a">+${x.gained} XP${x.after > x.before ? ` · ⬆️ Niveau supérieur ! +${x.after - x.before} point${x.after - x.before > 1 ? 's' : ''} de compétence` : ''}</div></div>
       ${x.after >= PACT_LEVEL && x.before < PACT_LEVEL ? '<div class="unl"><div class="c">😈</div><div><b>Nouveau : les pactes !</b><div class="tiny">Des cartes très puissantes… avec une contrepartie. Elles peuvent maintenant sortir aux haltes.</div></div></div>' : ''}
+      <div class="panel"><div class="tiny" style="color:#ffd25a">${x.coins ? `+${x.coins} 🟡` : '+0 🟡'} · ${x.today >= COINS.max ? `plafond du jour atteint (${COINS.max} 🟡), reviens demain !` : `${x.today} / ${COINS.max} 🟡 gagnées aujourd'hui dans l'aventure`}</div></div>
       <div class="panel"><table class="stats"><tr><td>Bonus pris</td><td class="taken">${(run.taken || []).join(' ') || '—'}</td></tr><tr><td>Objets avalés</td><td>${run.absorbed}</td></tr><tr><td>Temps</td><td>${fmtTime(run.time)}</td></tr></table></div>
       <div class="col"><button class="btn big" data-adv="play">Rejouer</button>${points() ? `<button class="btn" data-adv="skills">🎯 Placer mes points (${points()})</button>` : ''}<button class="btn ghost" data-adv="hub">Menu de l'aventure</button></div>
     </div>`;
