@@ -6357,6 +6357,51 @@ if (SURVIVAL_ON) (() => {
       x.translate(o.width / 2, o.height / 2); x.rotate(dir * Math.PI / 2); x.drawImage(c, -c.width / 2, -c.height / 2); return o; };
     return { up, right: up.map(c => turn(c, 1)), left: up.map(c => turn(c, -1)) };
   })();
+  // oasis : décor qu'on n'avale jamais (couronnes de palmiers vues du dessus, buissons, fougères, fleurs)
+  const OASIS_DECO = (() => {
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const G = ['#1f4a24', '#2f6b33', '#3f8a3a', '#5fae4a', '#8fd06a'], FL = ['#ff7aa8', '#ffd25a', '#ffffff', '#e0483a'];
+    const mk = (w, h, fn) => { const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d')); return c; };
+    const px = (x, X, Y, col) => { x.fillStyle = col; x.fillRect(X, Y, 1, 1); };
+    const bush = (w, h, flowers) => mk(w, h, x => {
+      const cx = w / 2, cy = h / 2 + 0.5;
+      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+        const dx = (i + 0.5 - cx) / (w / 2), dy = (j + 0.5 - cy) / (h / 2), d = dx * dx + dy * dy + (rnd() - 0.5) * 0.18;
+        if (d > 1) continue;
+        const lit = -dx * 0.6 - dy * 0.8 + (rnd() - 0.5) * 0.5;
+        px(x, i, j, d > 0.78 ? G[0] : lit > 0.55 ? G[4] : lit > 0.05 ? G[3] : lit > -0.5 ? G[2] : G[1]);
+        if (flowers && d < 0.7 && rnd() < 0.09) px(x, i, j, FL[Math.floor(rnd() * FL.length)]);
+      }
+    });
+    const fern = (w, h) => mk(w, h, x => {
+      const bx = w / 2, by = h - 1;
+      for (const a of [-2.5, -2.0, -1.57, -1.1, -0.65]) {
+        const L = h * (a === -1.57 ? 1 : 0.85);
+        for (let t = 0; t < L; t += 0.5) {
+          const X = Math.round(bx + Math.cos(a) * t), Y = Math.round(by + Math.sin(a) * t * 1.05);
+          px(x, X, Y, G[1]);
+          if (t > 2 && Math.round(t * 2) % 3 === 0) { px(x, X - 1, Y, G[3]); px(x, X + 1, Y, G[2]); }
+        }
+      }
+    });
+    const crown = (w, h) => mk(w, h, x => {
+      const cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 0.5;
+      for (let k = 0; k < 9; k++) {
+        const a = k / 9 * 6.283 + 0.3;
+        for (let t = 2; t < R; t += 0.4) {
+          const X = cx + Math.cos(a) * t, Y = cy + Math.sin(a) * t * (h / w);
+          px(x, Math.round(X), Math.round(Y), G[1]);
+          const lw = Math.max(1, Math.round((1 - t / R) * 4 + 1));
+          for (let s = 1; s <= lw; s++) {
+            px(x, Math.round(X - Math.sin(a) * s), Math.round(Y + Math.cos(a) * s * 0.9), s === 1 ? G[3] : G[2]);
+            px(x, Math.round(X + Math.sin(a) * s), Math.round(Y - Math.cos(a) * s * 0.9), s === lw ? G[0] : G[2]);
+          }
+        }
+      }
+      x.fillStyle = '#6b4a2a'; x.fillRect(Math.round(cx) - 1, Math.round(cy) - 1, 3, 3); px(x, Math.round(cx), Math.round(cy), '#8a6238');
+    });
+    return { crown: crown(40, 34), fern: fern(15, 13), flowers: bush(18, 10, true), bush: bush(16, 11) };
+  })();
   // palme au premier plan (dessinée devant la boule, sur le bord de l'écran)
   const FROND = (() => {
     const c = document.createElement('canvas'); c.width = 48; c.height = 30; const x = c.getContext('2d');
@@ -6622,7 +6667,7 @@ if (SURVIVAL_ON) (() => {
       if (!isOasis(y)) continue;
       const [L, R] = this.edge(y), left = n % 2 === 0, bw = left ? L : W - R;
       const put = (key, k = 2, inset = 6) => {
-        const sp = SPR[key]; if (!sp) return;
+        const sp = typeof key === 'string' ? SPR[key] : key; if (!sp) return;
         const w = sp.width * k, hgt = sp.height * k;
         let cx = left ? L - inset - w / 2 : R + inset + w / 2;
         cx = left ? Math.max(w * 0.15, cx) : Math.min(W - w * 0.15, cx);
@@ -6631,9 +6676,10 @@ if (SURVIVAL_ON) (() => {
       };
       const roll = h % 100;
       if (bw < 12) continue;
-      if (roll < 34) put(bw >= 30 ? 'palmier' : 'palmL', bw >= 30 ? 1 : 2, 4);
-      else if (roll < 46) put('tente', 2, 5);
-      else if (roll < 56) put('chameau', 2, 5);
+      // jamais d'objet qu'on avale (palmier, tente, chameau…) dans le décor
+      if (roll < 34) put(bw >= 30 ? OASIS_DECO.crown : OASIS_DECO.fern, bw >= 30 ? 1 : 2, 4);
+      else if (roll < 46) put(OASIS_DECO.flowers, 2, 5);
+      else if (roll < 56) put(OASIS_DECO.bush, 2, 5);
       else if (roll < 66) put('puits', 2, 5);
       else if (roll < 86 && bw >= 22) {
         // mare, avec un poisson qui saute et parfois un flamant rose
