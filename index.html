@@ -4540,7 +4540,8 @@ class Game {
       // rappel des règles pendant le compte à rebours
       drawText(ctx, 'GLISSE LE DOIGT POUR DIRIGER', W / 2, H * 0.62, '#ffffff', 1, '#1d1416', 'center');
       drawText(ctx, 'AVALE PLUS PETIT QUE TOI', W / 2, H * 0.62 + 9, '#c8ff8a', 1, '#1d1416', 'center');
-      drawText(ctx, 'VISE LE TERRIER AU BOUT !', W / 2, H * 0.62 + 18, '#fff4a8', 1, '#1d1416', 'center');
+      // (l'aventure n'a pas de terrier : on rappelle d'éviter les animaux)
+      drawText(ctx, this.surv ? 'EVITE LES ANIMAUX !' : 'VISE LE TERRIER AU BOUT !', W / 2, H * 0.62 + 18, '#fff4a8', 1, '#1d1416', 'center');
     }
     // première course : flèches animées « glisse ton doigt » pendant les premières secondes
     if (this.hint && this.state === 'run' && this.phase === 'play' && this.run.time < 5) {
@@ -7410,9 +7411,6 @@ if (SURVIVAL_ON) (() => {
       <div class="panel welcome">
         <div class="row"><span class="ic">📜</span><span><b>La règle d'ici</b><br>${W1.rule}</span></div>
         <div class="row"><span class="ic">⚠️</span><span><b>Attention</b><br>${W1.obstacle} ${spriteImg(W1.haz || 'crabe', W1.haz === 'croc' ? 1 : 2)}</span></div>
-        <div class="row"><span class="ic">😋</span><span><b>À découvrir</b><div class="obj-grid">${W1.objs.map(o => { const O = D[o] || OBJ[o], sp = SPR[O.sprite], k = Math.min(2, 11 / Math.max(sp.width, sp.height));
-          return `<span class="obj-chip"><span class="oi">${spriteImg(O.sprite, k)}</span><span>${O.name}</span></span>`; }).join('')}</div></span></div>
-        ${(wc => wc.length ? `<div class="row"><span class="ic">🃏</span><span><b>Cartes de ce monde, aux haltes</b><br>${wc.map(c => `${c.icon} ${c.name}`).join(' · ')}</span></div>` : '')((w === 1 ? OASIS_CARDS : []).concat(NEW_COUPS.filter(c => c.world === w)))}
         <div class="row"><span class="ic">🌦️</span><span><b>Météo</b><br>${W1.wx.map(id => `${WEATHER[id].icon} ${WEATHER[id].name}`).join(' ou ')}</span></div>
       </div>
       <button class="btn big" data-adv="resume">C'est parti !</button>
