@@ -466,6 +466,11 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .myst b { display:block; font-size:1.2em; margin: calc(var(--u)*2) 0; color: var(--gold); }
 .myst.bad b { color:#ff9a8a; }
 .tipbox { font-size:.75em; background:#2a3a1a; box-shadow: inset 0 0 0 var(--u) #c8ff8a; color:#e8ffd0; padding: calc(var(--u)*2) calc(var(--u)*3); margin: calc(var(--u)*2) 0; text-align:left; }
+#hud-fx { position:absolute; left: calc(var(--u)*2); top: calc(var(--u)*25); display:flex; flex-direction:column; gap: calc(var(--u)*1.2); pointer-events:none; }
+#hud-fx .fxr { display:flex; align-items:center; gap: calc(var(--u)*1.5); font-size:.75em; }
+#hud-fx .fxr i { display:block; width: calc(var(--u)*16); height: calc(var(--u)*2); background: rgba(0,0,0,.55); box-shadow: 0 0 0 1px rgba(0,0,0,.6); }
+#hud-fx .fxr i b { display:block; height:100%; background:#c8ff8a; transition: width .2s linear; }
+#hud-fx .fxr.pact i b { background:#ff9ad8; }
 #hud-relics { position:absolute; right: calc(var(--u)*2); top: calc(var(--u)*25); font-size:.7em; letter-spacing:.1em; text-shadow: 0 1px 0 #000; }
 #hud-relics .combo { font-weight:bold; }
 #hud-beetle { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: .8em; }
@@ -6968,6 +6973,7 @@ if (SURVIVAL_ON) (() => {
     const ctx = this.ctx, H = this.H, camY = this.ball.y - H * 0.3;
     // fondu lisse de l'oasis (0 = désert, 1 = oasis) : pas de tirage au sort par image, donc pas de clignotement
     const frac = oasisFrac(camY + H * 0.5);
+    if (this.frame % 4 === 0) showFx(this);
     if (frac < 1) this.drawVultures(camY, 1 - frac);
     if (frac > 0) {
       // palmes au premier plan : elles défilent plus vite que le sol (effet de profondeur)
@@ -7045,7 +7051,7 @@ if (SURVIVAL_ON) (() => {
   Game.prototype.start = function (config, opts) {
     oStart.call(this, config, opts);
     this.quietFx = !!(this.surv && ADV.run);  // aventure : le détail des bonus est à la pause
-    showRelics(this);
+    showRelics(this); if (this.surv) this.surv.fxMax = {}; showFx(this);
     if (!this.surv || !ADV.run) return;
     const sv = this.surv, w = ADV.run.world, b = this.ball;
     sv.dist = startOf(w); sv.world = w;
@@ -7120,6 +7126,21 @@ if (SURVIVAL_ON) (() => {
     oAbsorb.call(this, o, dx, dy, d);
     if (ADV.run && this.surv && (this.surv.relics || []).includes('appetit') && b.area > before) b.area = before + (b.area - before) * 1.2;
   };
+  // coups de pouce en cours : une petite icône et une barre qui se vide (en haut à gauche)
+  function showFx(g) {
+    let el = document.getElementById('hud-fx');
+    if (!el) { el = document.createElement('div'); el.id = 'hud-fx'; document.getElementById('hud').appendChild(el); }
+    const sv = g && g.surv && ADV.run ? g.surv : null;
+    if (!sv) { el.innerHTML = ''; return; }
+    sv.fxMax = sv.fxMax || {};
+    const rows = Object.entries(sv.fx).filter(([k, t]) => t > 0).map(([k, t]) => {
+      if (t > (sv.fxMax[k] || 0)) sv.fxMax[k] = t;
+      const B = BONUS[k] || (k === 'mystereInv' ? { icon: '🙃' } : null); if (!B) return '';
+      return `<div class="fxr ${B.pact ? 'pact' : ''}"><span>${B.icon}</span><i><b style="width:${Math.round(t / sv.fxMax[k] * 100)}%"></b></i></div>`;
+    }).join('');
+    for (const k in sv.fxMax) if (!sv.fx[k]) delete sv.fxMax[k];
+    if (el.innerHTML !== rows) el.innerHTML = rows;
+  }
   // reliques de la partie, en haut à droite
   function showRelics(g) {
     let el = document.getElementById('hud-relics');
