@@ -19,6 +19,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   panier de fruits dans l'oasis ; poisson, radeau et barque dans la rivière. Berges de la rivière : saules, hérons, massettes, pontons.
 - Aventure : plus de rocher dans la rivière (4 sur 10 disparaissent, les autres deviennent des objets qui flottent, de taille proche).
 - Aventure, rivière : nouveau gros objet « Gros rondin » (plus fréquent que la barque).
+- Aventure, compétences en 3 familles (un onglet chacune) : 🍽️ Gourmand (Estomac, Provisions, Aimant), 🛡️ Costaud (Carapace,
+  Pansements de départ, aussi à chaque nouveau monde), 🃏 Malin (Cartes en plus, Bonus durables). Chaque famille a sa grande
+  compétence ⭐ (3 points, ouverte après 6 points dans la famille) : Seconde chance, Trousse de secours, Double choix.
+  Niveaux à 5 (au lieu de 10), effets rééquilibrés, points redistribuables gratuitement, +1 point la première fois qu'on termine
+  un monde, niveaux plus rapides (150 XP puis +50 par niveau). Les points placés au-delà des nouveaux maximums sont rendus.
 - Aventure : un seul mot, « pansement » 🩹 : la carte « Pansements » et la compétence « Pansements de départ » (avant : « Bouclier pansement », « Bouclier de départ »).
 - Aventure, difficulté : elle passe surtout par les animaux-obstacles (scorpion, crabe, crocodile), peu nombreux au début puis
   de plus en plus nombreux et rapides jusqu'à 4,5 km (environ 10, puis 35 tous les 500 m). Le scorpion n'est plus jamais avalable.

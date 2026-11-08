@@ -499,6 +499,14 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .up .dots i.on { background:#c8ff8a; }
 .up .btn { width:auto; flex:0 0 auto; margin:0; font-size:.75em; padding: calc(var(--u)*2) calc(var(--u)*3); white-space:nowrap; }
 .up.lockd { opacity:.5; }
+.up.star { border-color:#ffd25a; background: linear-gradient(#3a2a1a, var(--panel)); }
+.up.star.lockd { opacity:.85; }
+.up .gold, .up b.gold { color:#ffd25a; }
+.up .bar6 { height: calc(var(--u)*1.5); background:#4a3a4a; margin-top: calc(var(--u)*0.8); }
+.up .bar6 div { height:100%; background:#ffd25a; }
+.skill-tabs { display:flex; gap: var(--u); margin: calc(var(--u)*1.5) 0 0; }
+.skill-tabs .btn:not(.ghost) .tiny { color:#3a2410; }
+.skill-tabs .btn { flex:1; margin:0; padding: calc(var(--u)*1.5) calc(var(--u)*0.5); line-height:1.3; }
 .tabs3 { display:flex; gap: var(--u); }
 .tabs3 span { flex:1; text-align:center; padding: calc(var(--u)*2) 0; border: var(--u) solid var(--line); background: rgba(18,10,22,.85); font-size:.8em; color: var(--muted); }
 .tabs3 span.on { background: var(--accent); color:#2a1408; font-weight:700; }
@@ -6506,27 +6514,53 @@ if (SURVIVAL_ON) (() => {
     { id: 'source', icon: '💧', name: 'Source fraîche', desc: 'Ta faim s\'arrête pendant 12 s', dur: 12 },
     { id: 'cocos', icon: '🥥', name: 'Pluie de noix de coco', desc: 'Des noix de coco tombent devant toi', dur: 0 },
   ];
-  const UPS = [
-    { id: 'estomac', icon: '🍽️', name: 'Estomac', desc: 'La faim monte moins vite', max: 10, fx: n => `−${Math.round((1 - 0.92 ** n) * 100)} %` },
-    { id: 'provisions', icon: '🎒', name: 'Provisions', desc: 'Départ avec une boule plus grosse', max: 10, fx: n => `+${n * 12} %` },
-    { id: 'cartes', icon: '🃏', name: 'Cartes en plus', desc: 'Plus de cartes à chaque halte', max: 2, fx: n => `${3 + n} cartes` },
-    { id: 'durable', icon: '⏱️', name: 'Bonus durables', desc: 'Les bonus durent plus longtemps', max: 10, fx: n => `+${n * 15} %` },
-    { id: 'bouclier', icon: '🩹', name: 'Pansements de départ', desc: 'Tu pars avec des pansements : chacun annule un choc', max: 5, fx: n => `${n} pansement${n > 1 ? 's' : ''}` },
+  // compétences : 3 familles (un style de jeu chacune), avec une grande compétence ⭐ au bout,
+  // débloquée quand on a mis STAR_NEED points dans la famille
+  const FAMS = [
+    { id: 'gourmand', icon: '🍽️', name: 'Gourmand', sub: 'la faim', col: '#ffb35a' },
+    { id: 'costaud', icon: '🛡️', name: 'Costaud', sub: 'les animaux', col: '#8ae0ff' },
+    { id: 'malin', icon: '🃏', name: 'Malin', sub: 'les cartes', col: '#c8a2ff' },
   ];
+  const UPS = [
+    { id: 'estomac', fam: 'gourmand', icon: '🍽️', name: 'Estomac', desc: 'La faim monte moins vite', max: 5, fx: n => `−${Math.round((1 - 0.9 ** n) * 100)} %` },
+    { id: 'provisions', fam: 'gourmand', icon: '🎒', name: 'Provisions', desc: 'Départ avec une boule plus grosse', max: 5, fx: n => `+${n * 15} %` },
+    { id: 'aimant', fam: 'gourmand', icon: '🧲', name: 'Aimant', desc: 'Les petits objets proches viennent à toi', max: 3, fx: n => ['rien', 'petit rayon', 'rayon moyen', 'grand rayon'][n] },
+    { id: 'seconde', fam: 'gourmand', star: true, cost: 3, max: 1, icon: '❤️', name: 'Seconde chance', desc: 'Une fois par partie, quand ta boule est vide, tu repars\u00a0!' },
+    { id: 'carapace', fam: 'costaud', icon: '🐢', name: 'Carapace', desc: 'Les animaux font moins mal', max: 5, fx: n => `−${n * 10} %` },
+    { id: 'bouclier', fam: 'costaud', icon: '🩹', name: 'Pansements de départ', desc: 'Au départ et à chaque nouveau monde', max: 3, fx: n => `${n} pansement${n > 1 ? 's' : ''}` },
+    { id: 'trousse', fam: 'costaud', star: true, cost: 3, max: 1, icon: '🧰', name: 'Trousse de secours', desc: '+1 pansement à chaque halte' },
+    { id: 'cartes', fam: 'malin', icon: '🃏', name: 'Cartes en plus', desc: 'Plus de cartes à chaque halte', max: 2, fx: n => `${3 + n} cartes` },
+    { id: 'durable', fam: 'malin', icon: '⏱️', name: 'Bonus durables', desc: 'Les bonus durent plus longtemps', max: 5, fx: n => `+${n * 20} %` },
+    { id: 'double', fam: 'malin', star: true, cost: 3, max: 1, icon: '✌️', name: 'Double choix', desc: 'Une halte sur deux, tu prends 2 cartes' },
+  ];
+  const STAR_NEED = 6;
   const PACT_LEVEL = 3;
   // pièces : +10 à la première partie du jour, puis 1 tous les 100 m, 50 par jour au plus
   const COINS = { first: 10, per: 100, max: 50 };
   const ADV = { run: null };
   const prof = () => Store.profile();
-  const adv = () => { const p = prof(); p.adv = p.adv || { xp: 0, spent: {}, unlocked: 0, best: {}, sel: 0, short: false }; return p.adv; };
+  const adv = () => {
+    const p = prof(); p.adv = p.adv || { xp: 0, spent: {}, unlocked: 0, best: {}, sel: 0, short: false };
+    // anciennes compétences montées plus haut que le nouveau maximum : les points en trop sont rendus
+    for (const u of UPS) if ((p.adv.spent[u.id] || 0) > u.max) p.adv.spent[u.id] = u.max;
+    return p.adv;
+  };
   const k = () => (adv().short ? 0.1 : 1);
   const len = w => Math.round(WORLDS[w].len * k());
   const startOf = w => { let s = 0; for (let i = 0; i < w; i++) s += len(i); return s; };
-  const need = L => 150 + 100 * (L - 1);
+  const need = L => 150 + 50 * (L - 1);
   const levelOf = xp => { let L = 1; while (xp >= need(L)) { xp -= need(L); L++; } return { L, cur: xp, next: need(L) }; };
-  const spent = () => Object.values(adv().spent).reduce((a, b) => a + b, 0);
-  const points = () => levelOf(adv().xp).L - 1 - spent();
   const up = id => adv().spent[id] || 0;
+  const spent = () => UPS.reduce((a, u) => a + up(u.id) * (u.cost || 1), 0);
+  const famSpent = f => UPS.reduce((a, u) => a + (u.fam === f && !u.star ? up(u.id) : 0), 0);
+  // +1 point la première fois qu'on termine un monde
+  const worldPoints = () => Math.max(adv().unlocked || 0, adv().cleared || 0);
+  const points = () => {
+    const n = levelOf(adv().xp).L - 1 + worldPoints() - spent();
+    if (n >= 0) return n;
+    adv().spent = {}; Store.save();  // plus de points placés que gagnés (ancien réglage) : tout est rendu
+    return levelOf(adv().xp).L - 1 + worldPoints();
+  };
   const themeOf = w => { const t = WORLDS[Math.min(w, PLAYABLE - 1)].theme; return typeof t === 'object' ? t : findCos('theme', t); };
   const fmt = m => `${Math.floor(m).toLocaleString('fr-FR')} m`;
   // repères de la partie, en unités de la dune (10 unités = 1 m), comptés depuis le monde de départ
@@ -6915,9 +6949,10 @@ if (SURVIVAL_ON) (() => {
     if (!this.surv || !ADV.run) return;
     const sv = this.surv, w = ADV.run.world, b = this.ball;
     sv.dist = startOf(w); sv.world = w;
-    b.area *= 1 + 0.12 * up('provisions'); b.r = Math.sqrt(b.area);
+    b.area *= 1 + 0.15 * up('provisions'); b.r = Math.sqrt(b.area);
     sv.shields += up('bouclier');
-    sv.hunger *= 0.92 ** up('estomac') * WORLDS[w].hunger;
+    sv.hunger *= 0.9 ** up('estomac') * WORLDS[w].hunger;
+    sv.halts = 0; sv.second = false; sv.doublePick = false;
     sv.speedPact *= WORLDS[w].speed;
     if (!WORLDS[w].wx.includes(this.wx.id)) this.wx = pickWx(w);
     this.advPalettes(); this.setPalette(themeOf(w), this.wx);
@@ -6927,7 +6962,11 @@ if (SURVIVAL_ON) (() => {
   function enterWorld(g, w) {
     const sv = g.surv, prev = WORLDS[sv.world];
     sv.world = w;
-    const a = adv(); a.unlocked = Math.max(a.unlocked, Math.min(w, PLAYABLE - 1)); Store.save();
+    const a = adv(), before = points();
+    a.unlocked = Math.max(a.unlocked, Math.min(w, PLAYABLE - 1)); a.cleared = Math.max(a.cleared || 0, w); Store.save();
+    if (points() > before) { g.floatText('+1 POINT !', g.ball.x, g.ball.y - g.ball.r - 18, '#c8ff8a'); if (ADV.run) ADV.run.wp = (ADV.run.wp || 0) + 1; }
+    // pansements de départ : aussi à chaque nouveau monde
+    if (up('bouclier') && w < PLAYABLE) sv.shields += up('bouclier');
     if (w >= PLAYABLE) {
       g.phase = 'miss'; g.phaseT = 0; g.alert = null;
       g.notice('BIENTOT LA SUITE !', '#fff4a8', 3, 4); Sound.play('unlock');
@@ -6949,6 +6988,13 @@ if (SURVIVAL_ON) (() => {
     g.paused = false; g.last = 0;
     this.show('none');
   };
+  // Carapace : les animaux font moins mal
+  const oBump = Game.prototype.bump;
+  Game.prototype.bump = function (o, dx, dy, d) {
+    const b = this.ball, before = b.area;
+    oBump.call(this, o, dx, dy, d);
+    if (ADV.run && this.surv && o.def && o.def.hazard && up('carapace') && b.area < before) b.area = before - (before - b.area) * (1 - 0.1 * up('carapace'));
+  };
   const oStep = Game.prototype.stepSurvival;
   Game.prototype.stepSurvival = function (b) {
     const sv = this.surv;
@@ -6967,6 +7013,26 @@ if (SURVIVAL_ON) (() => {
       this.lastPud = pud;
     }
     oStep.call(this, b);
+    if (sv && ADV.run) {
+      // Seconde chance : la première fois que la boule est vide, on repart
+      if (this.phase === 'miss' && b.area < SURV.deathArea && up('seconde') && !sv.second) {
+        sv.second = true; this.phase = 'play'; this.phaseT = 0;
+        b.area = SURV.deathArea * 2; b.r = Math.sqrt(b.area);
+        this.notice('SECONDE CHANCE !', '#ff8aa8', 2.5, 4); Sound.play('unlock');
+        this.burst(b.x, b.y, 30, ['#ff6a8a', '#ffd25a', '#ffffff'], 120);
+      }
+      // Aimant (compétence) : les petits objets proches glissent doucement vers la boule
+      const ai = up('aimant');
+      if (ai && !sv.fx.aimant && this.phase === 'play' && !this.paused) {
+        const R = 16 + 12 * ai;
+        for (let i = lowerBound(this.objs, b.y - R); i < this.objs.length && this.objs[i].y < b.y + R; i++) {
+          const o = this.objs[i];
+          if (o.dead || o.deco || !edible(o, b)) continue;
+          const ox = this.objX(o);
+          if (Math.hypot(ox - b.x, o.y - b.y) < R + b.r) { o.x0 += (b.x - ox) * 0.05; o.x = o.x0; }
+        }
+      }
+    }
     if (!sv || !ADV.run || this.phase !== 'play' || this.paused) return;
     const w = worldAtY(b.y);
     if (w !== sv.world) enterWorld(this, w);
@@ -6988,11 +7054,35 @@ if (SURVIVAL_ON) (() => {
     const pool = () => BONUSES.filter(x => !cards.includes(x));
     cards = cards.map(c => (c.pact && !pacts ? null : c)).filter(Boolean);
     while (cards.length < 3 + up('cartes')) { const l = pool(); cards.push(l[Math.floor(Math.random() * l.length)]); }
+    if (ADV.run && this.surv) {
+      const sv = this.surv; sv.halts = (sv.halts || 0) + 1;
+      // Trousse de secours : +1 pansement à chaque halte ; Double choix : une halte sur deux (dès la 1re), 2 cartes
+      if (up('trousse')) { sv.shields++; this.floatText('+1 PANSEMENT', this.ball.x, this.ball.y - this.ball.r - 10, '#8ae0ff'); }
+      sv.doublePick = !!up('double') && sv.halts % 2 === 1;
+    }
     // dans l'oasis, ses cartes à elle
     if (ADV.run && this.surv && this.surv.world === 1) cards[0] = OASIS_CARDS[Math.floor(Math.random() * OASIS_CARDS.length)];
     return cards;
   };
 
+  // Double choix : après la 1re carte, on en reprend une parmi les autres
+  const oPick = App.pickCard;
+  App.pickCard = function (i) {
+    const g = this.game, sv = g && g.surv, c = this.cards && this.cards[i];
+    if (ADV.run && sv && sv.doublePick && c) {
+      sv.doublePick = false; g.applyBonus(c);
+      this.cards = this.cards.filter((_, k) => k !== i);
+      return this.show('cards');
+    }
+    return oPick.call(this, i);
+  };
+  const oCardsScr = App.scr_cards;
+  App.scr_cards = function () {
+    let h = oCardsScr.call(this);
+    const sv = this.game && this.game.surv;
+    if (ADV.run && sv) h = h.replace('· choisis un bonus', sv.doublePick ? '· ✌️ Double choix : prends 2 cartes !' : (up('double') && sv.halts % 2 === 1 ? '· ✌️ choisis ta 2e carte' : '· choisis un bonus'));
+    return h;
+  };
   const oSurv = App.startSurvival;
   App.startSurvival = function () { if (!ADV.run) { const w = Math.min(adv().sel, adv().unlocked, PLAYABLE - 1); ADV.run = { world: w, offset: startOf(w) }; ADV.lastY = 0; } return oSurv.call(this); };
   // --- Lancer une partie -------------------------------------------------------
@@ -7073,10 +7163,27 @@ if (SURVIVAL_ON) (() => {
     </div>`;
   };
   App.scr_competences = function () {
-    const pts = points();
+    const pts = points(), F = FAMS.find(f => f.id === ADV.tab) || FAMS[0];
+    const dots = (n, m) => `<div class="dots">${Array.from({ length: m }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>`;
+    const tabs = FAMS.map(f => { const sp = famSpent(f.id), st = UPS.find(u => u.fam === f.id && u.star), got = up(st.id);
+      return `<button class="btn ${f === F ? '' : 'ghost'} small skill-tab" data-adv="tab" data-u="${f.id}">${f.icon} ${f.name}<br><span class="tiny">${got ? '⭐ ✅' : `${Math.min(sp, STAR_NEED)}/${STAR_NEED} ⭐`}</span></button>`; }).join('');
+    const rows = UPS.filter(u => u.fam === F.id).map(u => {
+      const n = up(u.id), full = n >= u.max, cost = u.cost || 1;
+      if (u.star) {
+        const sp = famSpent(F.id), open = sp >= STAR_NEED, can = open && !full && pts >= cost;
+        return `<div class="up star ${open ? '' : 'lockd'}"><span class="ic">${u.icon}</span><div style="flex:1"><b class="gold">⭐ ${u.name}</b> <span class="tiny">${cost} points</span><div class="tiny">${u.desc}</div>
+          ${full ? '<div class="tiny gold">✅ Débloquée !</div>' : `<div class="tiny gold">${open ? `Prête : ${cost} points` : `🔒 Mets ${STAR_NEED} points dans ${F.name} : ${Math.min(sp, STAR_NEED)}/${STAR_NEED}`}</div>
+          <div class="bar6"><div style="width:${Math.min(100, sp / STAR_NEED * 100)}%"></div></div>`}</div>
+          ${full ? '<span class="tiny">MAX</span>' : open ? `<button class="btn ${can ? '' : 'ghost'}" data-adv="buy" data-u="${u.id}" ${can ? '' : 'disabled'}>+${cost}</button>` : '<span class="tiny">🔒</span>'}</div>`;
+      }
+      return `<div class="up ${!pts && !full ? 'lockd' : ''}"><span class="ic">${u.icon}</span><div style="flex:1"><b>${u.name}</b> <span class="tiny">niv. ${n}/${u.max}</span><div class="tiny">${u.desc}</div><div class="tiny" style="color:#c8ff8a">${u.fx(n)}${full ? '' : ' → ' + u.fx(n + 1)}</div>${dots(n, u.max)}</div>${full ? '<span class="tiny">MAX</span>' : `<button class="btn ${pts ? '' : 'ghost'}" data-adv="buy" data-u="${u.id}" ${pts ? '' : 'disabled'}>+1</button>`}</div>`;
+    }).join('');
     return `<div class="screen">${head('Compétences', `<span class="seeds">🎯 ${pts} point${pts > 1 ? 's' : ''}</span>`)}
-      <div class="tiny center">1 point à chaque niveau. Les compétences ne servent que dans le mode aventure.</div>
-      ${UPS.map(u => { const n = up(u.id), full = n >= u.max; return `<div class="up ${!pts && !full ? 'lockd' : ''}"><span class="ic">${u.icon}</span><div><b>${u.name}</b> <span class="tiny">niv. ${n}/${u.max}</span><div class="tiny">${u.desc}</div><div class="tiny" style="color:#c8ff8a">${u.fx(n)}${full ? '' : ' → ' + u.fx(n + 1)}</div></div>${full ? '<span class="tiny">MAX</span>' : `<button class="btn ${pts ? '' : 'ghost'}" data-adv="buy" data-u="${u.id}" ${pts ? '' : 'disabled'}>+1</button>`}</div>`; }).join('')}
+      <div class="tiny center">1 point à chaque niveau, +1 la première fois que tu termines un monde.<br>Choisis ton style : chaque famille a sa grande compétence ⭐.</div>
+      <div class="skill-tabs">${tabs}</div>
+      <div class="tiny center" style="color:${F.col};margin:var(--u) 0">${F.icon} ${F.name} : tout pour tenir contre ${F.sub}</div>
+      <div class="col" style="gap:calc(var(--u)*1.5)">${rows}</div>
+      ${spent() ? '<button class="btn ghost small" data-adv="respec" style="margin-top:calc(var(--u)*2)">↺ Redistribuer mes points (gratuit)</button>' : ''}
     </div>`;
   };
   App.scr_advrecords = async function () {
@@ -7101,7 +7208,7 @@ if (SURVIVAL_ON) (() => {
       const p = prof(), cd = a.coins && a.coins.day === this.today ? a.coins : (a.coins = { day: this.today, n: 0 });
       const coins = Math.max(0, Math.min(COINS.max - cd.n, (cd.n ? 0 : COINS.first) + Math.floor(gained / COINS.per)));
       cd.n += coins; p.coins += coins; r.coins = coins;
-      r.adv = { gained, from, w, wb, before, after: levelOf(a.xp).L, rec, newWorld: w > from, left: Math.max(0, Math.ceil((yEnd(wb) - y) / 10)), coins, today: cd.n };
+      r.adv = { gained, from, w, wb, before, after: levelOf(a.xp).L, rec, newWorld: w > from, left: Math.max(0, Math.ceil((yEnd(wb) - y) / 10)), coins, today: cd.n, wp: (ADV.run && ADV.run.wp) || 0 };
       Store.save();
     }
     const x = r.adv, l = levelOf(a.xp), end = x.w >= PLAYABLE, W1 = WORLDS[x.wb], N = WORLDS[x.wb + 1];
@@ -7113,7 +7220,7 @@ if (SURVIVAL_ON) (() => {
         : x.newWorld ? `<div class="next">🎉 <b>Monde ${x.w + 1} débloqué : ${WORLDS[x.w].name}</b> ! Tu peux maintenant y commencer directement.</div>`
         : `<div class="next">🏁 Plus que <b>${fmt(x.left)}</b> avant ${N && !N.soon ? `<b>${N.icon} ${N.name}</b>` : 'la fin des mondes jouables'} !</div>`}
       <div class="panel"><div class="lvl"><span class="n">Niv. ${x.before}${x.after > x.before ? ' → ' + x.after : ''}</span><div class="bar"><div style="width:${Math.round(l.cur * 100 / l.next)}%"></div><span>${l.cur} / ${l.next} XP</span></div></div>
-        <div class="tiny" style="margin-top:var(--u);color:#c8ff8a">+${x.gained} XP${x.after > x.before ? ` · ⬆️ Niveau supérieur ! +${x.after - x.before} point${x.after - x.before > 1 ? 's' : ''} de compétence` : ''}</div></div>
+        <div class="tiny" style="margin-top:var(--u);color:#c8ff8a">+${x.gained} XP${x.after > x.before ? ` · ⬆️ Niveau supérieur ! +${x.after - x.before} point${x.after - x.before > 1 ? 's' : ''} de compétence` : ''}${x.wp ? ` · 🎯 +${x.wp} point${x.wp > 1 ? 's' : ''} : nouveau monde terminé !` : ''}</div></div>
       ${x.after >= PACT_LEVEL && x.before < PACT_LEVEL ? '<div class="unl"><div class="c">😈</div><div><b>Nouveau : les pactes !</b><div class="tiny">Des cartes très puissantes… avec une contrepartie. Elles peuvent maintenant sortir aux haltes.</div></div></div>' : ''}
       <div class="panel"><div class="tiny" style="color:#ffd25a">${x.coins ? `+${x.coins} 🟡` : '+0 🟡'} · ${x.today >= COINS.max ? `plafond du jour atteint (${COINS.max} 🟡), reviens demain !` : `${x.today} / ${COINS.max} 🟡 gagnées aujourd'hui dans l'aventure`}</div></div>
       <div class="panel"><table class="stats"><tr><td>Bonus pris</td><td class="taken">${(run.taken || []).join(' ') || '—'}</td></tr><tr><td>Objets avalés</td><td>${run.absorbed}</td></tr><tr><td>Temps</td><td>${fmtTime(run.time)}</td></tr></table></div>
@@ -7147,7 +7254,13 @@ if (SURVIVAL_ON) (() => {
     if (act === 'sel') { a.sel = +el.dataset.w; Store.save(); return App.show('aventure'); }
     if (act === 'skills') return App.show('competences');
     if (act === 'records') return App.show('advrecords');
-    if (act === 'buy') { const u = el.dataset.u, U = UPS.find(x => x.id === u); if (points() > 0 && up(u) < U.max) { a.spent[u] = up(u) + 1; Store.save(); } return App.show('competences'); }
+    if (act === 'buy') {
+      const u = el.dataset.u, U = UPS.find(x => x.id === u), cost = U.cost || 1;
+      if (points() >= cost && up(u) < U.max && (!U.star || famSpent(U.fam) >= STAR_NEED)) { a.spent[u] = up(u) + 1; Store.save(); }
+      return App.show('competences');
+    }
+    if (act === 'tab') { ADV.tab = el.dataset.u; return App.show('competences'); }
+    if (act === 'respec') { if (confirm('Reprendre tous tes points pour les placer autrement ?')) { a.spent = {}; Store.save(); } return App.show('competences'); }
     if (act === 'short') { a.short = !a.short; Store.save(); return App.show('aventure'); }
     if (act === 'xp') { a.xp += 300; Store.save(); return App.show('aventure'); }
     if (act === 'reset') { if (confirm('Remettre l\'aventure à zéro ?')) { const p = prof(); delete p.adv; Store.save(); } return App.show('aventure'); }
