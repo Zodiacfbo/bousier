@@ -456,6 +456,7 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .recap .rc-cmb { font-size:.7em; color:#9a8a9a; margin-top: calc(var(--u)*.8); }
 .recap .rc-cmb b { color: var(--fam); }
 .recap .rc-cmb.on { color: var(--fam); font-weight:bold; }
+.tipbox { font-size:.75em; background:#2a3a1a; box-shadow: inset 0 0 0 var(--u) #c8ff8a; color:#e8ffd0; padding: calc(var(--u)*2) calc(var(--u)*3); margin: calc(var(--u)*2) 0; text-align:left; }
 #hud-relics { position:absolute; right: calc(var(--u)*2); top: calc(var(--u)*25); font-size:.7em; letter-spacing:.1em; text-shadow: 0 1px 0 #000; }
 #hud-relics .combo { font-weight:bold; }
 #hud-beetle { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: .8em; }
@@ -3681,6 +3682,7 @@ class Game {
     for (const k in sv.fx) if ((sv.fx[k] -= TICK) <= 0) {
       delete sv.fx[k];
       if (k === 'pacteGeant' || k === 'mystereInv') this.mirror = false;
+      if (this.quietFx && BONUS[k]) this.floatText('FIN : ' + BONUS[k].name.toUpperCase(), this.ball.x, this.ball.y - this.ball.r - 16, '#e8dce8');
     }
     // la faim : la boule fond doucement, de plus en plus vite
     const hunger = (0.9 + sv.dist / 1800) * sv.hunger * (sv.fx.pacteFeu ? 2 : 1);
@@ -3757,7 +3759,7 @@ class Game {
     const ctx = this.ctx, sv = this.surv, b = this.ball;
     // effets actifs (en haut à gauche) et pansements
     let y = 48 + (this.st || 0);
-    for (const [k, left] of Object.entries(sv.fx)) {
+    if (!this.quietFx) for (const [k, left] of Object.entries(sv.fx)) {
       const bon = BONUS[k]; if (!bon) continue;
       drawText(ctx, `${bon.name.toUpperCase().slice(0, 14)} ${Math.ceil(left)}`, 4, y, bon.pact ? '#ff9ad8' : '#c8ff8a', 1, '#1d1416');
       y += 8;
@@ -6978,6 +6980,7 @@ if (SURVIVAL_ON) (() => {
   const oStart = Game.prototype.start;
   Game.prototype.start = function (config, opts) {
     oStart.call(this, config, opts);
+    this.quietFx = !!(this.surv && ADV.run);  // aventure : le détail des bonus est à la pause
     showRelics(this);
     if (!this.surv || !ADV.run) return;
     const sv = this.surv, w = ADV.run.world, b = this.ball;
@@ -7036,7 +7039,8 @@ if (SURVIVAL_ON) (() => {
     oBump.call(this, o, dx, dy, d);
     if (ADV.run && sv && o.def && o.def.hazard && b.area < before) {
       const rl = sv.relics || [];
-      const k = (1 - 0.1 * up('carapace')) * (rl.includes('coquille') ? 0.85 : 1) * (combo(sv, 'costaud') ? 0.75 : 1);
+      // les protections s'additionnent, mais un animal fait toujours au moins 30 % de ses dégâts
+      const k = Math.max(0.3, (1 - 0.1 * up('carapace')) * (rl.includes('coquille') ? 0.85 : 1) * (combo(sv, 'costaud') ? 0.75 : 1));
       b.area = before - (before - b.area) * k;
     }
   };
@@ -7051,8 +7055,7 @@ if (SURVIVAL_ON) (() => {
   function showRelics(g) {
     let el = document.getElementById('hud-relics');
     if (!el) { el = document.createElement('div'); el.id = 'hud-relics'; document.getElementById('hud').appendChild(el); }
-    const sv = g && g.surv && ADV.run ? g.surv : null, rl = (sv && sv.relics) || [];
-    el.innerHTML = rl.map(id => BONUS[id].icon).join('') + (sv ? FAMS.filter(f => combo(sv, f.id)).map(f => `<span class="combo" style="color:${f.col}">★</span>`).join('') : '');
+    el.innerHTML = '';  // (les reliques ne s'affichent plus en jeu : tout est à la pause)
   }
   const oStep = Game.prototype.stepSurvival;
   Game.prototype.stepSurvival = function (b) {
@@ -7228,10 +7231,21 @@ if (SURVIVAL_ON) (() => {
       return `<button class="card acard rar-${c.rar || 'c'} ${c.kind === 'relic' ? 'relic' : ''} ${c.pact ? 'pact' : ''}" data-a="pickcard" data-v="${i}" ${F ? `style="--fam:${F.col}"` : ''}>
         <span class="ico">${c.icon}</span><span class="txt"><span class="top"><b>${esc(c.name)}</b>${rar}</span><span class="eff">${esc(c.desc)}</span><span class="bot">${chip}${comboTxt}</span></span></button>`;
     };
-    const rl = sv.relics || [];
+    const rl = sv.relics || [], tips = adv().tips = adv().tips || {}, cs = this.cards || [];
+    // une seule fois : on explique ce qui est nouveau
+    const TIPS = [
+      ['combo', FAMS.some(f => combo(sv, f.id)), '★ Bravo, ton premier combo ! 3 reliques de la même famille donnent un bonus en plus. Tout est rappelé à la pause.'],
+      ['relic', cs.some(c => c.kind === 'relic'), '♾ Nouveau : les reliques ! Elles durent toute la partie et se cumulent. 3 de la même famille (même couleur) = un combo.'],
+      ['legend', cs.some(c => c.rar === 'l'), '✨ Une carte légendaire (cadre doré) : très rare et très forte !'],
+      ['rare', cs.some(c => c.rar === 'r' && !c.pact), '🔷 Une carte rare (cadre bleu) : plus forte que les autres.'],
+      ['pact', cs.some(c => c.pact), '😈 Un pacte : très puissant… mais avec un défaut. À toi de voir !'],
+    ];
+    const tip = TIPS.find(([id, show]) => show && !tips[id]);
+    if (tip) { tips[tip[0]] = 1; Store.save(); }
     return `<div class="screen center dim">
       <div class="title small">HALTE !</div>
       <div class="tiny">${Math.floor(sv.dist)} m parcourus · ${sub}</div>
+      ${tip ? `<div class="tipbox">${tip[2]}</div>` : ''}
       <div class="cards">${(this.cards || []).map(card).join('')}</div>
       ${rl.length ? `<div class="tiny" style="margin-top:calc(var(--u)*2)">Tes reliques : ${rl.map(id => BONUS[id].icon).join(' ')}</div>` : ''}
     </div>`;
@@ -7297,9 +7311,9 @@ if (SURVIVAL_ON) (() => {
       <div class="sv-title" style="margin-top:calc(var(--u)*6)">MODE AVENTURE</div><div class="sv-sub">Bienvenue, explorateur !</div>
       <div class="panel intro">
         <div class="r"><span class="i">🍽️</span><span><b>Ta boule fond sans arrêt</b><br>Mange pour survivre et roule le plus loin possible. La partie s'arrête quand il ne reste plus rien.</span></div>
-        <div class="r"><span class="i">🃏</span><span><b>Une halte tous les 250 m</b><br>Choisis un bonus parmi plusieurs cartes. Certaines sont risquées 😈</span></div>
+        <div class="r"><span class="i">🃏</span><span><b>Une halte tous les 250 m</b><br>Choisis une carte : un coup de pouce ⏱ pour quelques secondes, ou une relique ♾ pour toute la partie (3 de la même famille = un combo). Certaines sont risquées 😈. Tout est rappelé à la pause.</span></div>
         <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Au bout du désert, l'oasis… et d'autres encore. Une fois atteint, tu peux y commencer directement.</span></div>
-        <div class="r"><span class="i">📈</span><span><b>Tu progresses à chaque partie</b><br>Chaque mètre rapporte de l'XP. À chaque niveau, un point de compétence pour devenir plus fort.</span></div>
+        <div class="r"><span class="i">📈</span><span><b>Tu progresses à chaque partie</b><br>Chaque mètre rapporte de l'XP. À chaque niveau, un point de compétence à placer dans 3 familles : Gourmand, Costaud, Malin. Les niveaux débloquent aussi de nouvelles cartes.</span></div>
         <div class="r"><span class="i">🎲</span><span><b>Ne compte pas au classement</b><br>Joue autant que tu veux : c'est aussi le meilleur entraînement pour la dune du jour !</span></div>
       </div>
       <button class="btn big" data-adv="introok">C'est parti !</button>
