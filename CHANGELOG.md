@@ -7,7 +7,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
-## v1.23.6 — Aventure : pièces plafonnées, cactus avalable (dev seulement) (7 novembre 2026)
+## v1.23.6 — L'aventure au complet (dev seulement) (8 novembre 2026)
 - Aventure : plus d'événements surprise (ils restent dans la dune du jour).
 - Aventure : une météo fixe par monde (désert : canicule, oasis : grand calme, rivière : averse), au lieu d'un tirage au hasard.
   La canicule du désert ne fait que le look (pas de rétrécissement ni de vitesse en plus : la faim suffit).
