@@ -28,7 +28,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Aventure : annonces des mondes simplifiées (règle, animal dangereux, météo) ; au compte à rebours, « ÉVITE LES ANIMAUX ! »
   au lieu de « VISE LE TERRIER AU BOUT ! » (il n'y a pas de terrier dans l'aventure).
 - Aventure : mode vraiment solo, sans classement (plus de bouton Records ni de « Les plus loin ») ; « ⭐ Ton record » s'affiche
-  sous le niveau ; présentation : « Ton aventure à toi ». Plus de records par monde (carte : « terminé » / « à découvrir »).
+  sous le niveau ; présentation : « Ton aventure à toi ». Plus de records par monde (carte : « terminé » / « en cours »).
 - Menu de l'aventure : haut fixé (titre, « ? », barre de niveau) ; seuls la carte et l'entraînement défilent. Grand titre retiré.
 - Aventure : la Boule fantôme n'est plus une carte (trop faible face à la Boule rebondissante) ; son effet reste dans l'Étoile filante.
 - Aventure : tube mystère pris à une halte → écran de révélation (bon effet en vert, mauvaise surprise en rouge) avant de repartir.

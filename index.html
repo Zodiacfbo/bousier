@@ -7413,7 +7413,7 @@ if (SURVIVAL_ON) (() => {
       // un monde pas encore atteint garde son nom secret
       const ic = !W0 ? '❓' : done || cur ? W0.icon : W0.soon ? '🚧' : '🔒';
       const nm = W0 && (done || cur) ? W0.name : '???';
-      const sub = !W0 ? '🔒' : done ? '✅ terminé' : cur ? '📍 à découvrir' : W0.soon ? 'bientôt' : '';
+      const sub = !W0 ? '🔒' : done ? '✅ terminé' : cur ? '📍 en cours' : W0.soon ? 'bientôt' : '';
       // un monde atteint se touche pour en faire le départ
       const pick = W0 && !W0.soon && i <= a.unlocked, isSel = pick && i === Math.min(a.sel || 0, a.unlocked);
       return `<div class="node ${st} ${pick ? 'pick' : ''} ${isSel ? 'sel' : ''}" style="left:${x}%;top:${y}%" ${pick ? `data-adv="sel" data-w="${i}"` : ''}>${isSel && a.unlocked > 0 ? '<span class="dep">DÉPART</span>' : ''}<div class="ic">${ic}</div><b>${nm}</b><i>${sub}</i></div>`;
