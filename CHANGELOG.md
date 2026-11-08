@@ -26,6 +26,8 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Aventure, cartes plus lisibles : nom, effet en une phrase, et une seule pastille (⏱ durée, ⚡ tout de suite, ♾ toute la partie) ;
   rareté au cadre (gris, bleu, doré). Pause : récapitulatif de la partie (pansements, vies en plus, coups de pouce en cours
   avec les secondes restantes, reliques et combos avec leur effet). Les cartes rappellent aussi l'effet du combo (« Armure 2/3 : … »).
+- Aventure, mots : « Cartes prises », « Coups de pouce durables », relique « Boîte de pansements », « Ne compte pas pour la dune du jour »,
+  « Bienvenue dans l'aventure ! », objets à débloquer « dans l'aventure » (plus « La Grande Fuite »).
 - Aventure, lisibilité : plus de liste de bonus ni d'icônes de reliques pendant la course (tout est à la pause), message
   « FIN : … » quand un coup de pouce se termine ; bulles de découverte (une seule fois) pour les reliques, raretés, pactes et le
   premier combo ; présentation de l'aventure mise à jour. Les animaux font toujours au moins 30 % de leurs dégâts.

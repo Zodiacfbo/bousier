@@ -1711,8 +1711,8 @@ const UNLOCKS = {
   'title:derniere': { secret: true, how: 'Le terrier au dernier essai, après avoir raté tous les autres', prog: p => [counter(p, 'lastchance'), 1] },
   'title:vege': { secret: true, how: 'Le terrier sans avaler ni feuille ni cactus', prog: p => [counter(p, 'vege'), 1] },
   'title:mois1': { how: 'Joué pendant le premier mois de Bousier', prog: p => [counter(p, 'mois1'), 1] },
-  'hat:bandana': { text: 'Parcours 1 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 1000] },
-  'trail:survivant': { text: 'Parcours 2 000 m dans La Grande Fuite', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 2000] },
+  'hat:bandana': { text: 'Parcours 1 000 m dans l\'aventure', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 1000] },
+  'trail:survivant': { text: 'Parcours 2 000 m dans l\'aventure', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 2000] },
 };
 for (const key in UNLOCKS) { const [type, id] = key.split(':'); Object.assign(COSMETICS[type].find(c => c.id === id), UNLOCKS[key]); }
 function unlockReached(p, item) {
@@ -6563,7 +6563,7 @@ if (SURVIVAL_ON) (() => {
     { id: 'bouclier', fam: 'costaud', icon: '🩹', name: 'Pansements de départ', desc: 'Au départ et à chaque nouveau monde', max: 3, fx: n => `${n} pansement${n > 1 ? 's' : ''}` },
     { id: 'trousse', fam: 'costaud', star: true, cost: 3, max: 1, icon: '🧰', name: 'Trousse de secours', desc: '+1 pansement à chaque halte' },
     { id: 'cartes', fam: 'malin', icon: '🃏', name: 'Cartes en plus', desc: 'Plus de cartes à chaque halte', max: 2, fx: n => `${3 + n} cartes` },
-    { id: 'durable', fam: 'malin', icon: '⏱️', name: 'Bonus durables', desc: 'Les bonus durent plus longtemps', max: 5, fx: n => `+${n * 20} %` },
+    { id: 'durable', fam: 'malin', icon: '⏱️', name: 'Coups de pouce durables', desc: 'Les coups de pouce durent plus longtemps', max: 5, fx: n => `+${n * 20} %` },
     { id: 'double', fam: 'malin', star: true, cost: 3, max: 1, icon: '✌️', name: 'Double choix', desc: 'Une halte sur deux, tu prends 2 cartes' },
   ];
   const STAR_NEED = 6;
@@ -7152,7 +7152,7 @@ if (SURVIVAL_ON) (() => {
     { id: 'gourde', fam: 'gourmand', icon: '🥤', name: 'Gourde', desc: 'La faim monte 15 % moins vite', rar: 'c' },
     { id: 'piquenique', fam: 'gourmand', icon: '🧺', name: 'Pique-nique', desc: '+20 % de taille à chaque halte', rar: 'r', lvl: 5 },
     { id: 'coquille', fam: 'costaud', icon: '🐚', name: 'Coquille', desc: 'Les animaux font 15 % moins mal', rar: 'c' },
-    { id: 'kit', fam: 'costaud', icon: '💊', name: 'Kit de soin', desc: '+1 pansement toutes les 2 haltes', rar: 'c' },
+    { id: 'kit', fam: 'costaud', icon: '💊', name: 'Boîte de pansements', desc: '+1 pansement toutes les 2 haltes', rar: 'c' },
     { id: 'piquants', fam: 'costaud', icon: '🦔', name: 'Piquants', desc: 'Un animal qui te touche fuit sans faire mal (1 fois toutes les 20 s)', rar: 'r', lvl: 5 },
     { id: 'trefle', fam: 'malin', icon: '🍀', name: 'Trèfle', desc: 'Les cartes rares et légendaires sortent 2× plus', rar: 'c' },
     { id: 'sablier', fam: 'malin', icon: '⏳', name: 'Sablier', desc: 'Les coups de pouce durent 30 % de plus', rar: 'c' },
@@ -7308,13 +7308,13 @@ if (SURVIVAL_ON) (() => {
   App.scr_aventure = function () {
     const a = adv(), sel = Math.min(a.sel, a.unlocked, PLAYABLE - 1);
     if (!a.introSeen || ADV.intro) return `<div class="screen">
-      <div class="sv-title" style="margin-top:calc(var(--u)*6)">MODE AVENTURE</div><div class="sv-sub">Bienvenue, explorateur !</div>
+      <div class="sv-title" style="margin-top:calc(var(--u)*6)">MODE AVENTURE</div><div class="sv-sub">Bienvenue dans l'aventure !</div>
       <div class="panel intro">
         <div class="r"><span class="i">🍽️</span><span><b>Ta boule fond sans arrêt</b><br>Mange pour survivre et roule le plus loin possible. La partie s'arrête quand il ne reste plus rien.</span></div>
         <div class="r"><span class="i">🃏</span><span><b>Une halte tous les 250 m</b><br>Choisis une carte : un coup de pouce ⏱ pour quelques secondes, ou une relique ♾ pour toute la partie (3 de la même famille = un combo). Certaines sont risquées 😈. Tout est rappelé à la pause.</span></div>
         <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Au bout du désert, l'oasis… et d'autres encore. Une fois atteint, tu peux y commencer directement.</span></div>
         <div class="r"><span class="i">📈</span><span><b>Tu progresses à chaque partie</b><br>Chaque mètre rapporte de l'XP. À chaque niveau, un point de compétence à placer dans 3 familles : Gourmand, Costaud, Malin. Les niveaux débloquent aussi de nouvelles cartes.</span></div>
-        <div class="r"><span class="i">🎲</span><span><b>Ne compte pas au classement</b><br>Joue autant que tu veux : c'est aussi le meilleur entraînement pour la dune du jour !</span></div>
+        <div class="r"><span class="i">🎲</span><span><b>Ne compte pas pour la dune du jour</b><br>Joue autant que tu veux : ton record a son propre classement (🏆 Records). C'est aussi un bon entraînement !</span></div>
       </div>
       <button class="btn big" data-adv="introok">C'est parti !</button>
     </div>`;
@@ -7413,7 +7413,7 @@ if (SURVIVAL_ON) (() => {
       ${Object.keys(CARD_UNLOCKS).map(Number).filter(L => L !== PACT_LEVEL && L > x.before && L <= x.after).map(L => `<div class="unl"><div class="c">🆕</div><div><b>Niveau ${L} : ${CARD_UNLOCKS[L]} !</b><div class="tiny">Elles peuvent maintenant sortir aux haltes.</div></div></div>`).join('')}
       ${x.after >= PACT_LEVEL && x.before < PACT_LEVEL ? '<div class="unl"><div class="c">😈</div><div><b>Nouveau : les pactes !</b><div class="tiny">Des cartes très puissantes… avec une contrepartie. Elles peuvent maintenant sortir aux haltes.</div></div></div>' : ''}
       <div class="panel"><div class="tiny" style="color:#ffd25a">${x.coins ? `+${x.coins} 🟡` : '+0 🟡'} · ${x.today >= COINS.max ? `plafond du jour atteint (${COINS.max} 🟡), reviens demain !` : `${x.today} / ${COINS.max} 🟡 gagnées aujourd'hui dans l'aventure`}</div></div>
-      <div class="panel"><table class="stats"><tr><td>Bonus pris</td><td class="taken">${(run.taken || []).join(' ') || '—'}</td></tr><tr><td>Objets avalés</td><td>${run.absorbed}</td></tr><tr><td>Temps</td><td>${fmtTime(run.time)}</td></tr></table></div>
+      <div class="panel"><table class="stats"><tr><td>Cartes prises</td><td class="taken">${(run.taken || []).join(' ') || '—'}</td></tr><tr><td>Objets avalés</td><td>${run.absorbed}</td></tr><tr><td>Temps</td><td>${fmtTime(run.time)}</td></tr></table></div>
       <div class="col"><button class="btn big" data-adv="play">Rejouer</button>${points() ? `<button class="btn" data-adv="skills">🎯 Placer mes points (${points()})</button>` : ''}<button class="btn ghost" data-adv="hub">Menu de l'aventure</button></div>
     </div>`;
   };
