@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.25.1 — Aventure : accueil plus court, texte de la news (9 novembre 2026)
+- Aventure : l'écran d'accueil passe de six blocs à trois (Survivre, Choisir tes bonus, Finir le monde), avec le but
+  en sous-titre : « Traverse chaque monde sans que ta boule disparaisse ! ».
+- News de l'aventure : « bats ton record » devient « va le plus loin possible ».
+
 ## v1.25.0 — Aventure : un monde par partie (9 novembre 2026)
 - Aventure : chaque partie se joue dans un seul monde, avec une ligne d'arrivée en damier au bout (plus de transition,
   de panneau ni de portique entre les mondes : chaque monde garde son sol et ses objets jusqu'au bout).

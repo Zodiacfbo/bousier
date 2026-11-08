@@ -1771,7 +1771,7 @@ const SECRET_COUNT = Object.values(UNLOCKS).filter(u => u.secret).length;
 // La première entrée est la plus récente : elle s'affiche une fois sur l'accueil
 // des joueurs qui ne l'ont pas encore vue.
 const CHANGELOG = [
-  { v: 13.5, date: '2026-11-09', items: ['🗺️ Nouveau : le mode Aventure ! Au bout du désert, d\'autres mondes t\'attendent… mais ta boule fond à chaque mètre ! Choisis tes bonus aux haltes, débloque des compétences et bats ton record. Bouton 🗺️ AVENTURE à l\'accueil.', '🎲 L\'entraînement aléatoire est maintenant dans le menu de l\'Aventure.', '🐞 C\'est tout neuf : si tu vois un bug, dis-le-moi avec le bouton 💡 en haut de l\'accueil. Merci !'] },
+  { v: 13.5, date: '2026-11-09', items: ['🗺️ Nouveau : le mode Aventure ! Au bout du désert, d\'autres mondes t\'attendent… mais ta boule fond à chaque mètre ! Choisis tes bonus aux haltes, débloque des compétences et va le plus loin possible. Bouton 🗺️ AVENTURE à l\'accueil.', '🎲 L\'entraînement aléatoire est maintenant dans le menu de l\'Aventure.', '🐞 C\'est tout neuf : si tu vois un bug, dis-le-moi avec le bouton 💡 en haut de l\'accueil. Merci !'] },
   { v: 14, date: '2026-11-20', items: ['🎂 Bousier a 1 mois ! Merci à tous ceux qui roulent depuis le début : un gâteau vous attend sur la dune du jour, et un petit cadeau pour les fidèles du premier mois.'] },
   { v: 13, date: '2099-01-01',  // en pause avec la boutique de la semaine
     items: ['⭐ Nouveau dans 🎨 Style : la boutique de la semaine ! Chaque lundi, 3 objets introuvables ailleurs, dont un rare. Ils reviendront… un jour. Peut-être.'] },
@@ -7469,14 +7469,12 @@ if (SURVIVAL_ON) (() => {
   App.scr_aventure = function () {
     const a = adv(), sel = Math.min(a.sel, a.unlocked, PLAYABLE - 1);
     if (!a.introSeen || ADV.intro) return `<div class="screen">
-      <div class="sv-title" style="margin-top:calc(var(--u)*6)">MODE AVENTURE</div><div class="sv-sub">Bienvenue dans l'aventure !</div>
+      <div class="sv-title" style="margin-top:calc(var(--u)*6)">MODE AVENTURE</div><div class="sv-sub">Traverse chaque monde sans que ta boule disparaisse !</div>
       <div class="panel intro">
-        <div class="r"><span class="i">🍽️</span><span><b>Ta boule fond sans arrêt</b><br>Mange pour survivre et roule le plus loin possible. Si ta boule arrive à 0, la partie s'arrête.</span></div>
-        <div class="r"><span class="i">🃏</span><span><b>Une halte tous les 250 m</b><br>Choisis une carte : un coup de pouce ⏱ pour quelques secondes, ou une relique ♾ pour toute la partie (3 de la même famille = un combo). Certaines sont risquées 😈. Un récapitulatif de tes bonus est disponible quand tu mets pause (II).</span></div>
-        <div class="r"><span class="i">⚠️</span><span><b>Un animal dangereux par monde</b><br>Dans chaque monde, un animal fait rétrécir ta boule. Impossible de le manger : évite-le !</span></div>
-        <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Passe la ligne d'arrivée du désert pour ouvrir le monde suivant. Chaque monde se joue en une partie : tu y repars de zéro.</span></div>
-        <div class="r"><span class="i">📈</span><span><b>Tu progresses à chaque partie</b><br>Chaque mètre rapporte de l'XP. À chaque niveau, un point de compétence à placer dans 3 familles : Gourmand, Costaud, Malin. Les niveaux débloquent aussi de nouvelles cartes.</span></div>
-        <div class="r"><span class="i">🎲</span><span><b>Ton aventure à toi</b><br>Pas de classement : joue à ton rythme et bats ton propre record. Ça ne compte pas pour la dune du jour.</span></div>
+        <div class="r"><span class="i">🍽️</span><span><b>Survivre</b><br>Ta boule fond sans arrêt : mange pour la garder en vie. Évite l'animal dangereux de chaque monde.</span></div>
+        <div class="r"><span class="i">🃏</span><span><b>Choisir tes bonus</b><br>Tous les 250 m, une halte : pioche une carte qui t'aide quelques secondes ou toute la partie.</span></div>
+        <div class="r"><span class="i">🏁</span><span><b>Finir le monde</b><br>Passe la ligne d'arrivée pour ouvrir le monde suivant. À chaque partie, tu gagnes de l'XP et des points de compétence.</span></div>
+        <div class="tiny center" style="opacity:.8">Pas de classement : joue à ton rythme. Ça ne compte pas pour la dune du jour.</div>
       </div>
       <button class="btn big" data-adv="introok">C'est parti !</button>
     </div>`;
