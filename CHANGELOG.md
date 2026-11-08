@@ -25,7 +25,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   partie d'entraînement « avec les règles de la dune du jour ».
   Étiquette « ▼ Tes mondes et l'entraînement plus bas » qui disparaît en bas. Le départ se choisit en touchant un monde atteint
   sur la carte (étiquette « DÉPART ») ; ROULER ! rappelle « départ : … · touche un monde pour changer ».
-- News du 9 novembre : « 🗺️ Nouveau : le mode Aventure ! … ».
+- News du 9 novembre : « 🗺️ Nouveau : le mode Aventure ! … » et « 🎲 L'entraînement aléatoire est maintenant dans le menu de l'Aventure. »
 - Contenu : tout ce qui est décrit dans les versions 1.23.x ci-dessous (mondes, difficulté, compétences, cartes, récompenses).
 - Dune du jour, à partir du 9 novembre : le cactus ne pique plus ; le titre « L'ami des cactus » compte les cactus avalés.
 
