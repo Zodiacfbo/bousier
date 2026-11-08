@@ -6561,8 +6561,13 @@ if (SURVIVAL_ON) (() => {
       let def = null;
       const rv = riverAt(o.y);
       if (o.def.hazard) def = rv && rng.chance(rv) ? D.croc : D.crabe;
-      else if (o.def.rock) { if (!rv) o.sprite = mossy(o.sprite); return o; }
-      else if (BIG_OASIS[o.def.id]) def = (rv && rng.chance(rv) ? BIG_RIVER : BIG_OASIS)[o.def.id];
+      else if (o.def.rock) {
+        // pas de rocher dans la rivière : il devient un objet qui flotte, de taille proche
+        // (4 sur 10 disparaissent, pour ne pas encombrer l'eau ; les gros varient entre poisson, radeau, barque et tronc)
+        if (rv && rng.chance(rv)) { if (rng.chance(0.4)) return null; def = o.r <= 5.2 ? D.coco : o.r <= 7 ? D.nenuphar : rng.pick([D.poisson, D.radeau, D.barque, D.tronc]); }
+        else { if (!rv) o.sprite = mossy(o.sprite); return o; }
+      }
+      else if (BIG_OASIS[o.def.id]) def = rng.pick(Object.values(rv && rng.chance(rv) ? BIG_RIVER : BIG_OASIS));
       else if (o.r <= 2.2) def = D.datte;
       else if (o.r <= 3.4) def = rng.chance(0.5) && !rv ? D.grenouille : D.datte;
       else if (o.r <= 5.2) def = D.coco;
@@ -6571,7 +6576,7 @@ if (SURVIVAL_ON) (() => {
       const n = mk(def, o.x, o.y), [L, R] = edge(o.y);
       n.x = n.x0 = Math.max(L + def.r + n.amp + 2, Math.min(R - def.r - n.amp - 2, o.x));
       return n;
-    });
+    }).filter(Boolean);
     // troncs d'arbre flottants (des objets : mangeables si la boule est assez grosse)
     for (let y = 400; y < c.len - 300; y += rng.range(240, 480)) {
       const t = riverAt(y);
