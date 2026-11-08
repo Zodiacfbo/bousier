@@ -2054,6 +2054,7 @@ const Store = {
       if (os.d0 && (!s.d0 || os.d0 < s.d0)) s.d0 = os.d0;
       s.clr = s.clr || {};
       for (const k in os.clr || {}) if (!s.clr[k] || os.clr[k].n < s.clr[k].n) s.clr[k] = os.clr[k];
+      s.wn = s.wn || {}; for (const k in os.wn || {}) s.wn[k] = Math.max(s.wn[k] || 0, os.wn[k]);
     }
     if (older.survival) m.survival = { best: Math.max((m.survival || {}).best || 0, older.survival.best || 0), runs: Math.max((m.survival || {}).runs || 0, older.survival.runs || 0) };
     if ((older.awardsDay || '') > (m.awardsDay || '')) m.awardsDay = older.awardsDay;
@@ -6683,7 +6684,6 @@ if (SURVIVAL_ON) (() => {
   const yEnd = w => (startOf(w + 1) - startOf(ADV.run.world)) * 10;
   const yStart = w => (startOf(w) - startOf(ADV.run.world)) * 10;
   const worldAtY = y => { for (let i = ADV.run.world; i < PLAYABLE; i++) if (y < yEnd(i)) return i; return PLAYABLE; };
-  const transLen = w => Math.min(2000, len(w) * 10 * 0.6);  // zone de transition : 200 m
 
   // --- La dune : objets, flaques et repères du monde suivant -----------------
   const oGen = window.generateSurvivalCourse;
@@ -6693,19 +6693,12 @@ if (SURVIVAL_ON) (() => {
     c.events = [];  // pas d'événements surprise dans l'aventure (ils restent dans la dune du jour)
     const rng = makeRng((seed ^ 0xa5a5) >>> 0), w0 = ADV.run.world;
     // part du monde « oasis » à la hauteur y : 0 dans le désert, monte dans la transition, 1 dans l'oasis
-    const oasisAt = y => {
-      if (w0 >= 1) return 1;
-      const b = yEnd(0), T = transLen(0);
-      return y >= b ? 1 : y <= b - T ? 0 : (y - (b - T)) / T;
-    };
+    // chaque partie se joue dans un seul monde (ligne d'arrivée au bout, pas de transition)
+    const oasisAt = y => (w0 >= 1 ? 1 : 0);
     const mk = (def, x, y) => ({ def, x, x0: x, y, r: def.r, sprite: def.sprite, dead: false, hitT: -9, phase: rng.range(0, 6.28),
       amp: def.move === 'side' ? rng.range(6, 14) : 0, w: def.move === 'side' ? rng.range(1, 2) : 0 });
     // part de la « rivière » à la hauteur y : 0 avant, monte dans la transition, 1 ensuite
-    const riverAt = y => {
-      if (w0 >= 2) return 1;
-      const b = yEnd(1), T = transLen(1);
-      return y >= b ? 1 : y <= b - T ? 0 : (y - (b - T)) / T;
-    };
+    const riverAt = y => (w0 >= 2 ? 1 : 0);
     const edge = y => [c.Lx[Math.max(0, Math.min(c.len - 1, y | 0))], c.Rx[Math.max(0, Math.min(c.len - 1, y | 0))]];
     c.objects = c.objects.map(o => {
       if (o.def.id === 'cactus') o.def = CACTUS_SOFT;  // en aventure, le cactus ne pique pas : c'est un objet comme les autres
@@ -6786,9 +6779,9 @@ if (SURVIVAL_ON) (() => {
     return c;
   };
 
-  const oasisFrac = y => { if (!ADV.run) return 0; if (ADV.run.world !== 0 || worldAtY(y) >= 1) return 1; const b = yEnd(0), T = transLen(0); return y <= b - T ? 0 : (y - (b - T)) / T; };
+  const oasisFrac = y => (ADV.run && ADV.run.world >= 1 ? 1 : 0);
   const isOasisAt = y => { const t = oasisFrac(y); return t >= 1 || (t > 0 && ((((y | 0) * 7919) % 100 + 100) % 100) / 100 < t); };
-  const riverFrac = y => { if (!ADV.run) return 0; if (ADV.run.world >= 2 || worldAtY(y) >= 2) return 1; const b = yEnd(1), T = transLen(1); return y <= b - T ? 0 : (y - (b - T)) / T; };
+  const riverFrac = y => (ADV.run && ADV.run.world >= 2 ? 1 : 0);
   const isRiverAt = y => { const t = riverFrac(y); return t >= 1 || (t > 0 && ((((y | 0) * 6007) % 100 + 100) % 100) / 100 < t); };
   // le courant : sens qui alterne tous les ~280 m ; fort au milieu de la rivière, calme près des berges
   const hash2 = (a, b) => ((Math.imul(a * 73856093 ^ b * 19349663, 2654435761) >>> 0) >>> 8) % 1000;
@@ -6812,14 +6805,7 @@ if (SURVIVAL_ON) (() => {
   };
   Game.prototype.palAt = function (wy) {
     if (!ADV.run || !this.surv || !this.advPals) return this.pal;
-    const w = Math.min(worldAtY(wy), PLAYABLE - 1), b = yEnd(w), T = transLen(w);
-    if (w + 1 < PLAYABLE && wy > b - T) {
-      const t = Math.round(((wy - (b - T)) / T) * 8) / 8;  // fondu en 8 paliers, façon pixel
-      const a = this.advPals[w], z = this.advPals[w + 1], o = {};
-      for (const key of KEYS) o[key] = pack(mixRgb(a[key], z[key], t));
-      return o;
-    }
-    return this.advPacked[w];
+    return this.advPacked[Math.min(ADV.run.world, PLAYABLE - 1)];  // un seul monde par partie
   };
   Game.prototype.drawBackground = function (camY) {
     const buf = this.buf, H = this.H, Lx = this.course.Lx, Rx = this.course.Rx, len = this.course.len;
@@ -6953,28 +6939,13 @@ if (SURVIVAL_ON) (() => {
       ctx.fillStyle = '#bfe8ff'; const sh = Math.round(Math.sin(this.t * 2 + p.x) * 3);
       ctx.fillRect(Math.round(p.x - p.rx / 3 + sh), sy(p.y - p.ry / 2), 4, 1); ctx.fillRect(Math.round(p.x + p.rx / 4 - sh), sy(p.y + 1), 3, 1);
     }
-    // panneau puis porte vers le monde suivant
-    for (let w = ADV.run.world; w < PLAYABLE; w++) {
-      const next = WORLDS[w + 1]; if (!next || next.soon && w + 1 >= PLAYABLE) {
-        // fin des mondes jouables : une barrière « en construction »
-        const b = yEnd(w); if (b > camY - 20 && b < camY + H + 20) { const [L, R] = this.edge(b);
-          for (let x = L; x < R; x += 6) { ctx.fillStyle = ((x - L) / 6) % 2 ? '#1d1416' : '#ffd25a'; ctx.fillRect(Math.round(x), sy(b) - 3, 6, 4); }
-          drawText(ctx, 'EN CONSTRUCTION', W / 2, sy(b) - 12, '#ffd25a', 1, '#1d1416', 'center'); }
-        continue;
-      }
-      const b = yEnd(w), sgn = b - 900;
-      if (sgn > camY - 30 && sgn < camY + H + 30) {
-        const [L] = this.edge(sgn), x = Math.max(4, L - 2);
-        ctx.fillStyle = '#6b4226'; ctx.fillRect(x + 6, sy(sgn) - 2, 2, 12);
-        ctx.fillStyle = '#c99a5a'; ctx.fillRect(x, sy(sgn) - 9, 34, 9); ctx.fillStyle = '#6b4226'; ctx.fillRect(x, sy(sgn) - 9, 34, 1); ctx.fillRect(x, sy(sgn) - 1, 34, 1);
-        drawText(ctx, next.sign || next.up.replace('L\'', ''), x + 17, sy(sgn) - 7, '#3a2410', 1, null, 'center');
-      }
-      if (b > camY - 40 && b < camY + H + 40) {
-        const [L, R] = this.edge(b), top = sy(b) - 26;
-        for (const px of [L - 1, R - 5]) { ctx.fillStyle = '#6b4226'; ctx.fillRect(Math.round(px), top, 6, 28); ctx.fillStyle = '#8f5a32'; ctx.fillRect(Math.round(px) + 1, top, 2, 28); ctx.fillStyle = '#5f9e3f'; ctx.fillRect(Math.round(px) - 2, top - 3, 10, 4); }
-        ctx.fillStyle = '#c99a5a'; ctx.fillRect(Math.round(L), top, Math.round(R - L), 10); ctx.fillStyle = '#6b4226'; ctx.fillRect(Math.round(L), top + 9, Math.round(R - L), 1);
-        drawText(ctx, `MONDE ${w + 2} : ${next.sign || next.up}`, (L + R) / 2, top + 2, '#3a2410', 1, null, 'center');
-      }
+    // ligne d'arrivée au bout du monde de la partie (damier en travers de la piste)
+    const fb = yEnd(ADV.run.world);
+    if (fb > camY - 40 && fb < camY + H + 40) {
+      const [L, R] = this.edge(fb), y0 = sy(fb) - 8;
+      for (let r = 0; r < 2; r++) for (let x = L, k = 0; x < R; x += 4, k++) { ctx.fillStyle = (k + r) % 2 ? '#1d1416' : '#fff6e6'; ctx.fillRect(Math.round(x), y0 + r * 4, Math.min(4, Math.ceil(R - x)), 4); }
+      for (const px of [L - 3, R - 1]) { ctx.fillStyle = '#6b4226'; ctx.fillRect(Math.round(px), y0 - 18, 3, 26); ctx.fillStyle = '#ff5a4a'; ctx.fillRect(Math.round(px) + 3 * (px === L - 3 ? 1 : -3), y0 - 18, 8, 5); }
+      drawText(ctx, 'ARRIVEE', (L + R) / 2, y0 - 10, '#fff4a8', 1, '#1d1416', 'center');
     }
   };
 
@@ -7079,31 +7050,21 @@ if (SURVIVAL_ON) (() => {
     this.advPalettes(); this.setPalette(themeOf(w), this.wx);
     this.notice(`MONDE ${w + 1} : ${WORLDS[w].up}`, '#fff4a8', 2.5, 4);
     // toute première partie dans le désert : sa grande annonce (règle, animal, objets), une seule fois
-    if (w === 0 && !adv().seen0) {
-      adv().seen0 = 1; Store.save();
-      setTimeout(() => { if (App.game !== this || !this.surv) return; this.paused = true; ADV.welcome = 0; App.show('monde'); }, 60);
+    if (!adv()['seen' + w]) {
+      adv()['seen' + w] = 1; Store.save();
+      setTimeout(() => { if (App.game !== this || !this.surv) return; this.paused = true; ADV.welcome = w; App.show('monde'); }, 60);
     }
     setTimeout(() => { App.hud.tryEl.textContent = `MONDE ${w + 1} · ${WORLDS[w].short.toUpperCase()}`; App.hud.wx.textContent = this.wx.icon; }, 0);
   };
-  function enterWorld(g, w) {
-    const sv = g.surv, prev = WORLDS[sv.world];
-    sv.world = w;
-    const a = adv(), before = points();
-    a.unlocked = Math.max(a.unlocked, Math.min(w, PLAYABLE - 1)); a.cleared = Math.max(a.cleared || 0, w); Store.save();
-    if (points() > before) { g.floatText('+1 POINT !', g.ball.x, g.ball.y - g.ball.r - 18, '#c8ff8a'); if (ADV.run) ADV.run.wp = (ADV.run.wp || 0) + 1; }
-    // pansements de départ : aussi à chaque nouveau monde
-    if (up('bouclier') && w < PLAYABLE) sv.shields += up('bouclier');
-    if (w >= PLAYABLE) {
-      g.phase = 'miss'; g.phaseT = 0; g.alert = null;
-      g.notice('BIENTOT LA SUITE !', '#fff4a8', 3, 4); Sound.play('unlock');
-      return;
-    }
-    sv.hunger = sv.hunger / prev.hunger * WORLDS[w].hunger;
-    sv.speedPact = sv.speedPact / prev.speed * WORLDS[w].speed;
-    // la porte : pause, grande annonce, puis on repart dans le nouveau monde
-    g.paused = true; ADV.welcome = w;
-    Sound.play('unlock');
-    App.show('monde');
+  // ligne d'arrivée : le monde est terminé, la partie s'arrête (on repart de zéro dans le monde suivant)
+  function finishWorld(g) {
+    const sv = g.surv, w = ADV.run.world, a = adv(), before = points();
+    sv.won = true; sv.world = w + 1;
+    a.unlocked = Math.max(a.unlocked, Math.min(w + 1, PLAYABLE - 1)); a.cleared = Math.max(a.cleared || 0, w + 1); Store.save();
+    if (points() > before) { g.floatText('+1 POINT !', g.ball.x, g.ball.y - g.ball.r - 18, '#c8ff8a'); ADV.run.wp = (ADV.run.wp || 0) + 1; }
+    g.phase = 'miss'; g.phaseT = 0; g.alert = null;
+    g.notice('MONDE TERMINE !', '#fff4a8', 3, 4); Sound.play('unlock');
+    g.burst(g.ball.x, g.ball.y, 40, ['#ffd25a', '#ff6a8a', '#5ab4e6', '#9be27a', '#ffffff'], 140);
   }
   App.resumeWorld = function () {
     const g = this.game, w = ADV.welcome; ADV.welcome = null;
@@ -7202,8 +7163,7 @@ if (SURVIVAL_ON) (() => {
       }
     }
     if (!sv || !ADV.run || this.phase !== 'play' || this.paused) return;
-    const w = worldAtY(b.y);
-    if (w !== sv.world) enterWorld(this, w);
+    if (b.y >= yEnd(ADV.run.world)) finishWorld(this);
   };
   const oBonus = Game.prototype.applyBonus;
   Game.prototype.applyBonus = function (bon, fromTube) {
@@ -7420,7 +7380,7 @@ if (SURVIVAL_ON) (() => {
     if (!sv || !ADV.run) return;
     const T = trk(sv);
     if (b.r > T.maxR) T.maxR = b.r;
-    if (this.phase === 'miss' && !T.end) T.end = (sv.world || 0) >= PLAYABLE || b.area >= SURV.deathArea ? 'fin' : this.t - T.lastHit < 3 ? 'animal' : 'faim';
+    if (this.phase === 'miss' && !T.end) T.end = sv.won ? 'fini' : b.area >= SURV.deathArea ? 'fin' : this.t - T.lastHit < 3 ? 'animal' : 'faim';
   };
   const oHaltT = App.onHalt;
   App.onHalt = function (cards) {
@@ -7444,7 +7404,8 @@ if (SURVIVAL_ON) (() => {
       if (st.last !== today) { st.last = today; st.days = (st.days || 0) + 1; }
       const end = info.end || T.end || 'faim';
       if (end === 'abandon') st.ab = (st.ab || 0) + 1;
-      for (let i = info.from; i < Math.min(info.w, PLAYABLE); i++) if (!st.clr[i]) st.clr[i] = { n: st.n, d: today, L: info.L };
+      st.wn = st.wn || {}; st.wn[info.from] = (st.wn[info.from] || 0) + 1;  // parties jouées dans chaque monde
+      for (let i = info.from; i < Math.min(info.w, PLAYABLE); i++) if (!st.clr[i]) st.clr[i] = { n: st.n, k: st.wn[i] || 0, d: today, L: info.L };
       const e = {
         at: Date.now(), d: today, n: st.n, w0: info.from, w: Math.min(info.w, PLAYABLE), m: info.gained, wm: info.inWorld, end,
         L: info.L, xp: info.xp || 0, sk: { ...(a.spent || {}) }, s: Math.round(run.time || 0), obj: run.absorbed || 0,
@@ -7511,7 +7472,7 @@ if (SURVIVAL_ON) (() => {
         <div class="r"><span class="i">🍽️</span><span><b>Ta boule fond sans arrêt</b><br>Mange pour survivre et roule le plus loin possible. Si ta boule arrive à 0, la partie s'arrête.</span></div>
         <div class="r"><span class="i">🃏</span><span><b>Une halte tous les 250 m</b><br>Choisis une carte : un coup de pouce ⏱ pour quelques secondes, ou une relique ♾ pour toute la partie (3 de la même famille = un combo). Certaines sont risquées 😈. Un récapitulatif de tes bonus est disponible quand tu mets pause (II).</span></div>
         <div class="r"><span class="i">⚠️</span><span><b>Un animal dangereux par monde</b><br>Dans chaque monde, un animal fait rétrécir ta boule. Impossible de le manger : évite-le !</span></div>
-        <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Au bout du désert, d'autres mondes t'attendent… Une fois atteint, un monde devient un point de départ.</span></div>
+        <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Passe la ligne d'arrivée du désert pour ouvrir le monde suivant. Chaque monde se joue en une partie : tu y repars de zéro.</span></div>
         <div class="r"><span class="i">📈</span><span><b>Tu progresses à chaque partie</b><br>Chaque mètre rapporte de l'XP. À chaque niveau, un point de compétence à placer dans 3 familles : Gourmand, Costaud, Malin. Les niveaux débloquent aussi de nouvelles cartes.</span></div>
         <div class="r"><span class="i">🎲</span><span><b>Ton aventure à toi</b><br>Pas de classement : joue à ton rythme et bats ton propre record. Ça ne compte pas pour la dune du jour.</span></div>
       </div>
@@ -7589,31 +7550,31 @@ if (SURVIVAL_ON) (() => {
       const gained = Math.max(0, Math.floor(run.dist - (ADV.run ? ADV.run.offset : 0)));
       const before = levelOf(a.xp).L;
       const xp0 = a.xp; a.xp = Math.min(ADV_XP_CAP, a.xp + gained); const xpGot = a.xp - xp0;
-      const wb = Math.min(w, PLAYABLE - 1), inWorld = Math.floor((y - yStart(wb)) / 10);
+      const won = w > from, wb = won ? from : Math.min(w, PLAYABLE - 1), inWorld = Math.min(len(wb), Math.floor((y - yStart(wb)) / 10));
       const rec = inWorld > (a.best[wb] || 0); if (rec) a.best[wb] = inWorld;
       a.unlocked = Math.max(a.unlocked, Math.min(w, PLAYABLE - 1));
       const p = prof(), cd = a.coins && a.coins.day === this.today ? a.coins : (a.coins = { day: this.today, n: 0 });
       const coins = Math.max(0, Math.min(COINS.max - cd.n, (cd.n ? 0 : COINS.first) + Math.floor(gained / COINS.per)));
       cd.n += coins; p.coins += coins; r.coins = coins;
-      r.adv = { gained, from, w, wb, before, after: levelOf(a.xp).L, rec, newWorld: w > from, left: Math.max(0, Math.ceil((yEnd(wb) - y) / 10)), coins, today: cd.n, wp: (ADV.run && ADV.run.wp) || 0, xp: xpGot };
+      r.adv = { gained, from, w, wb, total: Math.floor(run.dist), before, after: levelOf(a.xp).L, rec, newWorld: won, left: Math.max(0, Math.ceil((yEnd(wb) - y) / 10)), coins, today: cd.n, wp: (ADV.run && ADV.run.wp) || 0, xp: xpGot };
       logRun({ from, w, gained, inWorld, L: before, xp: xpGot, coins });
       Store.save();
     }
-    const x = r.adv, l = levelOf(a.xp), end = x.w >= PLAYABLE, W1 = WORLDS[x.wb], N = WORLDS[x.wb + 1];
+    const x = r.adv, l = levelOf(a.xp), won = x.newWorld, end = won && x.w >= PLAYABLE, W1 = WORLDS[x.wb], N = WORLDS[x.wb + 1];
     return `<div class="screen">
-      <div class="result-head ${x.newWorld ? 'win' : 'lose'}"><div class="title small">MODE AVENTURE</div>
-        <div class="sv-sub">${end ? '🚧 Fin des mondes jouables !' : `${W1.icon} ${W1.name} · plus de boule !`}</div>
-        <div class="big-dist">${fmt(x.gained)}</div>${r.newRecord ? '<div class="badge-new">Nouveau record !</div>' : ''}</div>
-      ${end ? '<div class="next">🚧 Tu as atteint la fin des mondes jouables ! D\'autres mondes arrivent bientôt…</div>'
-        : x.newWorld ? `<div class="next">🎉 <b>Monde ${x.w + 1} débloqué : ${WORLDS[x.w].name}</b> ! Tu peux maintenant y commencer directement.</div>`
-        : `<div class="next">🏁 Plus que <b>${fmt(x.left)}</b> avant ${N && !N.soon ? (x.wb + 1 <= a.unlocked ? `<b>${N.icon} ${N.name}</b>` : '<b>le monde suivant</b>') : 'la fin des mondes jouables'} !</div>`}
+      <div class="result-head ${won ? 'win' : 'lose'}"><div class="title small">MODE AVENTURE</div>
+        <div class="sv-sub">${won ? `🏁 ${W1.icon} ${W1.name} : terminé !` : `${W1.icon} ${W1.name} · plus de boule !`}</div>
+        <div class="big-dist">${fmt(x.total ?? x.gained)}</div><div class="tiny">+${fmt(x.gained)} dans cette partie</div>${r.newRecord ? '<div class="badge-new">Nouveau record !</div>' : ''}</div>
+      ${end ? '<div class="next">🎉 Tu as terminé tous les mondes jouables ! D\'autres mondes arrivent bientôt…</div>'
+        : won ? `<div class="next">🎉 <b>Monde ${x.w + 1} débloqué : ${WORLDS[x.w].name}</b> ! Continue tout de suite, ou reviens plus tard : il t'attend sur la carte.</div>`
+        : `<div class="next">🏁 Plus que <b>${fmt(x.left)}</b> avant la ligne d'arrivée !</div>`}
       <div class="panel"><div class="lvl"><span class="n">Niv. ${x.before}${x.after > x.before ? ' → ' + x.after : ''}</span><div class="bar">${lvlBar(l)}</div></div>
         <div class="tiny" style="margin-top:var(--u);color:#c8ff8a">${l.max && !x.xp ? 'Niveau max pour l\'instant' : `+${x.xp ?? x.gained} XP`}${x.after > x.before ? ` · ⬆️ Niveau supérieur ! +${x.after - x.before} point${x.after - x.before > 1 ? 's' : ''} de compétence` : ''}${x.wp ? ` · 🎯 +${x.wp} point${x.wp > 1 ? 's' : ''} : nouveau monde terminé !` : ''}</div></div>
       ${Object.keys(CARD_UNLOCKS).map(Number).filter(L => L !== PACT_LEVEL && L > x.before && L <= x.after).map(L => `<div class="unl"><div class="c">🆕</div><div><b>Niveau ${L} : ${CARD_UNLOCKS[L]} !</b><div class="tiny">Elles peuvent maintenant sortir aux haltes.</div></div></div>`).join('')}
       ${x.after >= PACT_LEVEL && x.before < PACT_LEVEL ? '<div class="unl"><div class="c">😈</div><div><b>Nouveau : les pactes !</b><div class="tiny">Des cartes très puissantes… avec une contrepartie. Elles peuvent maintenant sortir aux haltes.</div></div></div>' : ''}
       <div class="panel"><div class="tiny" style="color:#ffd25a">${x.coins ? `+${x.coins} 🟡` : '+0 🟡'} · ${x.today >= COINS.max ? `plafond du jour atteint (${COINS.max} 🟡), reviens demain !` : `${x.today} / ${COINS.max} 🟡 gagnées aujourd'hui dans l'aventure`}</div></div>
       <div class="panel"><table class="stats"><tr><td>Cartes prises</td><td class="taken">${(run.taken || []).join(' ') || '—'}</td></tr><tr><td>Objets avalés</td><td>${run.absorbed}</td></tr><tr><td>Temps</td><td>${fmtTime(run.time)}</td></tr></table></div>
-      <div class="col"><button class="btn big" data-adv="play">Rejouer</button>${points() ? `<button class="btn" data-adv="skills">🎯 Placer mes points (${points()})</button>` : ''}<button class="btn ghost" data-adv="hub">Menu de l'aventure</button></div>
+      <div class="col">${won && !end ? `<button class="btn big" data-adv="next">Monde suivant ▶ <small>${WORLDS[x.w].icon} ${WORLDS[x.w].name} · tu repars de zéro</small></button>` : won ? '' : '<button class="btn big" data-adv="play">Rejouer</button>'}${points() ? `<button class="btn" data-adv="skills">🎯 Placer mes points (${points()})</button>` : ''}<button class="btn ghost" data-adv="hub">Menu de l'aventure</button></div>
     </div>`;
   };
   // accueil : les deux piliers
@@ -7639,6 +7600,7 @@ if (SURVIVAL_ON) (() => {
     if (act === 'introok') { ADV.intro = false; a.introSeen = true; Store.save(); return App.show('aventure'); }
     if (act === 'practice') { ADV.run = null; return App.startPractice(); }
     if (act === 'play') return play();
+    if (act === 'next') { const x = App.lastRes && App.lastRes.adv; a.sel = Math.min(a.unlocked, x ? x.w : a.unlocked); Store.save(); return play(); }
     if (act === 'resume') return App.resumeWorld();
     if (act === 'sel') { a.sel = +el.dataset.w; Store.save(); return App.show('aventure'); }
     if (act === 'skills') return App.show('competences');

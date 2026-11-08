@@ -7,6 +7,16 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.25.0 — Aventure : un monde par partie (9 novembre 2026)
+- Aventure : chaque partie se joue dans un seul monde, avec une ligne d'arrivée en damier au bout (plus de transition,
+  de panneau ni de portique entre les mondes : chaque monde garde son sol et ses objets jusqu'au bout).
+- Ligne franchie : « 🏁 … terminé ! », monde suivant débloqué, puis « Monde suivant ▶ » (nouvelle partie : on repart de
+  zéro, sans reliques) ou « Menu de l'aventure ». Après la rivière : « Tu as terminé tous les mondes jouables ! ».
+- Le compteur de distance (et « Ton record ») continue d'un monde à l'autre (l'oasis démarre à 2 500 m).
+- La grande annonce de chaque monde s'affiche la première fois qu'on y joue. Présentation de l'aventure mise à jour.
+- Suivi : nouvelle cause de fin « fini », parties jouées par monde (`p.adv.st.wn`, `clr[i].k`) ; admin : « Monde fini »
+  dans les causes de fin, « Parties dans ce monde pour le finir ».
+
 ## v1.24.2 — Admin : onglet Aventure (8 novembre 2026)
 - Admin : nouvel onglet « 🗺️ Aventure » (d'après le suivi des parties de la v1.24.1) : vue d'ensemble (joueurs, parties,
   distance parcourue ensemble, durée, abandons), progression dans les mondes (parties, jours et niveau pour finir chaque monde,

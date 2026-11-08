@@ -49,7 +49,7 @@ svg text { fill: var(--muted); font-size: 10px; }
 .hbar { flex: 1; display: flex; height: 20px; background: #1a1020; border: 2px solid #000; min-width: 120px; }
 .hbar i { display: block; height: 100%; font-style: normal; font-size: 11px; color: #1a1020; text-align: center; line-height: 16px; overflow: hidden; white-space: nowrap; }
 .e-faim { background: #f2a33a; } .e-animal { background: #ff8a7a; background-image: repeating-linear-gradient(45deg, transparent 0 4px, rgba(0,0,0,.3) 4px 6px); }
-.e-abandon { background: #8a7a90; } .e-fin { background: #9be27a; }
+.e-abandon { background: #8a7a90; } .e-fin, .e-fini { background: #9be27a; }
 .leg span { margin-right: 12px; font-size: 12px; } .leg b { display: inline-block; width: 12px; height: 12px; vertical-align: -2px; margin-right: 4px; border: 1px solid #000; }
 .erow { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; } .erow .lab { width: 120px; flex: none; }
 .hist { display: flex; align-items: flex-end; gap: 3px; height: 120px; border-bottom: 2px solid var(--panel2); padding-top: 16px; }
@@ -794,7 +794,8 @@ const ADV_CARDS = {
   appetit: '🍯 Gros appétit', gourde: '🥤 Gourde', piquenique: '🧺 Pique-nique', coquille: '🐚 Coquille', kit: '💊 Boîte de pansements', piquants: '🦔 Piquants',
   trefle: '🍀 Trèfle', sablier: '⏳ Sablier', de: '🎲 Dé pipé',
 };
-const ADV_ENDS = { faim: 'Faim', animal: 'Animal', abandon: 'Abandon', fin: 'Fin des mondes' };
+const ADV_ENDS = { fini: 'Monde fini', faim: 'Faim', animal: 'Animal', abandon: 'Abandon', fin: 'Fin des mondes' };
+const advEndW = e => (e.end === 'fini' || e.w > e.w0 ? e.w0 : e.w);  // monde où la partie s'arrête (depuis le 9 nov., une partie = un monde)
 const advLvl = xp => { let L = 1; while (L < 20 && xp >= 150 + 50 * (L - 1)) { xp -= 150 + 50 * (L - 1); L++; } return L; };
 const advDoneP = a => Math.max(a.unlocked || 0, a.cleared || 0);
 const fmtM = m => Math.round(m || 0).toLocaleString('fr-FR') + ' m';
@@ -826,11 +827,11 @@ function renderAdventure() {
   const wrows = ADV_WORLDS.map((w, i) => {
     const reach = tried.filter(p => i === 0 || advDoneP(p.adv) >= i).length, done = tried.filter(p => advDoneP(p.adv) >= i + 1);
     const clr = done.map(p => p.adv.st && p.adv.st.clr && p.adv.st.clr[i]).filter(Boolean);
-    const nn = clr.map(c => c.n), med = median(nn), lv = median(clr.map(c => c.L || 0));
+    const nn = clr.map(c => c.k || c.n), med = median(nn), lv = median(clr.map(c => c.L || 0));
     const days = clr.map((c, k) => c.d && done[k].adv.st.d0 ? Math.round((new Date(c.d) - new Date(done[k].adv.st.d0)) / 864e5) + 1 : null).filter(x => x != null);
     return { w, i, reach, done: done.length, med, min: nn.length ? Math.min(...nn) : null, max: nn.length ? Math.max(...nn) : null, lv, nclr: clr.length, days: median(days) };
   });
-  $('advworlds').innerHTML = '<tr><th>Monde</th><th class="r">Atteint par</th><th class="r">Terminé par</th><th class="r">Parties pour le finir<br><span class="muted">médiane · min-max</span></th><th class="r">Jours pour le finir<br><span class="muted">médiane</span></th><th class="r">Niveau en le finissant<br><span class="muted">médiane</span></th></tr>'
+  $('advworlds').innerHTML = '<tr><th>Monde</th><th class="r">Atteint par</th><th class="r">Terminé par</th><th class="r">Parties dans ce monde pour le finir<br><span class="muted">médiane · min-max</span></th><th class="r">Jours pour le finir<br><span class="muted">médiane</span></th><th class="r">Niveau en le finissant<br><span class="muted">médiane</span></th></tr>'
     + wrows.map(r => `<tr><td>${r.w.icon} ${r.w.name}</td><td class="r">${r.reach}</td><td class="r">${r.done}${r.reach ? ` <span class="muted">(${Math.round(r.done * 100 / r.reach)} %)</span>` : ''}</td>
       <td class="r">${r.med != null ? `<b class="${r.i === 0 ? (r.med <= 4 && r.med >= 3 ? 'good' : 'bad') : ''}">${fmtN(r.med)}</b> · ${r.min}-${r.max}${r.nclr < r.done ? ` <span class="muted">(${r.nclr} suivis)</span>` : ''}` : '—'}</td>
       <td class="r">${r.days != null ? fmtN(r.days) : '—'}</td><td class="r">${r.lv != null ? 'niv. ' + fmtN(r.lv) : '—'}</td></tr>`).join('');
@@ -838,9 +839,9 @@ function renderAdventure() {
   $('advgoal').innerHTML = 'Progression depuis le début (sans tenir compte de la période). Objectif : finir le désert en 3 ou 4 parties'
     + (d0.med != null ? ` → ${d0.med >= 3 && d0.med <= 4 ? '<span class="good">✔ dans la cible</span>' : d0.med < 3 ? '<span class="bad">trop facile</span>' : '<span class="bad">trop difficile</span>'}` : ' → pas encore de données.');
   // causes de fin, par monde où la partie s'arrête
-  const cats = ['faim', 'animal', 'abandon', 'fin'];
+  const cats = ['fini', 'faim', 'animal', 'abandon', 'fin'];
   const ends = ADV_WORLDS.map((w, i) => {
-    const es = logs.filter(e => Math.min(e.w, W - 1) === i && (e.end !== 'fin' || i === W - 1)), c = {};
+    const es = logs.filter(e => advEndW(e) === i), c = {};
     for (const e of es) c[e.end] = (c[e.end] || 0) + 1;
     return { w, n: es.length, c };
   });
@@ -856,7 +857,7 @@ function renderAdventure() {
   // où ça s'arrête (tranches de 250 m dans le monde choisi)
   $('advhw').innerHTML = ADV_WORLDS.map((w, i) => `<button data-advhw="${i}" class="${i === advHistW ? 'main' : ''}">${w.icon} ${w.name}</button>`).join('');
   const hw = ADV_WORLDS[advHistW], step = 250, nb = Math.ceil(hw.len / step), bins = Array(nb).fill(0);
-  for (const e of logs) if (Math.min(e.w, W - 1) === advHistW && e.w < W) bins[Math.min(nb - 1, Math.max(0, Math.floor((e.wm || 0) / step)))]++;
+  for (const e of logs) if (advEndW(e) === advHistW && e.w === e.w0) bins[Math.min(nb - 1, Math.max(0, Math.floor((e.wm || 0) / step)))]++;
   const fin = logs.filter(e => e.w0 <= advHistW && e.w > advHistW).length, all = [...bins, fin], mx = Math.max(1, ...all);
   $('advhist').innerHTML = `<div class="hist">${all.map((v, k) => `<div style="height:${v / mx * 100}%;${k === nb ? 'background:var(--good)' : ''}"><span>${v || ''}</span></div>`).join('')}</div>
     <div class="hx">${bins.map((_, k) => `<span>${k % 2 ? '' : (k * step / 1000).toLocaleString('fr-FR') + ' km'}</span>`).join('')}<span>fini</span></div>
@@ -892,7 +893,7 @@ function renderAdventure() {
 function openAdvPlayer(name) {
   const p = profiles.find(x => x.name === name); if (!p || !p.adv) return;
   const a = p.adv, st = a.st || {}, log = (a.log || []).filter(e => !e.short).slice().reverse();
-  const clr = ADV_WORLDS.map((w, i) => st.clr && st.clr[i] ? `${w.icon} ${w.name} : partie n° ${st.clr[i].n}, ${fmtDay(st.clr[i].d)}, niv. ${st.clr[i].L}` : '').filter(Boolean);
+  const clr = ADV_WORLDS.map((w, i) => st.clr && st.clr[i] ? `${w.icon} ${w.name} : ${st.clr[i].k ? st.clr[i].k + 'e partie dans ce monde, ' : ''}partie n° ${st.clr[i].n}, ${fmtDay(st.clr[i].d)}, niv. ${st.clr[i].L}` : '').filter(Boolean);
   const sk = ADV_SKILLS.filter(([id]) => (a.spent || {})[id]).map(([id, , icon, nm]) => `${icon} ${esc(nm)} ${a.spent[id]}`);
   $('fiche').innerHTML = `<div class="panel">
     <div class="row" style="justify-content:space-between"><h2>🗺️ ${esc(p.name)} dans l'aventure</h2><button id="fclose">✕ Fermer</button></div>
@@ -900,7 +901,7 @@ function openAdvPlayer(name) {
     <p>${clr.length ? '🏁 Mondes finis : ' + clr.join(' · ') : '<span class="muted">Aucun monde fini pour l\'instant.</span>'}</p>
     <p>🎯 ${sk.join(' · ') || '<span class="muted">Aucune compétence.</span>'}</p>
     <div class="scroll"><table><tr><th>N°</th><th>Jour</th><th class="r">Niv.</th><th>Parcours</th><th class="r">Distance</th><th>Fin</th><th class="r">Temps</th><th class="r">Objets</th><th>Chocs</th><th>Cartes choisies</th></tr>
-      ${log.map(e => `<tr><td>${e.n}</td><td>${fmtDay(e.d)}</td><td class="r">${e.L}</td><td>${ADV_WORLDS[e.w0] ? ADV_WORLDS[e.w0].icon : ''}${e.w !== e.w0 ? ' → ' + (e.w >= ADV_WORLDS.length ? '🏁' : ADV_WORLDS[e.w].icon) : ''} <span class="muted">${fmtM(e.wm)}</span></td>
+      ${log.map(e => `<tr><td>${e.n}</td><td>${fmtDay(e.d)}</td><td class="r">${e.L}</td><td>${ADV_WORLDS[e.w0] ? ADV_WORLDS[e.w0].icon : ''}${e.w > e.w0 ? ' 🏁' : ''} <span class="muted">${fmtM(e.wm)}</span></td>
         <td class="r">${fmtM(e.m)}</td><td>${ADV_ENDS[e.end] || e.end}${e.sc ? ' ❤️' : ''}</td><td class="r">${fmtDur(e.s || 0)}</td><td class="r">${e.obj || 0}</td>
         <td>${Object.entries(e.kinds || {}).map(([k, v]) => `${(ADV_ANIMALS[k] || k).split(' ')[0]}×${v}`).join(' ') || '—'}${e.blk ? ` <span class="muted">(${e.blk} 🩹)</span>` : ''}</td><td>${(e.picks || []).map(cardIcon).join(' ') || '—'}</td></tr>`).join('') || '<tr><td colspan="10" class="muted">Aucune partie suivie.</td></tr>'}</table></div>
   </div>`;
