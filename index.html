@@ -7363,7 +7363,7 @@ if (SURVIVAL_ON) (() => {
       // un monde pas encore atteint garde son nom secret
       const ic = !W0 ? '❓' : done || cur ? W0.icon : W0.soon ? '🚧' : '🔒';
       const nm = W0 && (done || cur) ? W0.name : '???';
-      const sub = !W0 ? '🔒' : done ? '✅ terminé' : cur ? (a.best[i] ? `📍 record ${fmt(a.best[i])}` : '📍 à découvrir') : W0.soon ? 'bientôt' : '';
+      const sub = !W0 ? '🔒' : done ? '✅ terminé' : cur ? '📍 à découvrir' : W0.soon ? 'bientôt' : '';
       // un monde atteint se touche pour en faire le départ
       const pick = W0 && !W0.soon && i <= a.unlocked, isSel = pick && i === Math.min(a.sel || 0, a.unlocked);
       return `<div class="node ${st} ${pick ? 'pick' : ''} ${isSel ? 'sel' : ''}" style="left:${x}%;top:${y}%" ${pick ? `data-adv="sel" data-w="${i}"` : ''}>${isSel && a.unlocked > 0 ? '<span class="dep">DÉPART</span>' : ''}<div class="ic">${ic}</div><b>${nm}</b><i>${sub}</i></div>`;
@@ -7446,9 +7446,8 @@ if (SURVIVAL_ON) (() => {
   App.scr_advrecords = async function () {
     const a = adv(), top = ((await Online.survivalTop()) || []).slice(0, 10), me = this.p.name;
     return `<div class="screen">${head('Records')}
+      <div class="panel center"><div class="label">⭐ Ton record</div><div class="gold big-num">${fmt((this.p.survival && this.p.survival.best) || 0)}</div></div>
       ${top.length ? `<div class="label">🏆 Les plus loin</div><div class="panel"><table class="lb">${top.map((e, i) => `<tr><td>${medal(i)}${e.name === me ? '<br><span class="toi">toi</span>' : ''}</td><td>${esc(e.name)}</td><td class="r">${fmt(e.best)}</td></tr>`).join('')}</table></div>` : ''}
-      <div class="label">📍 Mes records par monde</div>
-      <div class="panel"><table class="lb">${WORLDS.filter(w => !w.soon).map((w, i) => `<tr><td>${i <= a.unlocked && !w.soon ? w.icon : w.soon ? '🚧' : '🔒'}</td><td>${i <= a.unlocked && !w.soon ? w.name : '???'}</td><td class="r">${w.soon ? '🚧' : a.best[i] ? fmt(a.best[i]) : i <= a.unlocked ? '—' : '🔒'}</td></tr>`).join('')}</table></div>
     </div>`;
   };
   // fin de partie
@@ -7472,7 +7471,7 @@ if (SURVIVAL_ON) (() => {
     return `<div class="screen">
       <div class="result-head ${x.newWorld ? 'win' : 'lose'}"><div class="title small">MODE AVENTURE</div>
         <div class="sv-sub">${end ? '🚧 Fin des mondes jouables !' : `${W1.icon} ${W1.name} · plus de boule !`}</div>
-        <div class="big-dist">${fmt(x.gained)}</div>${x.rec ? '<div class="badge-new">Record dans ce monde !</div>' : ''}</div>
+        <div class="big-dist">${fmt(x.gained)}</div>${r.newRecord ? '<div class="badge-new">Nouveau record !</div>' : ''}</div>
       ${end ? '<div class="next">🚧 Tu as atteint la fin des mondes jouables ! D\'autres mondes arrivent bientôt…</div>'
         : x.newWorld ? `<div class="next">🎉 <b>Monde ${x.w + 1} débloqué : ${WORLDS[x.w].name}</b> ! Tu peux maintenant y commencer directement.</div>`
         : `<div class="next">🏁 Plus que <b>${fmt(x.left)}</b> avant ${N && !N.soon ? (x.wb + 1 <= a.unlocked ? `<b>${N.icon} ${N.name}</b>` : '<b>le monde suivant</b>') : 'la fin des mondes jouables'} !</div>`}
