@@ -27,7 +27,8 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   sur la carte (étiquette « DÉPART ») ; ROULER ! rappelle « départ : … · touche un monde pour changer ».
 - Aventure : annonces des mondes simplifiées (règle, animal dangereux, météo) ; au compte à rebours, « ÉVITE LES ANIMAUX ! »
   au lieu de « VISE LE TERRIER AU BOUT ! » (il n'y a pas de terrier dans l'aventure).
-- Aventure : plus de records par monde (carte : « terminé » / « à découvrir » ; fin de partie : « Nouveau record ! »).
+- Aventure : mode vraiment solo, sans classement (plus de bouton Records ni de « Les plus loin ») ; « ⭐ Ton record » s'affiche
+  sous le niveau ; présentation : « Ton aventure à toi ». Plus de records par monde (carte : « terminé » / « à découvrir »).
 - Menu de l'aventure : haut fixé (titre, « ? », barre de niveau) ; seuls la carte et l'entraînement défilent. Grand titre retiré.
 - News du 9 novembre : « 🗺️ Nouveau : le mode Aventure ! … » et « 🎲 L'entraînement aléatoire est maintenant dans le menu de l'Aventure. »
 - Contenu : tout ce qui est décrit dans les versions 1.23.x ci-dessous (mondes, difficulté, compétences, cartes, récompenses).

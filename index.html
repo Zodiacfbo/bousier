@@ -7351,6 +7351,7 @@ if (SURVIVAL_ON) (() => {
     const nextTxt = l.max ? 'Niveau max pour l\'instant : la suite arrive avec les prochains mondes !' : l.L + 1 === PACT_LEVEL ? `Niveau ${PACT_LEVEL} : les pactes 😈 apparaissent aux haltes` : CARD_UNLOCKS[l.L + 1] ? `Niveau ${l.L + 1} : ${CARD_UNLOCKS[l.L + 1]} aux haltes, et +1 point` : `Niveau ${l.L + 1} : +1 point de compétence`;
     return `<div class="panel"><div class="lvl"><span class="n">Niv. ${l.L}</span><div class="bar">${lvlBar(l)}</div></div>
       <div class="tiny" style="margin-top:var(--u)">${nextTxt}</div>
+      <div class="tiny gold" style="margin-top:var(--u)">⭐ Ton record : ${fmt((prof().survival && prof().survival.best) || 0)}</div>
       ${pts ? `<button class="btn" data-adv="skills" style="margin-top:calc(var(--u)*2)">🎯 ${pts} point${pts > 1 ? 's' : ''} à placer</button>` : ''}</div>`;
   };
   // le chemin des mondes, en zigzag du bas vers le haut (8 étapes)
@@ -7382,7 +7383,7 @@ if (SURVIVAL_ON) (() => {
         <div class="r"><span class="i">⚠️</span><span><b>Un animal dangereux par monde</b><br>Dans chaque monde, un animal fait rétrécir ta boule. Impossible de le manger : évite-le !</span></div>
         <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Au bout du désert, d'autres mondes t'attendent… Une fois atteint, un monde devient un point de départ.</span></div>
         <div class="r"><span class="i">📈</span><span><b>Tu progresses à chaque partie</b><br>Chaque mètre rapporte de l'XP. À chaque niveau, un point de compétence à placer dans 3 familles : Gourmand, Costaud, Malin. Les niveaux débloquent aussi de nouvelles cartes.</span></div>
-        <div class="r"><span class="i">🎲</span><span><b>Ne compte pas pour la dune du jour</b><br>Joue autant que tu veux : ton record a son propre classement (🏆 Records). C'est aussi un bon entraînement !</span></div>
+        <div class="r"><span class="i">🎲</span><span><b>Ton aventure à toi</b><br>Pas de classement : joue à ton rythme et bats ton propre record. Ça ne compte pas pour la dune du jour.</span></div>
       </div>
       <button class="btn big" data-adv="introok">C'est parti !</button>
     </div>`;
@@ -7401,7 +7402,7 @@ if (SURVIVAL_ON) (() => {
       <div class="foot adv-foot">
         <div class="more">▼ Tes mondes et l'entraînement plus bas</div>
         <button class="btn big pulse" data-adv="play">ROULER ! <small>départ : ${WORLDS[sel].name}${a.unlocked > 0 ? ' · touche un monde pour changer' : ''}</small></button>
-        <div class="menu2"><button data-adv="skills"><span>🎯</span>Compétences${points() ? '<span class="pill-n">' + points() + '</span>' : ''}</button><button data-adv="records"><span>🏆</span>Records</button></div>
+        <div class="menu2" style="grid-template-columns:1fr"><button data-adv="skills"><span>🎯</span>Compétences${points() ? '<span class="pill-n">' + points() + '</span>' : ''}</button></div>
       </div>
     </div>`;
   };
