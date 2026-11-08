@@ -14,6 +14,8 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   nouveau point « Un animal dangereux par monde ».
 - Aventure : grande annonce du désert à la toute première partie (« TON PREMIER MONDE » : règle, scorpions, objets, cartes, météo) ;
   chaque annonce de monde liste ses propres cartes ; objets « À découvrir » en petit, sur 2 colonnes.
+- Aventure : les animaux dangereux ont un contour jaune et noir qui clignote, avec un « ! » au-dessus (les objets trop gros gardent
+  le contour rouge). En attente de validation par Florent.
 - News du 9 novembre : « 🗺️ Nouveau : le mode Aventure ! … ».
 - Contenu : tout ce qui est décrit dans les versions 1.23.x ci-dessous (mondes, difficulté, compétences, cartes, récompenses).
 - Dune du jour, à partir du 9 novembre : le cactus ne pique plus ; le titre « L'ami des cactus » compte les cactus avalés.
