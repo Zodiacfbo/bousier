@@ -6402,6 +6402,52 @@ if (SURVIVAL_ON) (() => {
     });
     return { crown: crown(40, 34), fern: fern(15, 13), flowers: bush(18, 10, true), bush: bush(16, 11) };
   })();
+  // gros objets propres à l'oasis et à la rivière (ils remplacent la tente, le chameau et le palmier du désert),
+  // et décor de la rivière (héron, massettes, ponton, saule)
+  (() => {
+    let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const mk = (w, h, fn) => { const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d')); return c; };
+    const px = (x, X, Y, col) => { x.fillStyle = col; x.fillRect(X, Y, 1, 1); };
+    const rows = (R, pal) => mk(Math.max(...R.map(r => r.length)), R.length, x => R.forEach((r, j) => [...r].forEach((ch, i) => { if (pal[ch]) px(x, i, j, pal[ch]); })));
+    const ell = (w, h, fn) => mk(w, h, x => { const cx = w / 2, cy = h / 2; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      const dx = (i + 0.5 - cx) / (w / 2), dy = (j + 0.5 - cy) / (h / 2), d = dx * dx + dy * dy; if (d <= 1) { const c = fn(i, j, d, dx, dy); if (c) px(x, i, j, c); } } });
+    SPR.regime = rows([
+      '.......ss.......', '......ssss......', '.....s.ss.s.....', '...ODOsODOsODO..', '..ODOODOODOODOO.', '.OODOOODOOODOOD.', 'ODOODOODOODOODOO',
+      '.ODOOODOODOOODO.', '.OODOODOOODOOD..', '..ODOODOODOOD...', '...ODOODOODO....', '....OODOOD......', '.....ODOD.......', '......OD........'],
+      { s: '#6b4a2a', O: '#d8862e', D: '#8a4a1a' });
+    SPR.pasteque = ell(20, 15, (i, j, d, dx, dy) => d > 0.82 ? '#1f4a24' : (-dx - dy > 0.9 && d < 0.5) ? '#a8e080' : (Math.floor((i + Math.sin(j * 0.6) * 1.5) / 2.5) % 2 ? '#2f6b33' : '#6fbf4a'));
+    SPR.panier = mk(26, 20, x => {
+      for (let j = 8; j < 20; j++) for (let i = 0; i < 26; i++) { const inset = Math.max(0, j - 16); if (i < inset + 1 || i > 25 - inset - 1) continue;
+        px(x, i, j, j === 8 || j === 19 ? '#553519' : ((i + (j >> 1)) % 4 < 2 ? '#a8783a' : '#7a5230')); }
+      const F = ['#ff9a3a', '#e0483a', '#ffd25a', '#6fbf4a', '#ff7aa8', '#8a4a1a'];
+      for (const [cx, cy, r, c] of [[5, 7, 3.2, 0], [11, 5, 3.6, 1], [17, 6, 3.4, 3], [22, 7, 2.8, 2], [8, 3, 2.6, 4], [15, 2, 2.5, 5], [20, 3, 2.4, 0]])
+        for (let j = -4; j <= 4; j++) for (let i = -4; i <= 4; i++) if (i * i + j * j <= r * r && cy + j >= 0 && cy + j < 10) px(x, cx + i, cy + j, i + j < -r * 0.6 ? '#fff4d0' : F[c]);
+    });
+    SPR.poisson = rows([
+      '......BBBBB.......', '....BBLLLLLBB...T.', '..BBLLLLLLLLLBBTT.', '.BkLLLLWLLLLLLLBTT', '..BBLLLLLLLLLBBTT.', '....BBLLLLLBB...T.', '......BBBBB.......'],
+      { B: '#3a5a7a', L: '#9fc4e0', W: '#e8f4ff', T: '#3a5a7a', k: '#101820' });
+    SPR.radeau = mk(22, 16, x => {
+      for (let n = 0; n < 5; n++) for (let j = 0; j < 3; j++) for (let i = 0; i < 22; i++) { const y = n * 3 + j + 1;
+        px(x, i, y, i === 0 || i === 21 ? '#c49a62' : j === 0 ? '#a8783a' : j === 2 ? '#553519' : '#7a5230'); }
+      for (const cx of [5, 16]) for (let y = 0; y < 16; y++) px(x, cx, y, y % 2 ? '#e8d8a8' : '#c8b888');
+    });
+    SPR.barque = mk(32, 14, x => {
+      for (let i = 0; i < 32; i++) { const h = Math.round(6.5 * Math.pow(Math.sin(Math.PI * (i + 0.5) / 32), 0.55));
+        for (let j = 7 - h; j < 7 + h; j++) { const edge = j === 7 - h || j === 6 + h || h <= 1;
+          px(x, i, j, edge ? '#3d2614' : (j === 7 - h + 1 || j === 5 + h) ? '#7a5230' : (i === 10 || i === 21) ? '#6b4a2a' : (j % 3 === 0 ? '#a8783a' : '#c08a48')); } }
+    });
+    SPR.heron = rows([
+      '....GGk..', '...GGWWyy', '....GW...', '....G....', '....GW...', '...GGW...', '..GGGGW..', '.GGGGGGW.', 'GGGGGGGW.', '.GGGGGG..', '...GG.G..', '...y..y..', '...y..y..', '...y..y..', '..yy.yy..'],
+      { G: '#8a96a6', W: '#e8eef4', y: '#d8a040', k: '#20242c' });
+    SPR.massettes = rows([
+      '.b.....b.', '.b..b..b.', '.b..b..b.', '.b..b..bg', 'gb..b..g.', '.g..b.g..', '.g..g.g..', '..g.g.g..', '..g.g.g..', '..g.gg...', '...ggg...', '...ggg...'],
+      { b: '#6b3f1f', g: '#3f8a3a' });
+    SPR.ponton = rows([
+      'PPPPPPPPPPPPPPPP', 'pPPPPpPPPPpPPPPp', 'PPPPPPPPPPPPPPPP', 'pPPPPpPPPPpPPPPp', 'PPPPPPPPPPPPPPPP', 'dd...dd....dd..d', 'dd...dd....dd..d'],
+      { P: '#b08048', p: '#7a5230', d: '#4a3020' });
+    SPR.saule = ell(36, 30, (i, j, d, dx, dy) => { if (d > 0.95 && rnd() < 0.5) return null; const st = (i * 7 + Math.floor(j / 2)) % 5 === 0;
+      return d > 0.85 ? '#3f7a3a' : st ? '#5fae4a' : (-dx - dy > 0.6 ? '#b8e890' : -dx - dy > -0.2 ? '#8fd06a' : '#6aa84f'); });
+  })();
   // palme au premier plan (dessinée devant la boule, sur le bord de l'écran)
   const FROND = (() => {
     const c = document.createElement('canvas'); c.width = 48; c.height = 30; const x = c.getContext('2d');
@@ -6422,7 +6468,15 @@ if (SURVIVAL_ON) (() => {
     scorpion: { id: 'scorpion', name: 'Scorpion', sprite: 'scorpion', r: 4.5, hazard: true, prickly: true, move: 'side' },
     croc: { id: 'croc', name: 'Crocodile', sprite: 'croc', r: 7, hazard: true, prickly: true },
     tronc: { id: 'tronc', name: 'Tronc', sprite: 'tronc', r: 5 },
+    regime: { id: 'regime', name: 'Régime de dattes', sprite: 'regime', r: 8.5 },
+    pasteque: { id: 'pasteque', name: 'Pastèque', sprite: 'pasteque', r: 10 },
+    panier: { id: 'panier', name: 'Panier de fruits', sprite: 'panier', r: 13 },
+    poisson: { id: 'poisson', name: 'Poisson', sprite: 'poisson', r: 8.5 },
+    radeau: { id: 'radeau', name: 'Radeau', sprite: 'radeau', r: 10 },
+    barque: { id: 'barque', name: 'Barque', sprite: 'barque', r: 13 },
   };
+  // les gros objets du désert (tente, chameau, palmier) deviennent ceux du monde
+  const BIG_OASIS = { tente: D.regime, chameau: D.pasteque, palmier: D.panier }, BIG_RIVER = { tente: D.poisson, chameau: D.radeau, palmier: D.barque };
 
   // --- Les mondes -----------------------------------------------------------
   // une météo fixe par monde : elle fait partie de son ambiance
@@ -6430,11 +6484,11 @@ if (SURVIVAL_ON) (() => {
     { icon: '🏜️', name: 'Le désert', short: 'Désert', up: 'LE DESERT', theme: 'doree', len: 2500, hunger: 1, speed: 1, wx: ['canicule'] },
     { icon: '🌴', name: 'L\'oasis', short: 'Oasis', up: 'L\'OASIS', theme: 'oasis', len: 3000, hunger: 1, speed: 1, wx: ['calme'],
       rule: 'Les flaques d\'eau font glisser… mais elles calment ta faim.', obstacle: 'des crabes qui pincent et qui bougent',
-      objs: ['datte', 'coco', 'nenuphar', 'grenouille'], haz: 'crabe', cards: true },
+      objs: ['datte', 'coco', 'nenuphar', 'grenouille', 'regime', 'pasteque', 'panier'], haz: 'crabe', cards: true },
     { icon: '🌊', name: 'La rivière sauvage', short: 'Rivière', up: 'LA RIVIERE SAUVAGE', sign: 'RIVIERE', len: 3500, hunger: 1, speed: 1, wx: ['pluie'],
       theme: { id: 'riviere', sand: '#3f93cc', sandDark: '#2f7fb8', sandLight: '#58aee0', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
       rule: 'Plus de sable : le courant te pousse ! Il est fort au milieu, calme près des berges.', obstacle: 'des crocodiles : impossible de les avaler !',
-      objs: ['tronc', 'nenuphar', 'coco'], haz: 'croc' },
+      objs: ['tronc', 'nenuphar', 'coco', 'poisson', 'radeau', 'barque'], haz: 'croc' },
     { icon: '🌋', name: 'Le volcan', short: 'Volcan', soon: true },
     { icon: '🌙', name: 'La Lune', short: 'Lune', soon: true },
   ];
@@ -6508,6 +6562,7 @@ if (SURVIVAL_ON) (() => {
       const rv = riverAt(o.y);
       if (o.def.hazard) def = rv && rng.chance(rv) ? D.croc : D.crabe;
       else if (o.def.rock) { if (!rv) o.sprite = mossy(o.sprite); return o; }
+      else if (BIG_OASIS[o.def.id]) def = (rv && rng.chance(rv) ? BIG_RIVER : BIG_OASIS)[o.def.id];
       else if (o.r <= 2.2) def = D.datte;
       else if (o.r <= 3.4) def = rng.chance(0.5) && !rv ? D.grenouille : D.datte;
       else if (o.r <= 5.2) def = D.coco;
@@ -6676,6 +6731,15 @@ if (SURVIVAL_ON) (() => {
       };
       const roll = h % 100;
       if (bw < 12) continue;
+      if (isRiverAt(y)) {
+        // berges de la rivière : saules, massettes, hérons, pontons (rien qu'on avale)
+        if (roll < 30) put(bw >= 30 ? 'saule' : 'massettes', bw >= 30 ? 1 : 2, 4);
+        else if (roll < 48) put('heron', 2, 5);
+        else if (roll < 62) put('ponton', 2, 0);
+        else if (roll < 80) put('massettes', 2, 3);
+        else put('roseaux', 2, 3);
+        continue;
+      }
       // jamais d'objet qu'on avale (palmier, tente, chameau…) dans le décor
       if (roll < 34) put(bw >= 30 ? OASIS_DECO.crown : OASIS_DECO.fern, bw >= 30 ? 1 : 2, 4);
       else if (roll < 46) put(OASIS_DECO.flowers, 2, 5);
