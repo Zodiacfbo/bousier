@@ -19,6 +19,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   panier de fruits dans l'oasis ; poisson, radeau et barque dans la rivière. Berges de la rivière : saules, hérons, massettes, pontons.
 - Aventure : plus de rocher dans la rivière (4 sur 10 disparaissent, les autres deviennent des objets qui flottent, de taille proche).
 - Aventure, rivière : nouveau gros objet « Gros rondin » (plus fréquent que la barque).
+- Aventure, cartes des haltes : 2 sortes, les coups de pouce (effet court) et les reliques (toute la partie, icônes en haut à droite),
+  3 raretés (cadre blanc, bleu, doré). 10 reliques dans les 3 familles (Gourmand, Costaud, Malin) + Cœur d'or ; 3 reliques d'une
+  famille = combo (Ventre d'or, Armure, Jackpot). Nouvelles cartes : Festin et Étoile filante (légendaires), désert (Ombre fraîche,
+  Repousse-scorpions), rivière (Bouée, Banc de poissons). Déblocages par niveau : pactes (3), reliques rares (5), légendaires (10), Cœur d'or (15).
+- Aventure, noms sans clin d'œil au labo : Café serré, Raccourci secret, Ralenti, Super aimant ; Kevin quitte l'aventure.
+  La boule de feu fait aussi fuir les animaux.
 - Aventure, compétences en 3 familles (un onglet chacune) : 🍽️ Gourmand (Estomac, Provisions, Aimant), 🛡️ Costaud (Carapace,
   Pansements de départ, aussi à chaque nouveau monde), 🃏 Malin (Cartes en plus, Bonus durables). Chaque famille a sa grande
   compétence ⭐ (3 points, ouverte après 6 points dans la famille) : Seconde chance, Trousse de secours, Double choix.

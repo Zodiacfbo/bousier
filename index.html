@@ -429,6 +429,16 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .card .ico { font-size: 2em; }
 .card b { display: block; color: var(--gold); }
 .card.pact b { color: #ff9ad8; }
+.card .ctag { display:block; font-size:.6em; letter-spacing:.04em; color:#cbb8c8; margin-bottom: calc(var(--u)*.5); }
+.card .ctag i { font-style:normal; }
+.card.rar-r { box-shadow: inset 0 0 0 var(--u) #5ab4ff; background: #1f2a44; }
+.card.rar-r .ctag i { color:#8acbff; }
+.card.rar-l { box-shadow: inset 0 0 0 var(--u) #ffd25a, 0 0 calc(var(--u)*4) #ffd25a88; background: linear-gradient(135deg, #4a3a14, #2a1c22); }
+.card.rar-l .ctag i { color:#ffd25a; }
+.card.relic { border-left: calc(var(--u)*2.5) solid var(--fam, #ffd25a); }
+.card .cmb { display:block; color: var(--fam, #c8ff8a); margin-top: calc(var(--u)*.5); }
+#hud-relics { position:absolute; right: calc(var(--u)*2); top: calc(var(--u)*25); font-size:.7em; letter-spacing:.1em; text-shadow: 0 1px 0 #000; }
+#hud-relics .combo { font-weight:bold; }
 #hud-beetle { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: .8em; }
 .hud-hole { position: absolute; right: calc(var(--u) * -4); top: 50%; transform: translateY(-50%); font-size: .8em; }
 
@@ -3187,17 +3197,17 @@ const SURV = {
 };
 // dur : durée en secondes (0 = immédiat). pact : bonus avec contrepartie.
 const BONUSES = [
-  { id: 'cafe', icon: '☕', name: 'Café du labo', desc: 'Turbo pendant 10 s', dur: 10 },
-  { id: 'aimant', icon: '🧲', name: 'Aimant à crottes', desc: 'Ce qui se mange vient à toi (12 s)', dur: 12 },
+  { id: 'cafe', icon: '☕', name: 'Café serré', desc: 'Turbo pendant 10 s', dur: 10 },
+  { id: 'aimant', icon: '🧲', name: 'Super aimant', desc: 'Ce qui se mange vient à toi (12 s)', dur: 12 },
   { id: 'fantome', icon: '👻', name: 'Boule fantôme', desc: 'Tu traverses tout pendant 6 s', dur: 6 },
   { id: 'bouclier', icon: '🩹', name: 'Pansements', desc: '3 pansements : chacun annule un choc', dur: 0 },
-  { id: 'feu', icon: '🔥', name: 'Boule de feu', desc: 'Tu brûles les obstacles (10 s)', dur: 10 },
+  { id: 'feu', icon: '🔥', name: 'Boule de feu', desc: 'Tu brûles les gros objets, les animaux te fuient (10 s)', dur: 10 },
   { id: 'rebond', icon: '🏀', name: 'Boule rebondissante', desc: 'Les chocs ne te font pas maigrir (12 s)', dur: 12 },
   { id: 'engrais', icon: '🌱', name: 'Engrais', desc: '+50 % de taille tout de suite', dur: 0 },
-  { id: 'matrix', icon: '🐌', name: 'Ralenti Matrix', desc: 'Tout ralentit pendant 8 s', dur: 8 },
+  { id: 'matrix', icon: '🐌', name: 'Ralenti', desc: 'Tout ralentit pendant 8 s', dur: 8 },
   { id: 'chameau', icon: '🐪', name: 'Chameau ami', desc: 'Il dégage la route devant toi (15 s)', dur: 15 },
-  { id: 'kevin', icon: '🛴', name: 'Kevin à la rescousse', desc: 'Pour une fois, il fonce dans les obstacles (10 s)', dur: 10 },
-  { id: 'raccourci', icon: '🚀', name: 'Raccourci du labo', desc: 'Distance ×2 pendant 15 s', dur: 15 },
+  // (Kevin à la rescousse : retiré, Kevin reste un personnage de la dune du jour)
+  { id: 'raccourci', icon: '🚀', name: 'Raccourci secret', desc: 'Distance ×2 pendant 15 s', dur: 15 },
   { id: 'mystere', icon: '🧪', name: 'Tube mystère', desc: 'Génial… ou catastrophique ?', dur: 0 },
 ];
 const PACTS = [
@@ -6451,6 +6461,7 @@ if (SURVIVAL_ON) (() => {
       for (const [i, j] of [[12, 1], [13, 0], [13, 1], [20, 1], [21, 1]]) px(x, i, j, '#5e3a1e');
       px(x, 14, 0, '#5fae4a'); px(x, 15, 0, '#5fae4a'); px(x, 22, 0, '#5fae4a');
     });
+    SPR.alevin = rows(['..BBB.T', '.BLLLBT', 'BkLLLLT', '.BLLLBT', '..BBB.T'], { B: '#3a5a7a', L: '#9fc4e0', T: '#3a5a7a', k: '#101820' });
     SPR.heron = rows([
       '....GGk..', '...GGWWyy', '....GW...', '....G....', '....GW...', '...GGW...', '..GGGGW..', '.GGGGGGW.', 'GGGGGGGW.', '.GGGGGG..', '...GG.G..', '...y..y..', '...y..y..', '...y..y..', '..yy.yy..'],
       { G: '#8a96a6', W: '#e8eef4', y: '#d8a040', k: '#20242c' });
@@ -6490,6 +6501,7 @@ if (SURVIVAL_ON) (() => {
     radeau: { id: 'radeau', name: 'Radeau', sprite: 'radeau', r: 10 },
     barque: { id: 'barque', name: 'Barque', sprite: 'barque', r: 13 },
     rondin: { id: 'rondin', name: 'Gros rondin', sprite: 'rondin', r: 10 },
+    alevin: { id: 'alevin', name: 'Petit poisson', sprite: 'alevin', r: 2.5 },
   };
   // les gros objets du désert (tente, chameau, palmier) deviennent ceux du monde
   const BIG_OASIS = { tente: D.regime, chameau: D.pasteque, palmier: D.panier };
@@ -6937,6 +6949,7 @@ if (SURVIVAL_ON) (() => {
     if (!f) return w;
     const [L, R] = this.edge(b.y), u = Math.abs(b.x - (L + R) / 2) / ((R - L) / 2);
     const core = Math.max(0, Math.min(1, (0.85 - u) / 0.45));   // 1 au milieu, 0 près des berges
+    if (this.surv.fx.bouee) return w;
     return w + 48 * f * core * flowDir(b.y, this.course.rvPh || 0);
   };
 
@@ -6946,13 +6959,15 @@ if (SURVIVAL_ON) (() => {
   const oStart = Game.prototype.start;
   Game.prototype.start = function (config, opts) {
     oStart.call(this, config, opts);
+    showRelics(this);
     if (!this.surv || !ADV.run) return;
     const sv = this.surv, w = ADV.run.world, b = this.ball;
     sv.dist = startOf(w); sv.world = w;
     b.area *= 1 + 0.15 * up('provisions'); b.r = Math.sqrt(b.area);
     sv.shields += up('bouclier');
     sv.hunger *= 0.9 ** up('estomac') * WORLDS[w].hunger;
-    sv.halts = 0; sv.second = false; sv.doublePick = false;
+    sv.halts = 0; sv.second = false; sv.doublePick = false; sv.relics = []; sv.coeur = 0; sv.jackpot = false;
+    showRelics(this);
     sv.speedPact *= WORLDS[w].speed;
     if (!WORLDS[w].wx.includes(this.wx.id)) this.wx = pickWx(w);
     this.advPalettes(); this.setPalette(themeOf(w), this.wx);
@@ -6991,10 +7006,35 @@ if (SURVIVAL_ON) (() => {
   // Carapace : les animaux font moins mal
   const oBump = Game.prototype.bump;
   Game.prototype.bump = function (o, dx, dy, d) {
-    const b = this.ball, before = b.area;
+    const b = this.ball, before = b.area, sv = this.surv;
+    // boule de feu : les animaux s'écartent, sans faire mal
+    const piq = ADV.run && sv && o.def && o.def.hazard && (sv.relics || []).includes('piquants') && this.t - (sv.piqT || -99) > 20;
+    if (piq) sv.piqT = this.t;
+    if (ADV.run && sv && o.def && o.def.hazard && (sv.fx.feu || sv.fx.pacteFeu || sv.fx.repousse || piq)) {
+      if (this.t - (o.hitT || -9) > 0.6 || piq) { o.hitT = this.t; o.x0 += (dx > 0 ? -1 : 1) * 22; this.floatText('FUIS !', this.objX(o), o.y - 10, '#ffb35a'); this.burst(this.objX(o), o.y, 8, ['#ff4a2a', '#ff9a3a'], 50); }
+      return;
+    }
     oBump.call(this, o, dx, dy, d);
-    if (ADV.run && this.surv && o.def && o.def.hazard && up('carapace') && b.area < before) b.area = before - (before - b.area) * (1 - 0.1 * up('carapace'));
+    if (ADV.run && sv && o.def && o.def.hazard && b.area < before) {
+      const rl = sv.relics || [];
+      const k = (1 - 0.1 * up('carapace')) * (rl.includes('coquille') ? 0.85 : 1) * (combo(sv, 'costaud') ? 0.75 : 1);
+      b.area = before - (before - b.area) * k;
+    }
   };
+  // Gros appétit : ce qu'on avale fait grossir plus
+  const oAbsorb = Game.prototype.absorb;
+  Game.prototype.absorb = function (o, dx, dy, d) {
+    const b = this.ball, before = b.area;
+    oAbsorb.call(this, o, dx, dy, d);
+    if (ADV.run && this.surv && (this.surv.relics || []).includes('appetit') && b.area > before) b.area = before + (b.area - before) * 1.2;
+  };
+  // reliques de la partie, en haut à droite
+  function showRelics(g) {
+    let el = document.getElementById('hud-relics');
+    if (!el) { el = document.createElement('div'); el.id = 'hud-relics'; document.getElementById('hud').appendChild(el); }
+    const sv = g && g.surv && ADV.run ? g.surv : null, rl = (sv && sv.relics) || [];
+    el.innerHTML = rl.map(id => BONUS[id].icon).join('') + (sv ? FAMS.filter(f => combo(sv, f.id)).map(f => `<span class="combo" style="color:${f.col}">★</span>`).join('') : '');
+  }
   const oStep = Game.prototype.stepSurvival;
   Game.prototype.stepSurvival = function (b) {
     const sv = this.surv;
@@ -7003,8 +7043,9 @@ if (SURVIVAL_ON) (() => {
       // faim : la source fraîche l'arrête, les flaques la calment
       const hunger = (0.9 + sv.dist / 1800) * sv.hunger * (sv.fx.pacteFeu ? 2 : 1) * TICK * (1 + b.r * 0.04);
       const pud = (this.course.puddles || []).find(p => ((b.x - p.x) / p.rx) ** 2 + ((b.y - p.y) / p.ry) ** 2 < 1);
-      if (sv.fx.source) b.area += hunger;
+      if (sv.fx.source || sv.fx.festin) b.area += hunger;
       else if (pud) b.area += hunger * 0.7;
+      else if (sv.fx.ombre) b.area += hunger * 0.5;
       if (pud) {
         if (!this.foam || this.foam.adv) this.foam = { y0: b.y - 3, y1: b.y + 3, blobs: [], adv: true };
         if (pud !== this.lastPud) { this.floatText('SPLASH !', b.x, b.y - b.r - 10, '#bfe8ff'); this.burst(b.x, b.y, 10, ['#5ab4e6', '#bfe8ff', '#ffffff'], 60); }
@@ -7015,8 +7056,9 @@ if (SURVIVAL_ON) (() => {
     oStep.call(this, b);
     if (sv && ADV.run) {
       // Seconde chance : la première fois que la boule est vide, on repart
-      if (this.phase === 'miss' && b.area < SURV.deathArea && up('seconde') && !sv.second) {
-        sv.second = true; this.phase = 'play'; this.phaseT = 0;
+      if (this.phase === 'miss' && b.area < SURV.deathArea && ((up('seconde') && !sv.second) || sv.coeur)) {
+        if (up('seconde') && !sv.second) sv.second = true; else sv.coeur--;
+        this.phase = 'play'; this.phaseT = 0;
         b.area = SURV.deathArea * 2; b.r = Math.sqrt(b.area);
         this.notice('SECONDE CHANCE !', '#ff8aa8', 2.5, 4); Sound.play('unlock');
         this.burst(b.x, b.y, 30, ['#ff6a8a', '#ffd25a', '#ffffff'], 120);
@@ -7041,30 +7083,105 @@ if (SURVIVAL_ON) (() => {
   Game.prototype.applyBonus = function (bon, fromTube) {
     oBonus.call(this, bon, fromTube);
     if (!this.surv || !bon) return;
-    if (bon.dur && bon.id !== 'mystere' && up('durable')) this.surv.fx[bon.id] = (this.surv.fx[bon.id] || 0) + bon.dur * 0.15 * up('durable');
+    const sv = this.surv, b = this.ball;
+    if (bon.dur && bon.id !== 'mystere' && up('durable')) sv.fx[bon.id] = (sv.fx[bon.id] || 0) + bon.dur * 0.2 * up('durable');
+    if (!ADV.run) return;
+    sv.relics = sv.relics || [];
+    if (bon.dur && bon.kind !== 'relic' && sv.relics.includes('sablier')) sv.fx[bon.id] = (sv.fx[bon.id] || 0) + bon.dur * 0.3;
+    if (bon.kind === 'relic' && !sv.relics.includes(bon.id)) {
+      sv.relics.push(bon.id);
+      if (bon.id === 'gourde') sv.hunger *= 0.85;
+      if (bon.id === 'coeur') sv.coeur = (sv.coeur || 0) + 1;
+      if (bon.fam && famCount(sv, bon.fam) === 3) {
+        const C = COMBOS[bon.fam];
+        this.notice(`COMBO : ${C.name.toUpperCase().replace('\'', ' ')} !`, '#ffd25a', 2.5, 4); Sound.play('unlock');
+        this.burst(b.x, b.y, 30, ['#ffd25a', '#ffffff', FAMI[bon.fam].col], 120);
+        if (bon.fam === 'gourmand') sv.hunger *= 0.75;
+        if (bon.fam === 'malin') sv.jackpot = true;
+      }
+      showRelics(this);
+    }
+    if (bon.id === 'festin') { b.area *= 1.5; b.r = Math.sqrt(b.area); }
+    if (bon.id === 'etoile') { sv.fx.fantome = (sv.fx.fantome || 0) + 12; sv.fx.cafe = (sv.fx.cafe || 0) + 12; }
+    if (bon.id === 'alevins') {
+      for (let i = 0; i < 14; i++) { const y = b.y + 50 + i * 11, [L, R] = this.edge(y); this.spawn(D.alevin, L + 8 + Math.random() * (R - L - 16), y, D.alevin.r); }
+    }
     if (bon.id === 'cocos') {
       const b = this.ball;
       for (let i = 0; i < 14; i++) { const y = b.y + 50 + i * 12, [L, R] = this.edge(y); this.spawn(D.coco, L + 8 + Math.random() * (R - L - 16), y, D.coco.r); }
     }
   };
-  const oCards = Game.prototype.drawCards;
+  // --- Les cartes des haltes ---------------------------------------------------
+  // 2 sortes : les coups de pouce (effet immédiat ou court) et les reliques (toute la partie, elles se cumulent).
+  // 3 raretés : commune, rare, légendaire. Les reliques suivent les 3 familles des compétences ;
+  // 3 reliques d'une même famille donnent un combo. Chaque monde ajoute ses 2 cartes.
+  const RARE_COUPS = ['fantome', 'feu', 'rebond', 'raccourci'];
+  const COUPS = BONUSES.map(b => ({ ...b, kind: 'coup', rar: RARE_COUPS.includes(b.id) ? 'r' : 'c' }));
+  const NEW_COUPS = [
+    { id: 'festin', icon: '🍗', name: 'Festin', desc: 'Plus de faim pendant 20 s, et +50 % de taille', dur: 20, rar: 'l', lvl: 10 },
+    { id: 'etoile', icon: '🌟', name: 'Étoile filante', desc: 'Turbo et tu traverses tout pendant 12 s', dur: 0, rar: 'l', lvl: 10 },
+    { id: 'ombre', icon: '🌴', name: 'Ombre fraîche', desc: 'La faim monte 2× moins vite (15 s)', dur: 15, rar: 'c', world: 0 },
+    { id: 'repousse', icon: '🦂', name: 'Repousse-scorpions', desc: 'Les animaux s\'écartent sans faire mal (12 s)', dur: 12, rar: 'r', world: 0 },
+    { id: 'bouee', icon: '🛟', name: 'Bouée', desc: 'Le courant ne te pousse plus (15 s)', dur: 15, rar: 'c', world: 2 },
+    { id: 'alevins', icon: '🐟', name: 'Banc de poissons', desc: 'Des petits poissons à avaler arrivent devant toi', dur: 0, rar: 'c', world: 2 },
+  ].map(b => ({ ...b, kind: 'coup' }));
+  const RELICS = [
+    { id: 'appetit', fam: 'gourmand', icon: '🍯', name: 'Gros appétit', desc: 'Ce que tu avales fait grossir +20 %', rar: 'c' },
+    { id: 'gourde', fam: 'gourmand', icon: '🥤', name: 'Gourde', desc: 'La faim monte 15 % moins vite', rar: 'c' },
+    { id: 'piquenique', fam: 'gourmand', icon: '🧺', name: 'Pique-nique', desc: '+20 % de taille à chaque halte', rar: 'r', lvl: 5 },
+    { id: 'coquille', fam: 'costaud', icon: '🐚', name: 'Coquille', desc: 'Les animaux font 15 % moins mal', rar: 'c' },
+    { id: 'kit', fam: 'costaud', icon: '💊', name: 'Kit de soin', desc: '+1 pansement toutes les 2 haltes', rar: 'c' },
+    { id: 'piquants', fam: 'costaud', icon: '🦔', name: 'Piquants', desc: 'Un animal qui te touche fuit sans faire mal (1 fois / 20 s)', rar: 'r', lvl: 5 },
+    { id: 'trefle', fam: 'malin', icon: '🍀', name: 'Trèfle', desc: 'Les cartes rares et légendaires sortent 2× plus', rar: 'c' },
+    { id: 'sablier', fam: 'malin', icon: '⏳', name: 'Sablier', desc: 'Les coups de pouce durent 30 % de plus', rar: 'c' },
+    { id: 'de', fam: 'malin', icon: '🎲', name: 'Dé pipé', desc: '+1 carte à chaque halte', rar: 'r', lvl: 5 },
+    { id: 'coeur', fam: null, icon: '💛', name: 'Cœur d\'or', desc: 'Une vie en plus : quand ta boule est vide, tu repars', rar: 'l', lvl: 15 },
+  ].map(b => ({ ...b, kind: 'relic', dur: 0 }));
+  const COMBOS = {
+    gourmand: { name: 'Ventre d\'or', desc: 'la faim monte encore 25 % moins vite' },
+    costaud: { name: 'Armure', desc: 'les animaux font encore 25 % moins mal' },
+    malin: { name: 'Jackpot', desc: 'une carte légendaire à la prochaine halte' },
+  };
+  const ALL_CARDS = [...COUPS, ...NEW_COUPS, ...RELICS];
+  for (const c of [...NEW_COUPS, ...RELICS]) BONUS[c.id] = c;  // pour l'affichage des effets en cours
+  // ce que chaque niveau débloque (affiché au passage de niveau)
+  const CARD_UNLOCKS = { 3: 'les pactes 😈', 5: 'de nouvelles reliques rares', 10: 'les cartes légendaires', 15: 'la relique légendaire Cœur d\'or' };
+  const RAR = { c: 'commune', r: 'rare', l: 'légendaire' };
+  const FAMI = Object.fromEntries(FAMS.map(f => [f.id, f]));
+
   Game.prototype.drawCards = function () {
-    let cards = oCards.call(this);
-    const pacts = levelOf(adv().xp).L >= PACT_LEVEL;
-    const pool = () => BONUSES.filter(x => !cards.includes(x));
-    cards = cards.map(c => (c.pact && !pacts ? null : c)).filter(Boolean);
-    while (cards.length < 3 + up('cartes')) { const l = pool(); cards.push(l[Math.floor(Math.random() * l.length)]); }
-    if (ADV.run && this.surv) {
-      const sv = this.surv; sv.halts = (sv.halts || 0) + 1;
-      // Trousse de secours : +1 pansement à chaque halte ; Double choix : une halte sur deux (dès la 1re), 2 cartes
-      if (up('trousse')) { sv.shields++; this.floatText('+1 PANSEMENT', this.ball.x, this.ball.y - this.ball.r - 10, '#8ae0ff'); }
-      sv.doublePick = !!up('double') && sv.halts % 2 === 1;
+    const sv = this.surv, L = levelOf(adv().xp).L;
+    if (!ADV.run || !sv) { const pool = BONUSES.slice(), cards = []; while (cards.length < 3) cards.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]); return cards; }
+    sv.halts = (sv.halts || 0) + 1; sv.relics = sv.relics || [];
+    const w = Math.min(sv.world, PLAYABLE - 1), luck = sv.relics.includes('trefle') ? 2 : 1;
+    const ok = c => (!c.lvl || L >= c.lvl) && (c.world == null || c.world === w) && !(c.kind === 'relic' && sv.relics.includes(c.id));
+    const pool = ALL_CARDS.filter(ok).concat(w === 1 ? OASIS_CARDS.map(c => ({ ...c, kind: 'coup', rar: 'c', world: 1 })) : []);
+    const n = 3 + up('cartes') + (sv.relics.includes('de') ? 1 : 0), cards = [];
+    const pick = (f) => { const l = pool.filter(c => f(c) && !cards.includes(c)); return l.length ? l[Math.floor(Math.random() * l.length)] : null; };
+    for (let k = 0; k < n; k++) {
+      // rareté de cet emplacement, puis coup de pouce ou relique
+      const x = Math.random(), legend = (sv.jackpot && k === 0) || (L >= 10 && x < 0.02 * luck), rare = !legend && x < 0.25 * luck;
+      const rar = legend ? 'l' : rare ? 'r' : 'c', relic = Math.random() < 0.4;
+      const c = pick(c => c.rar === rar && (c.kind === 'relic') === relic) || pick(c => c.rar === rar) || pick(c => c.rar === 'c') || pick(() => true);
+      if (c) cards.push(c);
     }
-    // dans l'oasis, ses cartes à elle
-    if (ADV.run && this.surv && this.surv.world === 1) cards[0] = OASIS_CARDS[Math.floor(Math.random() * OASIS_CARDS.length)];
+    sv.jackpot = false;
+    // une carte du monde de temps en temps
+    const wc = pool.filter(c => c.world === w && !cards.includes(c));
+    if (wc.length && Math.random() < 0.4) cards[cards.length - 1] = wc[Math.floor(Math.random() * wc.length)];
+    // un pacte de temps en temps (à partir du niveau 3)
+    if (L >= PACT_LEVEL && sv.dist > 400 && Math.random() < 0.3) cards[cards.length - 1] = { ...PACTS[Math.floor(Math.random() * PACTS.length)], kind: 'coup', rar: 'c' };
+    // effets des reliques et compétences à chaque halte
+    const b = this.ball;
+    if (up('trousse')) { sv.shields++; this.floatText('+1 PANSEMENT', b.x, b.y - b.r - 10, '#8ae0ff'); }
+    if (sv.relics.includes('kit') && sv.halts % 2 === 0) { sv.shields++; this.floatText('+1 PANSEMENT', b.x, b.y - b.r - 18, '#8ae0ff'); }
+    if (sv.relics.includes('piquenique')) { b.area *= 1.2; b.r = Math.sqrt(b.area); }
+    sv.doublePick = !!up('double') && sv.halts % 2 === 1;
     return cards;
   };
-
+  // reliques : nombre par famille, et combo à 3
+  const famCount = (sv, f) => (sv.relics || []).filter(id => (RELICS.find(r => r.id === id) || {}).fam === f).length;
+  const combo = (sv, f) => famCount(sv, f) >= 3;
   // Double choix : après la 1re carte, on en reprend une parmi les autres
   const oPick = App.pickCard;
   App.pickCard = function (i) {
@@ -7078,10 +7195,24 @@ if (SURVIVAL_ON) (() => {
   };
   const oCardsScr = App.scr_cards;
   App.scr_cards = function () {
-    let h = oCardsScr.call(this);
     const sv = this.game && this.game.surv;
-    if (ADV.run && sv) h = h.replace('· choisis un bonus', sv.doublePick ? '· ✌️ Double choix : prends 2 cartes !' : (up('double') && sv.halts % 2 === 1 ? '· ✌️ choisis ta 2e carte' : '· choisis un bonus'));
-    return h;
+    if (!ADV.run || !sv) return oCardsScr.call(this);
+    const sub = sv.doublePick ? '✌️ Double choix : prends 2 cartes !' : (up('double') && sv.halts % 2 === 1 ? '✌️ choisis ta 2e carte' : 'choisis une carte');
+    const card = (c, i) => {
+      const F = c.fam && FAMI[c.fam], dur = c.dur ? ` · ${c.dur} s` : '';
+      const tag = c.pact ? 'PACTE 😈' : c.kind === 'relic' ? `RELIQUE · toute la partie${F ? ` · ${F.icon} ${F.name}` : ''}` : `COUP DE POUCE${dur}`;
+      const cnt = c.kind === 'relic' && F ? famCount(sv, c.fam) : -1;
+      const comboTxt = cnt >= 0 && cnt < 3 ? `<span class="tiny cmb">${cnt + 1 === 3 ? `⭐ Combo ${COMBOS[c.fam].name} : ${COMBOS[c.fam].desc} !` : `Combo ${COMBOS[c.fam].name} : ${cnt + 1}/3`}</span>` : '';
+      return `<button class="card rar-${c.rar || 'c'} ${c.kind === 'relic' ? 'relic' : ''} ${c.pact ? 'pact' : ''}" data-a="pickcard" data-v="${i}" ${F ? `style="--fam:${F.col}"` : ''}>
+        <span class="ico">${c.icon}</span><span><span class="ctag">${tag}${c.rar && c.rar !== 'c' && !c.pact ? ` · <i>${RAR[c.rar]}</i>` : ''}</span><b>${esc(c.name)}</b><span class="tiny">${esc(c.desc)}</span>${comboTxt}</span></button>`;
+    };
+    const rl = sv.relics || [];
+    return `<div class="screen center dim">
+      <div class="title small">HALTE !</div>
+      <div class="tiny">${Math.floor(sv.dist)} m parcourus · ${sub}</div>
+      <div class="cards">${(this.cards || []).map(card).join('')}</div>
+      ${rl.length ? `<div class="tiny" style="margin-top:calc(var(--u)*2)">Tes reliques : ${rl.map(id => BONUS[id].icon).join(' ')}</div>` : ''}
+    </div>`;
   };
   const oSurv = App.startSurvival;
   App.startSurvival = function () { if (!ADV.run) { const w = Math.min(adv().sel, adv().unlocked, PLAYABLE - 1); ADV.run = { world: w, offset: startOf(w) }; ADV.lastY = 0; } return oSurv.call(this); };
@@ -7096,7 +7227,7 @@ if (SURVIVAL_ON) (() => {
   const head = (t, right = '') => `<div class="head"><button class="btn ghost small" data-adv="back">◀</button><h2>${t}</h2><span style="margin-left:auto">${right}</span></div>`;
   const lvlBox = () => {
     const l = levelOf(adv().xp), pts = points();
-    const nextTxt = l.L + 1 === PACT_LEVEL ? `Niveau ${PACT_LEVEL} : les pactes 😈 apparaissent aux haltes` : `Niveau ${l.L + 1} : +1 point de compétence`;
+    const nextTxt = l.L + 1 === PACT_LEVEL ? `Niveau ${PACT_LEVEL} : les pactes 😈 apparaissent aux haltes` : CARD_UNLOCKS[l.L + 1] ? `Niveau ${l.L + 1} : ${CARD_UNLOCKS[l.L + 1]} aux haltes, et +1 point` : `Niveau ${l.L + 1} : +1 point de compétence`;
     return `<div class="panel"><div class="lvl"><span class="n">Niv. ${l.L}</span><div class="bar"><div style="width:${Math.round(l.cur * 100 / l.next)}%"></div><span>${l.cur} / ${l.next} XP</span></div></div>
       <div class="tiny" style="margin-top:var(--u)">${nextTxt}</div>
       ${pts ? `<button class="btn" data-adv="skills" style="margin-top:calc(var(--u)*2)">🎯 ${pts} point${pts > 1 ? 's' : ''} à placer</button>` : ''}</div>`;
@@ -7221,6 +7352,7 @@ if (SURVIVAL_ON) (() => {
         : `<div class="next">🏁 Plus que <b>${fmt(x.left)}</b> avant ${N && !N.soon ? `<b>${N.icon} ${N.name}</b>` : 'la fin des mondes jouables'} !</div>`}
       <div class="panel"><div class="lvl"><span class="n">Niv. ${x.before}${x.after > x.before ? ' → ' + x.after : ''}</span><div class="bar"><div style="width:${Math.round(l.cur * 100 / l.next)}%"></div><span>${l.cur} / ${l.next} XP</span></div></div>
         <div class="tiny" style="margin-top:var(--u);color:#c8ff8a">+${x.gained} XP${x.after > x.before ? ` · ⬆️ Niveau supérieur ! +${x.after - x.before} point${x.after - x.before > 1 ? 's' : ''} de compétence` : ''}${x.wp ? ` · 🎯 +${x.wp} point${x.wp > 1 ? 's' : ''} : nouveau monde terminé !` : ''}</div></div>
+      ${Object.keys(CARD_UNLOCKS).map(Number).filter(L => L !== PACT_LEVEL && L > x.before && L <= x.after).map(L => `<div class="unl"><div class="c">🆕</div><div><b>Niveau ${L} : ${CARD_UNLOCKS[L]} !</b><div class="tiny">Elles peuvent maintenant sortir aux haltes.</div></div></div>`).join('')}
       ${x.after >= PACT_LEVEL && x.before < PACT_LEVEL ? '<div class="unl"><div class="c">😈</div><div><b>Nouveau : les pactes !</b><div class="tiny">Des cartes très puissantes… avec une contrepartie. Elles peuvent maintenant sortir aux haltes.</div></div></div>' : ''}
       <div class="panel"><div class="tiny" style="color:#ffd25a">${x.coins ? `+${x.coins} 🟡` : '+0 🟡'} · ${x.today >= COINS.max ? `plafond du jour atteint (${COINS.max} 🟡), reviens demain !` : `${x.today} / ${COINS.max} 🟡 gagnées aujourd'hui dans l'aventure`}</div></div>
       <div class="panel"><table class="stats"><tr><td>Bonus pris</td><td class="taken">${(run.taken || []).join(' ') || '—'}</td></tr><tr><td>Objets avalés</td><td>${run.absorbed}</td></tr><tr><td>Temps</td><td>${fmtTime(run.time)}</td></tr></table></div>
