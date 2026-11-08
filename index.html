@@ -6344,6 +6344,19 @@ if (SURVIVAL_ON) (() => {
     R('#7a4e26', 0, 2, 1, 4); R('#c89a5c', 15, 2, 1, 4); R('#e0b878', 14, 3, 1, 2);
     return c;
   })();
+  // désert : arbuste sec posé sur les falaises, et vautour vu du dessus (2 images : ailes à plat / bouts relevés)
+  const pix = (rows, pal) => { const c = document.createElement('canvas'); c.width = rows[0].length; c.height = rows.length; const x = c.getContext('2d');
+    rows.forEach((r, j) => [...r].forEach((ch, i) => { if (pal[ch]) { x.fillStyle = pal[ch]; x.fillRect(i, j, 1, 1); } })); return c; };
+  const BUSH = pix(['b...b...b', '.b.b.b.b.', '..bbBbb..', 'b..bBb..b', '.b.bBb.b.', '...bBb...', '....B....'], { b: '#7a5230', B: '#553519' });
+  const VULT = (() => {
+    const pal = { D: '#4a3428', d: '#24160f', B: '#2e1f17', W: '#efe2c8', H: '#e0a08a' }, tail = ['........dBBd........', '.........dd.........'];
+    const up = [pix(['.........HH.........', '........WWWW........', 'dd....DDDBBDDD....dd', 'dDDDDDDDDBBDDDDDDDDd', '.dDDDDDDDBBDDDDDDDd.', '..d.d.dDDBBDDd.d.d..', ...tail], pal),
+      pix(['.........HH.........', '........WWWW........', '......DDDBBDDD......', 'ddDDDDDDDBBDDDDDDDdd', 'dDDDDDDDDBBDDDDDDDDd', 'd.d.d.dDDBBDDd.d.d.d', ...tail], pal)];
+    // tournés d'un quart de tour : tête à droite (dir 1) ou à gauche (dir -1), pour les traversées
+    const turn = (c, dir) => { const o = document.createElement('canvas'); o.width = c.height; o.height = c.width; const x = o.getContext('2d');
+      x.translate(o.width / 2, o.height / 2); x.rotate(dir * Math.PI / 2); x.drawImage(c, -c.width / 2, -c.height / 2); return o; };
+    return { up, right: up.map(c => turn(c, 1)), left: up.map(c => turn(c, -1)) };
+  })();
   // palme au premier plan (dessinée devant la boule, sur le bord de l'écran)
   const FROND = (() => {
     const c = document.createElement('canvas'); c.width = 48; c.height = 30; const x = c.getContext('2d');
@@ -6493,6 +6506,10 @@ if (SURVIVAL_ON) (() => {
   const flowDir = (y, ph) => Math.sin(y / 450 + ph);
   const BEACH = pack([226, 201, 138]), BEACH_D = pack([196, 168, 104]), FOAM = pack([225, 240, 255]);
   const EARTH_D = pack([84, 56, 30]), EARTH = pack([128, 92, 52]), EARTH_L = pack([152, 114, 68]);
+  // désert : falaises rouges en couches sur les bords (canyon)
+  const CANYON = ['#c8683a', '#b5532e', '#d4824e', '#a2452a', '#bf5f35'].map(h => pack(hexToRgb(h)));
+  const CANYON_D = pack(hexToRgb('#6e2a18')), CANYON_M = pack(hexToRgb('#8a3a22'));
+  const CANYON_W = new Int16Array(W + 8).map((_, x) => Math.round(Math.sin(x * 0.35) * 2 + x * 0.15));
   // --- Couleurs du sol, ligne par ligne (fondu d'un monde à l'autre) ----------
   const KEYS = ['sand', 'sandDark', 'sandLight', 'wall', 'wallDark', 'wallLight'];
   function palRGB(theme, wx) {
@@ -6522,6 +6539,7 @@ if (SURVIVAL_ON) (() => {
     for (let sy = 0; sy < H; sy++) {
       const wy = camY + sy, yi = wy < 0 ? 0 : wy >= len ? len - 1 : wy;
       const P = this.palAt(wy), oz = this.surv && this.course.adv && isOasisAt(wy), rv = oz && isRiverAt(wy);
+      const cy = this.surv && this.course.adv && !oz;
       const L = Lx[yi] | 0, R = Rx[yi] | 0;
       const mid = (L + R) / 2, half = Math.max(1, (R - L) / 2);
       const deep = rv ? (255 << 24 | Math.round((P.sandDark >> 16 & 255) * 0.8) << 16 | Math.round((P.sandDark >> 8 & 255) * 0.8) << 8 | Math.round((P.sandDark & 255) * 0.8)) >>> 0 : 0;
@@ -6540,6 +6558,7 @@ if (SURVIVAL_ON) (() => {
             else { const s = (wx * 7 + (wyo >> 1) * 3 + RIP[(wx * 5 + wyo) & 255]) % 11; buf[p] = s === 0 ? P.wallDark : s < 3 ? P.wallLight : P.wall; }
             continue;
           }
+          if (cy) { buf[p] = d <= 1 ? CANYON_D : d <= 3 ? CANYON_M : CANYON[((((wyo + CANYON_W[wx < 0 ? 0 : wx]) / 5) | 0) % 5)]; continue; }
           if (d <= 1) buf[p] = P.wallDark;
           else if (d <= 4) buf[p] = P.wallLight;
           else {
@@ -6582,6 +6601,16 @@ if (SURVIVAL_ON) (() => {
     // décor des côtés : roseaux le long de la berge, puis un grand élément par bloc
     ctx.imageSmoothingEnabled = false;
     const hash = n => (Math.imul(n, 2654435761) >>> 0) % 1000;
+    // désert : arbustes secs sur les falaises
+    for (let n = Math.floor((camY - 40) / 46); n * 46 < camY + H + 40; n++) {
+      const h = hash(n + 77), y = n * 46 + (h % 15), side = n & 1;
+      if (h % 3 === 0 || isOasis(y)) continue;
+      const [L, R] = this.edge(y), bw = side ? W - R : L, w = BUSH.width * 2, hg = BUSH.height * 2;
+      if (bw < w * 0.6 + 5) continue;
+      const off = 5 + ((h % 100) / 100) * Math.max(0, bw - w - 5), x = side ? R + off : L - off - w;
+      ctx.fillStyle = 'rgba(90,45,10,0.3)'; ctx.fillRect(Math.round(x + 2), sy(y) - 1, w - 2, 2);
+      ctx.drawImage(BUSH, Math.round(x), sy(y) - hg, w, hg);
+    }
     for (let y = Math.floor((camY - 20) / 13) * 13; y < camY + H + 20; y += 13) {
       if (!isOasis(y)) continue;
       const [L, R] = this.edge(y), sp = SPR.roseaux, hh = hash(y);
@@ -6659,6 +6688,7 @@ if (SURVIVAL_ON) (() => {
     const ctx = this.ctx, H = this.H, camY = this.ball.y - H * 0.3;
     // fondu lisse de l'oasis (0 = désert, 1 = oasis) : pas de tirage au sort par image, donc pas de clignotement
     const frac = oasisFrac(camY + H * 0.5);
+    if (frac < 1) this.drawVultures(camY, 1 - frac);
     if (frac > 0) {
       // palmes au premier plan : elles défilent plus vite que le sol (effet de profondeur)
       const P = camY * 1.35;
@@ -6692,6 +6722,29 @@ if (SURVIVAL_ON) (() => {
     }
   };
 
+  // désert : des vautours tournent au-dessus des falaises (jamais au-dessus de la piste),
+  // et de temps en temps l'un d'eux traverse l'écran à l'horizontale
+  Game.prototype.drawVultures = function (camY, alpha) {
+    const ctx = this.ctx, H = this.H, t = this.t || 0;
+    ctx.imageSmoothingEnabled = false; ctx.globalAlpha = alpha;
+    const draw = (img, x, y, sdx) => {
+      ctx.fillStyle = 'rgba(60,25,10,0.22)'; ctx.beginPath(); ctx.ellipse(x + sdx, y + 12, img.width * 0.45, 2.5, 0, 0, 7); ctx.fill();
+      ctx.drawImage(img, Math.round(x - img.width / 2), Math.round(y - img.height / 2));
+    };
+    for (const [ph, side, y0, v] of [[0, 1, 100, 0.45], [2.6, 0, 170, -0.4], [4.1, 1, 250, 0.38]]) {
+      const a = t * v + ph, y = Math.round(y0 + Math.sin(a) * 14), [L, R] = this.edge(camY + y);
+      const x = (side ? Math.max(R + 11, W - 13) : Math.min(L - 11, 13)) + Math.cos(a) * 4;
+      draw(VULT.up[Math.floor(t * 1.5 + ph) % 2], x, y, side ? 4 : -4);
+    }
+    if (this.vNext == null) this.vNext = t + 12 + Math.random() * 10;
+    if (!this.vCross && t > this.vNext) { this.vCross = { t0: t, dir: Math.random() < 0.5 ? 1 : -1, y: 70 + Math.random() * (H - 160) }; this.vNext = t + 20 + Math.random() * 10; }
+    if (this.vCross) {
+      const c = this.vCross, x = c.dir > 0 ? -12 + (t - c.t0) * 60 : W + 12 - (t - c.t0) * 60;
+      if (x < -14 || x > W + 14) this.vCross = null;
+      else draw((c.dir > 0 ? VULT.right : VULT.left)[Math.floor(t * 1.5) % 2], x, c.y, 0);
+    }
+    ctx.globalAlpha = 1;
+  };
   // le courant pousse la boule de côté (s'ajoute au vent)
   const oWind = Game.prototype.windAt;
   Game.prototype.windAt = function (t) {
