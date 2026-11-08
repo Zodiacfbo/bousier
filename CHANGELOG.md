@@ -8,6 +8,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 ---
 
 ## v1.24.0 — Le mode Aventure (9 novembre 2026)
+- News du 9 novembre : une ligne invite à signaler les bugs avec le bouton 💡.
 - Le mode aventure s'ouvre aux joueurs le lundi 9 novembre au matin (`ADVENTURE_FROM`) : bouton 🗺️ AVENTURE à l'accueil,
   à la place de l'entraînement aléatoire (la partie d'entraînement reste dans le menu de l'aventure). Outils de test : dev seulement.
 - Présentation de l'aventure : « si ta boule arrive à 0, la partie s'arrête », récapitulatif des bonus à la pause (II),
