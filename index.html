@@ -493,7 +493,7 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .lvl .bar > div { height:100%; background: linear-gradient(90deg,#5ab4e6,#8ae0ff); }
 .lvl .bar > span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.75em; font-weight:700; color:#fff; text-shadow: var(--u) var(--u) 0 #1d1416; }
 .seeds { white-space:nowrap; color:#c8ff8a; font-weight:700; }
-.map { position:relative; height: calc(var(--u)*150); }
+.map { position:relative; height: calc(var(--u)*235); }
 .map svg { position:absolute; inset:0; width:100%; height:100%; }
 .node { position:absolute; transform: translate(-50%,-50%); text-align:center; width: calc(var(--u)*46); }
 .node .ic { width: calc(var(--u)*22); height: calc(var(--u)*22); margin: 0 auto; display:flex; align-items:center; justify-content:center; font-size: 1.5em; background: var(--panel2); border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) #7a5a8a; }
@@ -6576,8 +6576,12 @@ if (SURVIVAL_ON) (() => {
       theme: { id: 'riviere', sand: '#3f93cc', sandDark: '#2f7fb8', sandLight: '#58aee0', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
       rule: 'Plus de sable : le courant te pousse ! Il est fort au milieu, calme près des berges.', obstacle: 'des crocodiles : impossible de les avaler !',
       objs: ['tronc', 'nenuphar', 'coco', 'poisson', 'radeau', 'rondin', 'barque'], haz: 'croc' },
+    // mondes à venir (environ 8 en tout) : leurs noms restent secrets sur la carte
     { icon: '🌋', name: 'Le volcan', short: 'Volcan', soon: true },
     { icon: '🌙', name: 'La Lune', short: 'Lune', soon: true },
+    { icon: '❓', name: '???', short: '?', soon: true },
+    { icon: '❓', name: '???', short: '?', soon: true },
+    { icon: '❓', name: '???', short: '?', soon: true },
   ];
   const PLAYABLE = WORLDS.filter(w => !w.soon).length;
   const OASIS_CARDS = [
@@ -7334,7 +7338,8 @@ if (SURVIVAL_ON) (() => {
       <div class="tiny" style="margin-top:var(--u)">${nextTxt}</div>
       ${pts ? `<button class="btn" data-adv="skills" style="margin-top:calc(var(--u)*2)">🎯 ${pts} point${pts > 1 ? 's' : ''} à placer</button>` : ''}</div>`;
   };
-  const POS = [[22, 86], [72, 68], [28, 49], [72, 30], [38, 11]];
+  // le chemin des mondes, en zigzag du bas vers le haut (8 étapes)
+  const POS = [[22, 94], [72, 82.5], [28, 71], [72, 59.5], [28, 48], [72, 36.5], [28, 25], [62, 13]];
   function mapHtml() {
     const a = adv();
     const nodes = POS.map(([x, y], i) => {
@@ -7368,9 +7373,9 @@ if (SURVIVAL_ON) (() => {
       ${head('Aventure', '<button class="btn ghost small" data-adv="intro" aria-label="Comment ça marche">?</button>')}
       <div class="sv-title">MODE AVENTURE</div><div class="sv-sub">Roule le plus loin possible… avant que ta boule ne fonde !</div>
       ${lvlBox()}
-      <div class="panel"><div class="label">🗺️ Les mondes</div>${mapHtml()}</div>
+      <div class="panel"><div class="label">🗺️ Les mondes <span class="tiny" style="text-transform:none;letter-spacing:0">· d'autres arrivent bientôt…</span></div>${mapHtml()}</div>
       <div class="label">Départ</div>
-      <div class="wsel">${WORLDS.map((w, i) => !w.soon && i <= a.unlocked ? `<span class="${i === sel ? 'on' : ''}" data-adv="sel" data-w="${i}">${w.icon} ${w.short}</span>` : `<span class="off">${w.soon ? '🚧' : '🔒'}</span>`).join('')}</div>
+      <div class="wsel">${WORLDS.map((w, i) => !w.soon && i <= a.unlocked ? `<span class="${i === sel ? 'on' : ''}" data-adv="sel" data-w="${i}">${w.icon} ${w.short}</span>` : i === a.unlocked + 1 ? '<span class="off">🔒</span>' : '').join('')}</div>
       <button class="btn big pulse" data-adv="play">ROULER ! <small>départ : ${WORLDS[sel].name}</small></button>
       <button class="btn ghost" data-adv="practice">🎲 Partie d'entraînement <small style="display:block;font-size:.6em;opacity:.8">une dune au hasard, ne compte pas</small></button>
       <div class="menu2"><button data-adv="skills"><span>🎯</span>Compétences${points() ? '<span class="pill-n">' + points() + '</span>' : ''}</button><button data-adv="records"><span>🏆</span>Records</button></div>
@@ -7427,7 +7432,7 @@ if (SURVIVAL_ON) (() => {
     return `<div class="screen">${head('Records')}
       ${top.length ? `<div class="label">🏆 Les plus loin</div><div class="panel"><table class="lb">${top.map((e, i) => `<tr><td>${medal(i)}${e.name === me ? '<br><span class="toi">toi</span>' : ''}</td><td>${esc(e.name)}</td><td class="r">${fmt(e.best)}</td></tr>`).join('')}</table></div>` : ''}
       <div class="label">📍 Mes records par monde</div>
-      <div class="panel"><table class="lb">${WORLDS.map((w, i) => `<tr><td>${i <= a.unlocked && !w.soon ? w.icon : w.soon ? '🚧' : '🔒'}</td><td>${i <= a.unlocked && !w.soon ? w.name : '???'}</td><td class="r">${w.soon ? '🚧' : a.best[i] ? fmt(a.best[i]) : i <= a.unlocked ? '—' : '🔒'}</td></tr>`).join('')}</table></div>
+      <div class="panel"><table class="lb">${WORLDS.filter(w => !w.soon).map((w, i) => `<tr><td>${i <= a.unlocked && !w.soon ? w.icon : w.soon ? '🚧' : '🔒'}</td><td>${i <= a.unlocked && !w.soon ? w.name : '???'}</td><td class="r">${w.soon ? '🚧' : a.best[i] ? fmt(a.best[i]) : i <= a.unlocked ? '—' : '🔒'}</td></tr>`).join('')}</table></div>
     </div>`;
   };
   // fin de partie

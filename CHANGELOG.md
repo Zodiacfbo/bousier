@@ -19,6 +19,8 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Aventure : les mondes pas encore atteints gardent leur nom secret (« ??? », « bientôt », « au bout du monde 1 ») ; niveau maximum
   provisoire : 20 (« NIVEAU MAX (pour l'instant) »), l'XP s'arrête là (11 400 XP) pour que tout le monde reparte du même niveau
   quand le plafond sera relevé ; titre « Toujours plus loin » au niveau 20.
+- Aventure : le chemin des mondes compte 8 étapes (3 jouables, 5 « ??? bientôt ») pour montrer que d'autres mondes arrivent ;
+  le choix du départ ne montre que les mondes atteints et un seul cadenas.
 - News du 9 novembre : « 🗺️ Nouveau : le mode Aventure ! … ».
 - Contenu : tout ce qui est décrit dans les versions 1.23.x ci-dessous (mondes, difficulté, compétences, cartes, récompenses).
 - Dune du jour, à partir du 9 novembre : le cactus ne pique plus ; le titre « L'ami des cactus » compte les cactus avalés.
