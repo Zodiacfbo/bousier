@@ -7,6 +7,13 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.24.0 — Le mode Aventure (9 novembre 2026)
+- Le mode aventure s'ouvre aux joueurs le lundi 9 novembre au matin (`ADVENTURE_FROM`) : bouton 🗺️ AVENTURE à l'accueil,
+  à la place de l'entraînement aléatoire (la partie d'entraînement reste dans le menu de l'aventure). Outils de test : dev seulement.
+- News du 9 novembre : « 🗺️ Nouveau : le mode Aventure ! … ».
+- Contenu : tout ce qui est décrit dans les versions 1.23.x ci-dessous (mondes, difficulté, compétences, cartes, récompenses).
+- Dune du jour, à partir du 9 novembre : le cactus ne pique plus ; le titre « L'ami des cactus » compte les cactus avalés.
+
 ## v1.23.6 — L'aventure au complet (dev seulement) (8 novembre 2026)
 - Aventure : plus d'événements surprise (ils restent dans la dune du jour).
 - Aventure : une météo fixe par monde (désert : canicule, oasis : grand calme, rivière : averse), au lieu d'un tirage au hasard.
