@@ -1679,6 +1679,7 @@ const ADV_NEED = L => 150 + 50 * (L - 1);
 const ADV_MAX = 20;  // niveau maximum pour l'instant (à relever avec les prochains mondes)
 // l'XP s'arrête au niveau maximum : quand on relèvera le plafond, tout le monde repartira du même niveau
 const ADV_XP_CAP = Array.from({ length: ADV_MAX - 1 }, (_, i) => ADV_NEED(i + 1)).reduce((a, b) => a + b, 0);
+const ADV_LOG_MAX = 60;  // aventure : nombre de parties gardées dans le suivi (p.adv.log, lu dans l'admin)
 const advDone = p => Math.max((p.adv && p.adv.unlocked) || 0, (p.adv && p.adv.cleared) || 0);
 const advLevel = p => { let xp = (p.adv && p.adv.xp) || 0, L = 1; while (L < ADV_MAX && xp >= ADV_NEED(L)) { xp -= ADV_NEED(L); L++; } return L; };
 const UNLOCKS = {
@@ -2043,6 +2044,17 @@ const Store = {
     m.bestStreak = Math.max(m.bestStreak || 0, older.bestStreak || 0);
     if ((older.lastDay || '') > (m.lastDay || '')) { m.lastDay = older.lastDay; m.streak = older.streak; }
     m.weeks = { ...(older.weeks || {}), ...(m.weeks || {}) };
+    // aventure : on garde les parties notées sur chaque appareil (suivi lu dans l'admin)
+    if (older.adv && !m.adv) m.adv = JSON.parse(JSON.stringify(older.adv));
+    else if (older.adv && m.adv) {
+      const ml = m.adv.log || [], key = e => e.at + '_' + e.n, seen = new Set(ml.map(key));
+      m.adv.log = [...ml, ...(older.adv.log || []).filter(e => !seen.has(key(e)))].sort((a, b) => a.at - b.at).slice(-ADV_LOG_MAX);
+      const s = m.adv.st = m.adv.st || {}, os = older.adv.st || {};
+      for (const k of ['n', 'ab', 'days']) s[k] = Math.max(s[k] || 0, os[k] || 0);
+      if (os.d0 && (!s.d0 || os.d0 < s.d0)) s.d0 = os.d0;
+      s.clr = s.clr || {};
+      for (const k in os.clr || {}) if (!s.clr[k] || os.clr[k].n < s.clr[k].n) s.clr[k] = os.clr[k];
+    }
     if (older.survival) m.survival = { best: Math.max((m.survival || {}).best || 0, older.survival.best || 0), runs: Math.max((m.survival || {}).runs || 0, older.survival.runs || 0) };
     if ((older.awardsDay || '') > (m.awardsDay || '')) m.awardsDay = older.awardsDay;
     m.boosts = Math.max(m.boosts || 0, older.boosts || 0);
@@ -7386,6 +7398,75 @@ if (SURVIVAL_ON) (() => {
   };
   const oSurv = App.startSurvival;
   App.startSurvival = function () { if (!ADV.run) { const w = Math.min(adv().sel, adv().unlocked, PLAYABLE - 1); ADV.run = { world: w, offset: startOf(w) }; ADV.lastY = 0; } return oSurv.call(this); };
+  // --- Suivi des parties (pour l'équilibrage, lu dans l'admin ; rien ne s'affiche pour le joueur) ---
+  // p.adv.log : les ADV_LOG_MAX dernières parties ; p.adv.st : compteurs depuis le début (parties, abandons,
+  // jours joués, et pour chaque monde la partie où il a été terminé la première fois)
+  const trk = sv => sv.trk || (sv.trk = { hits: 0, blk: 0, bumps: 0, dmg: 0, kinds: {}, lastHit: -99, offers: [], picks: [], maxR: 0 });
+  const oBumpT = Game.prototype.bump;
+  Game.prototype.bump = function (o, dx, dy, d) {
+    const b = this.ball, sv = this.surv, a0 = b.area, lh = b.lastHurt;
+    oBumpT.call(this, o, dx, dy, d);
+    if (!ADV.run || !sv || b.lastHurt === lh) return;  // pas de vrai choc (délai entre deux chocs, feu, fantôme)
+    const T = trk(sv), hz = o.def && o.def.hazard;
+    if (b.area < a0) {
+      if (hz) { T.hits++; T.kinds[o.def.id] = (T.kinds[o.def.id] || 0) + 1; T.lastHit = this.t; T.dmg += (a0 - b.area) / a0; }
+      else T.bumps++;
+    } else if (hz) T.blk++;  // pansement ou boule rebondissante
+  };
+  const oStepT = Game.prototype.stepSurvival;
+  Game.prototype.stepSurvival = function (b) {
+    oStepT.call(this, b);
+    const sv = this.surv;
+    if (!sv || !ADV.run) return;
+    const T = trk(sv);
+    if (b.r > T.maxR) T.maxR = b.r;
+    if (this.phase === 'miss' && !T.end) T.end = (sv.world || 0) >= PLAYABLE || b.area >= SURV.deathArea ? 'fin' : this.t - T.lastHit < 3 ? 'animal' : 'faim';
+  };
+  const oHaltT = App.onHalt;
+  App.onHalt = function (cards) {
+    const sv = this.game && this.game.surv;
+    if (ADV.run && sv) { trk(sv).offers.push((cards || []).map(c => c.id)); }
+    return oHaltT.call(this, cards);
+  };
+  const oPickT = App.pickCard;
+  App.pickCard = function (i) {
+    const sv = this.game && this.game.surv, c = this.cards && this.cards[i];
+    if (ADV.run && sv && c) trk(sv).picks.push(c.id);
+    return oPickT.call(this, i);
+  };
+  // une partie terminée (fin = 'faim', 'animal', 'fin' des mondes jouables ou 'abandon')
+  function logRun(info) {
+    try {
+      const a = adv(), g = App.game, sv = g && g.surv, T = (sv && sv.trk) || trk({}), run = (g && g.run) || {};
+      const st = a.st = a.st || { n: 0, ab: 0, days: 0, clr: {} }, today = App.today || dayKey();
+      st.n = (st.n || 0) + 1; st.clr = st.clr || {};
+      if (!st.d0) st.d0 = today;
+      if (st.last !== today) { st.last = today; st.days = (st.days || 0) + 1; }
+      const end = info.end || T.end || 'faim';
+      if (end === 'abandon') st.ab = (st.ab || 0) + 1;
+      for (let i = info.from; i < Math.min(info.w, PLAYABLE); i++) if (!st.clr[i]) st.clr[i] = { n: st.n, d: today, L: info.L };
+      const e = {
+        at: Date.now(), d: today, n: st.n, w0: info.from, w: Math.min(info.w, PLAYABLE), m: info.gained, wm: info.inWorld, end,
+        L: info.L, xp: info.xp || 0, sk: { ...(a.spent || {}) }, s: Math.round(run.time || 0), obj: run.absorbed || 0,
+        r: Math.round(T.maxR * 10) / 10, hits: T.hits, kinds: T.kinds, blk: T.blk, bumps: T.bumps, dmg: Math.round(T.dmg * 100),
+        halts: T.offers.length, offers: T.offers, picks: T.picks, relics: (sv && sv.relics) || [],
+        sc: sv && sv.second ? 1 : 0, coins: info.coins || 0, wx: g && g.wx ? g.wx.id : '',
+      };
+      if (a.short) e.short = 1;  // parcours raccourci (outil de test)
+      a.log = [...(a.log || []), e].slice(-ADV_LOG_MAX);
+    } catch (err) { /* le suivi ne doit jamais gêner la partie */ }
+  }
+  const oAbandonT = App.abandon;
+  App.abandon = function () {
+    const g = this.game;
+    if (this.mode === 'survival' && ADV.run && g && g.surv && g.state === 'run') {
+      const y = ADV.lastY || 0, w = worldAtY(y), wb = Math.min(w, PLAYABLE - 1);
+      logRun({ end: 'abandon', from: ADV.run.world, w, gained: Math.max(0, Math.floor(g.surv.dist - ADV.run.offset)),
+        inWorld: Math.max(0, Math.floor((y - yStart(wb)) / 10)), L: levelOf(adv().xp).L });
+      Store.save();
+    }
+    return oAbandonT.call(this);
+  };
   // --- Lancer une partie -------------------------------------------------------
   function play() {
     const w = Math.min(adv().sel, adv().unlocked, PLAYABLE - 1);
@@ -7515,6 +7596,7 @@ if (SURVIVAL_ON) (() => {
       const coins = Math.max(0, Math.min(COINS.max - cd.n, (cd.n ? 0 : COINS.first) + Math.floor(gained / COINS.per)));
       cd.n += coins; p.coins += coins; r.coins = coins;
       r.adv = { gained, from, w, wb, before, after: levelOf(a.xp).L, rec, newWorld: w > from, left: Math.max(0, Math.ceil((yEnd(wb) - y) / 10)), coins, today: cd.n, wp: (ADV.run && ADV.run.wp) || 0, xp: xpGot };
+      logRun({ from, w, gained, inWorld, L: before, xp: xpGot, coins });
       Store.save();
     }
     const x = r.adv, l = levelOf(a.xp), end = x.w >= PLAYABLE, W1 = WORLDS[x.wb], N = WORLDS[x.wb + 1];

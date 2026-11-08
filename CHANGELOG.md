@@ -7,6 +7,16 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.24.1 — Suivi des parties d'aventure (8 novembre 2026)
+- Aventure : chaque partie est notée dans la progression du joueur (`p.adv.log`, les 60 dernières), pour équilibrer le mode
+  depuis l'admin : date, monde de départ et d'arrivée, distance, cause de fin (faim, animal, abandon, fin des mondes),
+  niveau et compétences, temps, objets avalés, taille max, chocs d'animaux (par animal), pansements utilisés, dégâts,
+  cartes proposées et choisies, reliques, seconde chance, pièces, météo.
+- Compteurs depuis le début (`p.adv.st`) : nombre de parties, abandons, jours joués, et pour chaque monde la partie
+  (et le jour, le niveau) où il a été terminé la première fois.
+- Fusion entre deux appareils : les parties des deux côtés sont gardées.
+- Rien ne change pour les joueurs (pas d'écran, pas de news).
+
 ## v1.24.0 — Le mode Aventure (9 novembre 2026)
 - News du 9 novembre : une ligne invite à signaler les bugs avec le bouton 💡.
 - Le mode aventure s'ouvre aux joueurs le lundi 9 novembre au matin (`ADVENTURE_FROM`) : bouton 🗺️ AVENTURE à l'accueil,
