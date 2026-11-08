@@ -494,6 +494,9 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .lvl .bar > span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.75em; font-weight:700; color:#fff; text-shadow: var(--u) var(--u) 0 #1d1416; }
 .seeds { white-space:nowrap; color:#c8ff8a; font-weight:700; }
 .map { position:relative; height: calc(var(--u)*235); }
+.adv-foot .wsel-row { display:flex; align-items:center; gap: calc(var(--u)*2); }
+.adv-foot .wsel-row .wsel { flex:1; margin:0; }
+.adv-foot .btn.big { margin: calc(var(--u)*1.5) 0; }
 .map svg { position:absolute; inset:0; width:100%; height:100%; }
 .node { position:absolute; transform: translate(-50%,-50%); text-align:center; width: calc(var(--u)*46); }
 .node .ic { width: calc(var(--u)*22); height: calc(var(--u)*22); margin: 0 auto; display:flex; align-items:center; justify-content:center; font-size: 1.5em; background: var(--panel2); border: var(--u) solid var(--line); box-shadow: inset 0 0 0 var(--u) #7a5a8a; }
@@ -7374,16 +7377,17 @@ if (SURVIVAL_ON) (() => {
       <div class="sv-title">MODE AVENTURE</div><div class="sv-sub">Roule le plus loin possible… avant que ta boule ne fonde !</div>
       ${lvlBox()}
       <div class="panel"><div class="label">🗺️ Les mondes <span class="tiny" style="text-transform:none;letter-spacing:0">· d'autres arrivent bientôt…</span></div>${mapHtml()}</div>
-      <div class="label">Départ</div>
-      <div class="wsel">${WORLDS.map((w, i) => !w.soon && i <= a.unlocked ? `<span class="${i === sel ? 'on' : ''}" data-adv="sel" data-w="${i}">${w.icon} ${w.short}</span>` : i === a.unlocked + 1 ? '<span class="off">🔒</span>' : '').join('')}</div>
-      <button class="btn big pulse" data-adv="play">ROULER ! <small>départ : ${WORLDS[sel].name}</small></button>
-      <button class="btn ghost" data-adv="practice">🎲 Partie d'entraînement <small style="display:block;font-size:.6em;opacity:.8">une dune au hasard, ne compte pas</small></button>
-      <div class="menu2"><button data-adv="skills"><span>🎯</span>Compétences${points() ? '<span class="pill-n">' + points() + '</span>' : ''}</button><button data-adv="records"><span>🏆</span>Records</button></div>
+      <button class="btn ghost" data-adv="practice">🎲 Partie d'entraînement <small style="display:block;font-size:.6em;opacity:.8">une dune au hasard, avec les règles de la dune du jour (ne compte pas)</small></button>
       ${ONLINE_ENV === 'dev' ? `<div class="panel test"><div class="label">🧪 Outils de test (dev seulement)</div>
         <button class="btn ghost small" data-adv="short">${a.short ? '✅' : '⬜'} Mondes 10× plus courts (${fmt(len(0))} le désert)</button>
         <button class="btn ghost small" data-adv="xp">+300 XP</button>
         <button class="btn ghost small" data-adv="reset">Tout remettre à zéro</button>
 </div>` : ''}
+      <div class="foot adv-foot">
+        <div class="wsel-row"><span class="tiny">Départ :</span><div class="wsel">${WORLDS.map((w, i) => !w.soon && i <= a.unlocked ? `<span class="${i === sel ? 'on' : ''}" data-adv="sel" data-w="${i}">${w.icon} ${w.short}</span>` : i === a.unlocked + 1 ? '<span class="off">🔒</span>' : '').join('')}</div></div>
+        <button class="btn big pulse" data-adv="play">ROULER ! <small>départ : ${WORLDS[sel].name}</small></button>
+        <div class="menu2"><button data-adv="skills"><span>🎯</span>Compétences${points() ? '<span class="pill-n">' + points() + '</span>' : ''}</button><button data-adv="records"><span>🏆</span>Records</button></div>
+      </div>
     </div>`;
   };
   App.scr_monde = function () {
