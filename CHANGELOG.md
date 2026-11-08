@@ -27,6 +27,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   sur la carte (étiquette « DÉPART ») ; ROULER ! rappelle « départ : … · touche un monde pour changer ».
 - Aventure : annonces des mondes simplifiées (règle, animal dangereux, météo) ; au compte à rebours, « ÉVITE LES ANIMAUX ! »
   au lieu de « VISE LE TERRIER AU BOUT ! » (il n'y a pas de terrier dans l'aventure).
+- Menu de l'aventure : haut fixé (titre, « ? », barre de niveau) ; seuls la carte et l'entraînement défilent. Grand titre retiré.
 - News du 9 novembre : « 🗺️ Nouveau : le mode Aventure ! … » et « 🎲 L'entraînement aléatoire est maintenant dans le menu de l'Aventure. »
 - Contenu : tout ce qui est décrit dans les versions 1.23.x ci-dessous (mondes, difficulté, compétences, cartes, récompenses).
 - Dune du jour, à partir du 9 novembre : le cactus ne pique plus ; le titre « L'ami des cactus » compte les cactus avalés.

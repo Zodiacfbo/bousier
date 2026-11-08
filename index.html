@@ -498,6 +498,8 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .adv-foot .wsel-row .wsel { flex:1; margin:0; min-width:0; overflow-x:auto; scrollbar-width:none; }
 .adv-foot .wsel-row .wsel::-webkit-scrollbar { display:none; }
 .adv-foot .wsel-row .wsel span { flex: 1 0 auto; white-space:nowrap; padding-left: calc(var(--u)*3); padding-right: calc(var(--u)*3); }
+.adv-top .panel { margin:0; }
+.adv-top .head { margin-bottom:0; }
 .adv-foot .btn.big { margin: calc(var(--u)*1.5) 0; }
 .map svg { position:absolute; inset:0; width:100%; height:100%; }
 .node { position:absolute; transform: translate(-50%,-50%); text-align:center; width: calc(var(--u)*46); }
@@ -7385,9 +7387,10 @@ if (SURVIVAL_ON) (() => {
       <button class="btn big" data-adv="introok">C'est parti !</button>
     </div>`;
     return `<div class="screen">
+      <div class="shop-top adv-top">
       ${head('Aventure', '<button class="btn ghost small" data-adv="intro" aria-label="Comment ça marche">?</button>')}
-      <div class="sv-title">MODE AVENTURE</div><div class="sv-sub">Roule le plus loin possible… avant que ta boule ne fonde !</div>
       ${lvlBox()}
+      </div>
       <div class="panel"><div class="label">🗺️ Les mondes <span class="tiny" style="text-transform:none;letter-spacing:0">· d'autres arrivent bientôt…</span></div>${mapHtml()}</div>
       <button class="btn ghost" data-adv="practice">🎲 Partie d'entraînement <small style="display:block;font-size:.6em;opacity:.8">une dune au hasard, avec les règles de la dune du jour (ne compte pas)</small></button>
       ${ONLINE_ENV === 'dev' ? `<div class="panel test"><div class="label">🧪 Outils de test (dev seulement)</div>
