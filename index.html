@@ -6436,6 +6436,13 @@ if (SURVIVAL_ON) (() => {
         for (let j = 7 - h; j < 7 + h; j++) { const edge = j === 7 - h || j === 6 + h || h <= 1;
           px(x, i, j, edge ? '#3d2614' : (j === 7 - h + 1 || j === 5 + h) ? '#7a5230' : (i === 10 || i === 21) ? '#6b4a2a' : (j % 3 === 0 ? '#a8783a' : '#c08a48')); } }
     });
+    SPR.rondin = mk(30, 11, x => {
+      for (let j = 2; j < 11; j++) for (let i = 2; i < 28; i++) px(x, i, j, j === 2 ? '#3d2614' : j === 10 ? '#2a1a0e' : j === 3 ? '#8a5a30' : ((i * 3 + j * 5) % 7 === 0 ? '#4a2e18' : j < 6 ? '#7a4a26' : '#5e3a1e'));
+      for (const e of [0, 27]) for (let j = 3; j < 10; j++) for (let i = 0; i < 3; i++) { const d = Math.hypot(i + e - (e ? 28.5 : 1.5), j - 6.5);
+        if (d < 3.6) px(x, i + e, j, d > 2.8 ? '#5e3a1e' : d > 1.8 ? '#c49a62' : d > 0.9 ? '#a8783a' : '#c49a62'); }
+      for (const [i, j] of [[12, 1], [13, 0], [13, 1], [20, 1], [21, 1]]) px(x, i, j, '#5e3a1e');
+      px(x, 14, 0, '#5fae4a'); px(x, 15, 0, '#5fae4a'); px(x, 22, 0, '#5fae4a');
+    });
     SPR.heron = rows([
       '....GGk..', '...GGWWyy', '....GW...', '....G....', '....GW...', '...GGW...', '..GGGGW..', '.GGGGGGW.', 'GGGGGGGW.', '.GGGGGG..', '...GG.G..', '...y..y..', '...y..y..', '...y..y..', '..yy.yy..'],
       { G: '#8a96a6', W: '#e8eef4', y: '#d8a040', k: '#20242c' });
@@ -6474,9 +6481,11 @@ if (SURVIVAL_ON) (() => {
     poisson: { id: 'poisson', name: 'Poisson', sprite: 'poisson', r: 8.5 },
     radeau: { id: 'radeau', name: 'Radeau', sprite: 'radeau', r: 10 },
     barque: { id: 'barque', name: 'Barque', sprite: 'barque', r: 13 },
+    rondin: { id: 'rondin', name: 'Gros rondin', sprite: 'rondin', r: 10 },
   };
   // les gros objets du désert (tente, chameau, palmier) deviennent ceux du monde
-  const BIG_OASIS = { tente: D.regime, chameau: D.pasteque, palmier: D.panier }, BIG_RIVER = { tente: D.poisson, chameau: D.radeau, palmier: D.barque };
+  const BIG_OASIS = { tente: D.regime, chameau: D.pasteque, palmier: D.panier };
+  const RIVER_BIG = [D.poisson, D.radeau, D.rondin, D.rondin, D.barque];  // le gros rondin sort plus souvent que la barque
 
   // --- Les mondes -----------------------------------------------------------
   // une météo fixe par monde : elle fait partie de son ambiance
@@ -6488,7 +6497,7 @@ if (SURVIVAL_ON) (() => {
     { icon: '🌊', name: 'La rivière sauvage', short: 'Rivière', up: 'LA RIVIERE SAUVAGE', sign: 'RIVIERE', len: 3500, hunger: 1, speed: 1, wx: ['pluie'],
       theme: { id: 'riviere', sand: '#3f93cc', sandDark: '#2f7fb8', sandLight: '#58aee0', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
       rule: 'Plus de sable : le courant te pousse ! Il est fort au milieu, calme près des berges.', obstacle: 'des crocodiles : impossible de les avaler !',
-      objs: ['tronc', 'nenuphar', 'coco', 'poisson', 'radeau', 'barque'], haz: 'croc' },
+      objs: ['tronc', 'nenuphar', 'coco', 'poisson', 'radeau', 'rondin', 'barque'], haz: 'croc' },
     { icon: '🌋', name: 'Le volcan', short: 'Volcan', soon: true },
     { icon: '🌙', name: 'La Lune', short: 'Lune', soon: true },
   ];
@@ -6551,23 +6560,18 @@ if (SURVIVAL_ON) (() => {
     c.objects = c.objects.map(o => {
       if (o.def.id === 'cactus') o.def = CACTUS_SOFT;  // en aventure, le cactus ne pique pas : c'est un objet comme les autres
       const t = oasisAt(o.y);
-      // désert : le scorpion est le seul obstacle (les pics et les barils deviennent des scorpions)
-      if (o.def.hazard && !o.def.pickup && !(t && rng.chance(t))) {
-        const n = mk(D.scorpion, o.x, o.y), [L, R] = edge(o.y);
-        n.x = n.x0 = Math.max(L + n.r + n.amp + 2, Math.min(R - n.r - n.amp - 2, o.x));
-        return n;
-      }
+      // les obstacles (pics, barils, scorpions) sont retirés : les animaux du monde sont placés plus bas, selon la distance
+      if ((o.def.hazard && !o.def.pickup) || o.def.id === 'scorpion') return null;
       if (!t || o.def.pickup || !rng.chance(t)) return o;
       let def = null;
       const rv = riverAt(o.y);
-      if (o.def.hazard) def = rv && rng.chance(rv) ? D.croc : D.crabe;
-      else if (o.def.rock) {
+      if (o.def.rock) {
         // pas de rocher dans la rivière : il devient un objet qui flotte, de taille proche
         // (4 sur 10 disparaissent, pour ne pas encombrer l'eau ; les gros varient entre poisson, radeau, barque et tronc)
-        if (rv && rng.chance(rv)) { if (rng.chance(0.4)) return null; def = o.r <= 5.2 ? D.coco : o.r <= 7 ? D.nenuphar : rng.pick([D.poisson, D.radeau, D.barque, D.tronc]); }
+        if (rv && rng.chance(rv)) { if (rng.chance(0.4)) return null; def = o.r <= 5.2 ? D.coco : o.r <= 7 ? D.nenuphar : rng.pick(RIVER_BIG.concat(D.tronc)); }
         else { if (!rv) o.sprite = mossy(o.sprite); return o; }
       }
-      else if (BIG_OASIS[o.def.id]) def = rng.pick(Object.values(rv && rng.chance(rv) ? BIG_RIVER : BIG_OASIS));
+      else if (BIG_OASIS[o.def.id]) def = rng.pick(rv && rng.chance(rv) ? RIVER_BIG : Object.values(BIG_OASIS));
       else if (o.r <= 2.2) def = D.datte;
       else if (o.r <= 3.4) def = rng.chance(0.5) && !rv ? D.grenouille : D.datte;
       else if (o.r <= 5.2) def = D.coco;
@@ -6597,6 +6601,36 @@ if (SURVIVAL_ON) (() => {
       if (rng.chance(0.5)) c.objects.push(mk(D.nenuphar, x + rng.range(-rx / 3, rx / 3), y));
     }
     c.objects.sort((a, b) => a.y - b.y);
+    // plafond : pas de mur de rochers ni de très gros objets en rafale (au plus un rocher tous les 25 m, un très gros objet tous les 20 m)
+    let lastRock = -1e9, lastBig = -1e9;
+    c.objects = c.objects.filter(o => {
+      if (o.def.hazard || o.def.pickup) return true;
+      if (o.def.rock) { if (o.y - lastRock < 250) return false; lastRock = o.y; return true; }
+      if (o.r >= 8) { if (o.y - lastBig < 200) return false; lastBig = o.y; }
+      return true;
+    });
+    // les animaux-obstacles du monde (scorpion, crabe, crocodile) : peu au début, puis de plus en plus nombreux
+    // et rapides, jusqu'à 4,5 km depuis le départ du désert (environ 10, puis 35 tous les 500 m)
+    const y0 = startOf(w0) * 10, animals = [];
+    for (let y = 1500; y < c.len - 300;) {
+      const f = Math.min(1, (y + y0) / 45000);
+      y += (500 - 360 * f) * rng.range(0.7, 1.3);
+      const tR = riverAt(y), tO = oasisAt(y);
+      const def = tR && rng.chance(tR) ? D.croc : tO && rng.chance(tO) ? D.crabe : D.scorpion;
+      const n = mk(def, 0, y), [L, R] = edge(y);
+      if (def.move === 'side') { n.w *= 1 + 0.6 * f; n.amp *= 1 + 0.3 * f; }
+      const m = n.r + n.amp + 3; if (R - L < 2 * m + 4) continue;
+      n.x = n.x0 = rng.range(L + m, R - m);
+      animals.push(n);
+    }
+    // on retire les objets posés trop près d'un animal
+    let j = 0;
+    for (const a of animals) {
+      while (j < c.objects.length && c.objects[j].y < a.y - 40) j++;
+      for (let k = j; k < c.objects.length && c.objects[k].y < a.y + 40; k++) { const q = c.objects[k];
+        if (!q.def.pickup && Math.abs(q.x - a.x) < q.r + a.r + a.amp + 4 && Math.abs(q.y - a.y) < q.r + a.r + 4) q.gone = true; }
+    }
+    c.objects = c.objects.filter(o => !o.gone).concat(animals).sort((a, b) => a.y - b.y);
     c.adv = { w0 };
     c.rvPh = rng.range(0, 6.28);
     return c;

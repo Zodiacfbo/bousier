@@ -18,6 +18,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Aventure : les gros objets du désert (tente, chameau, palmier) deviennent ceux du monde : régime de dattes, pastèque et
   panier de fruits dans l'oasis ; poisson, radeau et barque dans la rivière. Berges de la rivière : saules, hérons, massettes, pontons.
 - Aventure : plus de rocher dans la rivière (4 sur 10 disparaissent, les autres deviennent des objets qui flottent, de taille proche).
+- Aventure, rivière : nouveau gros objet « Gros rondin » (plus fréquent que la barque).
+- Aventure, difficulté : elle passe surtout par les animaux-obstacles (scorpion, crabe, crocodile), peu nombreux au début puis
+  de plus en plus nombreux et rapides jusqu'à 4,5 km (environ 10, puis 35 tous les 500 m). Le scorpion n'est plus jamais avalable.
+  Plafond : au plus un rocher tous les 25 m et un très gros objet tous les 20 m (avant : un rocher tous les 7 m en fin de partie).
 - Aventure : +10 🟡 à la première partie du jour, puis 1 🟡 tous les 100 m, 50 🟡 par jour au plus (avant : 1 🟡 / 25 m sans limite).
   Le gain et le compteur du jour s'affichent à l'écran de fin.
 - Aventure : le cactus ne pique plus, c'est un objet avalable comme les autres (un seul obstacle par monde : le scorpion dans le désert).
