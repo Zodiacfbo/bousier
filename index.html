@@ -1654,8 +1654,9 @@ const findCos = (type, id) => COSMETICS[type].find(c => c.id === id) || COSMETIC
 const counter = (p, k) => (p.counters && p.counters[k]) || 0;
 // aventure : mondes terminés et niveau (le même calcul que dans le bloc de l'aventure)
 const ADV_NEED = L => 150 + 50 * (L - 1);
+const ADV_MAX = 20;  // niveau maximum pour l'instant (à relever avec les prochains mondes) ; l'XP continue de compter
 const advDone = p => Math.max((p.adv && p.adv.unlocked) || 0, (p.adv && p.adv.cleared) || 0);
-const advLevel = p => { let xp = (p.adv && p.adv.xp) || 0, L = 1; while (xp >= ADV_NEED(L)) { xp -= ADV_NEED(L); L++; } return L; };
+const advLevel = p => { let xp = (p.adv && p.adv.xp) || 0, L = 1; while (L < ADV_MAX && xp >= ADV_NEED(L)) { xp -= ADV_NEED(L); L++; } return L; };
 const UNLOCKS = {
   'ball:saturne': { text: 'Complète la Bousipédia', prog: p => [Store.discovered(p), OBJECTS.filter(o => !o.bonus).length + LEGENDS.length] },
   'ball:atome': { price: 500 },
@@ -1729,7 +1730,7 @@ const UNLOCKS = {
   'outfit:fleurie': { text: 'Termine l\'oasis dans l\'aventure', prog: p => [advDone(p) >= 2 ? 1 : 0, 1] },
   'theme:rive': { text: 'Termine la rivière sauvage dans l\'aventure', prog: p => [advDone(p) >= 3 ? 1 : 0, 1] },
   'title:globetrotter': { text: 'Atteins le niveau 10 dans l\'aventure', prog: p => [Math.min(advLevel(p), 10), 10] },
-  'title:plusloin': { text: 'Atteins le niveau 25 dans l\'aventure', prog: p => [Math.min(advLevel(p), 25), 25] },
+  'title:plusloin': { text: 'Atteins le niveau 20 dans l\'aventure', prog: p => [Math.min(advLevel(p), 20), 20] },
   'trail:survivant': { text: 'Parcours 2 000 m dans l\'aventure', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 2000] },
 };
 for (const key in UNLOCKS) { const [type, id] = key.split(':'); Object.assign(COSMETICS[type].find(c => c.id === id), UNLOCKS[key]); }
@@ -6616,7 +6617,8 @@ if (SURVIVAL_ON) (() => {
   const len = w => Math.round(WORLDS[w].len * k());
   const startOf = w => { let s = 0; for (let i = 0; i < w; i++) s += len(i); return s; };
   const need = ADV_NEED;
-  const levelOf = xp => { let L = 1; while (xp >= need(L)) { xp -= need(L); L++; } return { L, cur: xp, next: need(L) }; };
+  const levelOf = xp => { let L = 1; while (L < ADV_MAX && xp >= need(L)) { xp -= need(L); L++; } return { L, cur: xp, next: need(L), max: L >= ADV_MAX }; };
+  const lvlBar = l => l.max ? '<div style="width:100%"></div><span style="color:#1d1416;text-shadow:none">NIVEAU MAX (pour l\'instant)</span>' : `<div style="width:${Math.round(l.cur * 100 / l.next)}%"></div><span>${l.cur} / ${l.next} XP</span>`;
   const up = id => adv().spent[id] || 0;
   const spent = () => UPS.reduce((a, u) => a + up(u.id) * (u.cost || 1), 0);
   const famSpent = f => UPS.reduce((a, u) => a + (u.fam === f && !u.star ? up(u.id) : 0), 0);
@@ -7324,8 +7326,8 @@ if (SURVIVAL_ON) (() => {
   const head = (t, right = '') => `<div class="head"><button class="btn ghost small" data-adv="back">◀</button><h2>${t}</h2><span style="margin-left:auto">${right}</span></div>`;
   const lvlBox = () => {
     const l = levelOf(adv().xp), pts = points();
-    const nextTxt = l.L + 1 === PACT_LEVEL ? `Niveau ${PACT_LEVEL} : les pactes 😈 apparaissent aux haltes` : CARD_UNLOCKS[l.L + 1] ? `Niveau ${l.L + 1} : ${CARD_UNLOCKS[l.L + 1]} aux haltes, et +1 point` : `Niveau ${l.L + 1} : +1 point de compétence`;
-    return `<div class="panel"><div class="lvl"><span class="n">Niv. ${l.L}</span><div class="bar"><div style="width:${Math.round(l.cur * 100 / l.next)}%"></div><span>${l.cur} / ${l.next} XP</span></div></div>
+    const nextTxt = l.max ? 'Niveau max pour l\'instant : la suite arrive avec les prochains mondes !' : l.L + 1 === PACT_LEVEL ? `Niveau ${PACT_LEVEL} : les pactes 😈 apparaissent aux haltes` : CARD_UNLOCKS[l.L + 1] ? `Niveau ${l.L + 1} : ${CARD_UNLOCKS[l.L + 1]} aux haltes, et +1 point` : `Niveau ${l.L + 1} : +1 point de compétence`;
+    return `<div class="panel"><div class="lvl"><span class="n">Niv. ${l.L}</span><div class="bar">${lvlBar(l)}</div></div>
       <div class="tiny" style="margin-top:var(--u)">${nextTxt}</div>
       ${pts ? `<button class="btn" data-adv="skills" style="margin-top:calc(var(--u)*2)">🎯 ${pts} point${pts > 1 ? 's' : ''} à placer</button>` : ''}</div>`;
   };
@@ -7335,9 +7337,10 @@ if (SURVIVAL_ON) (() => {
     const nodes = POS.map(([x, y], i) => {
       const W0 = WORLDS[i], done = W0 && !W0.soon && i < a.unlocked, cur = W0 && !W0.soon && i === a.unlocked, next = W0 && !W0.soon && i === a.unlocked + 1;
       const st = done ? 'done' : cur ? 'cur' : 'lock';
-      const ic = !W0 ? '❓' : done || cur ? W0.icon : W0.soon ? '🚧' : `<span>${W0.icon}</span>`;
-      const nm = !W0 ? '???' : W0.name;
-      const sub = !W0 ? '🔒' : done ? '✅ terminé' : cur ? (a.best[i] ? `📍 record ${fmt(a.best[i])}` : '📍 à découvrir') : W0.soon ? 'en construction' : next ? `🔒 au bout de ${WORLDS[i - 1].name.toLowerCase()}` : '🔒';
+      // un monde pas encore atteint garde son nom secret
+      const ic = !W0 ? '❓' : done || cur ? W0.icon : W0.soon ? '🚧' : '🔒';
+      const nm = W0 && (done || cur) ? W0.name : '???';
+      const sub = !W0 ? '🔒' : done ? '✅ terminé' : cur ? (a.best[i] ? `📍 record ${fmt(a.best[i])}` : '📍 à découvrir') : W0.soon ? 'bientôt' : next ? `au bout du monde ${i}` : '🔒';
       return `<div class="node ${st}" style="left:${x}%;top:${y}%"><div class="ic">${ic}</div><b>${nm}</b><i>${sub}</i></div>`;
     }).join('');
     const pts = POS.map(([x, y]) => `${x},${y}`).join(' ');
@@ -7352,7 +7355,7 @@ if (SURVIVAL_ON) (() => {
         <div class="r"><span class="i">🍽️</span><span><b>Ta boule fond sans arrêt</b><br>Mange pour survivre et roule le plus loin possible. Si ta boule arrive à 0, la partie s'arrête.</span></div>
         <div class="r"><span class="i">🃏</span><span><b>Une halte tous les 250 m</b><br>Choisis une carte : un coup de pouce ⏱ pour quelques secondes, ou une relique ♾ pour toute la partie (3 de la même famille = un combo). Certaines sont risquées 😈. Un récapitulatif de tes bonus est disponible quand tu mets pause (II).</span></div>
         <div class="r"><span class="i">⚠️</span><span><b>Un animal dangereux par monde</b><br>Dans chaque monde, un animal fait rétrécir ta boule. Impossible de le manger : évite-le !</span></div>
-        <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Au bout du désert, l'oasis… et d'autres encore. Une fois atteint, tu peux y commencer directement.</span></div>
+        <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Au bout du désert, d'autres mondes t'attendent… Une fois atteint, un monde devient un point de départ.</span></div>
         <div class="r"><span class="i">📈</span><span><b>Tu progresses à chaque partie</b><br>Chaque mètre rapporte de l'XP. À chaque niveau, un point de compétence à placer dans 3 familles : Gourmand, Costaud, Malin. Les niveaux débloquent aussi de nouvelles cartes.</span></div>
         <div class="r"><span class="i">🎲</span><span><b>Ne compte pas pour la dune du jour</b><br>Joue autant que tu veux : ton record a son propre classement (🏆 Records). C'est aussi un bon entraînement !</span></div>
       </div>
@@ -7421,7 +7424,7 @@ if (SURVIVAL_ON) (() => {
     return `<div class="screen">${head('Records')}
       ${top.length ? `<div class="label">🏆 Les plus loin</div><div class="panel"><table class="lb">${top.map((e, i) => `<tr><td>${medal(i)}${e.name === me ? '<br><span class="toi">toi</span>' : ''}</td><td>${esc(e.name)}</td><td class="r">${fmt(e.best)}</td></tr>`).join('')}</table></div>` : ''}
       <div class="label">📍 Mes records par monde</div>
-      <div class="panel"><table class="lb">${WORLDS.map((w, i) => `<tr><td>${w.icon}</td><td>${w.name}</td><td class="r">${w.soon ? '🚧' : a.best[i] ? fmt(a.best[i]) : i <= a.unlocked ? '—' : '🔒'}</td></tr>`).join('')}</table></div>
+      <div class="panel"><table class="lb">${WORLDS.map((w, i) => `<tr><td>${i <= a.unlocked && !w.soon ? w.icon : w.soon ? '🚧' : '🔒'}</td><td>${i <= a.unlocked && !w.soon ? w.name : '???'}</td><td class="r">${w.soon ? '🚧' : a.best[i] ? fmt(a.best[i]) : i <= a.unlocked ? '—' : '🔒'}</td></tr>`).join('')}</table></div>
     </div>`;
   };
   // fin de partie
@@ -7446,10 +7449,10 @@ if (SURVIVAL_ON) (() => {
       <div class="result-head ${x.newWorld ? 'win' : 'lose'}"><div class="title small">MODE AVENTURE</div>
         <div class="sv-sub">${end ? '🚧 Fin des mondes jouables !' : `${W1.icon} ${W1.name} · plus de boule !`}</div>
         <div class="big-dist">${fmt(x.gained)}</div>${x.rec ? '<div class="badge-new">Record dans ce monde !</div>' : ''}</div>
-      ${end ? '<div class="next">🚧 Tu as atteint la fin des mondes jouables ! Le volcan et la Lune sont en construction.</div>'
+      ${end ? '<div class="next">🚧 Tu as atteint la fin des mondes jouables ! D\'autres mondes arrivent bientôt…</div>'
         : x.newWorld ? `<div class="next">🎉 <b>Monde ${x.w + 1} débloqué : ${WORLDS[x.w].name}</b> ! Tu peux maintenant y commencer directement.</div>`
-        : `<div class="next">🏁 Plus que <b>${fmt(x.left)}</b> avant ${N && !N.soon ? `<b>${N.icon} ${N.name}</b>` : 'la fin des mondes jouables'} !</div>`}
-      <div class="panel"><div class="lvl"><span class="n">Niv. ${x.before}${x.after > x.before ? ' → ' + x.after : ''}</span><div class="bar"><div style="width:${Math.round(l.cur * 100 / l.next)}%"></div><span>${l.cur} / ${l.next} XP</span></div></div>
+        : `<div class="next">🏁 Plus que <b>${fmt(x.left)}</b> avant ${N && !N.soon ? (x.wb + 1 <= a.unlocked ? `<b>${N.icon} ${N.name}</b>` : '<b>le monde suivant</b>') : 'la fin des mondes jouables'} !</div>`}
+      <div class="panel"><div class="lvl"><span class="n">Niv. ${x.before}${x.after > x.before ? ' → ' + x.after : ''}</span><div class="bar">${lvlBar(l)}</div></div>
         <div class="tiny" style="margin-top:var(--u);color:#c8ff8a">+${x.gained} XP${x.after > x.before ? ` · ⬆️ Niveau supérieur ! +${x.after - x.before} point${x.after - x.before > 1 ? 's' : ''} de compétence` : ''}${x.wp ? ` · 🎯 +${x.wp} point${x.wp > 1 ? 's' : ''} : nouveau monde terminé !` : ''}</div></div>
       ${Object.keys(CARD_UNLOCKS).map(Number).filter(L => L !== PACT_LEVEL && L > x.before && L <= x.after).map(L => `<div class="unl"><div class="c">🆕</div><div><b>Niveau ${L} : ${CARD_UNLOCKS[L]} !</b><div class="tiny">Elles peuvent maintenant sortir aux haltes.</div></div></div>`).join('')}
       ${x.after >= PACT_LEVEL && x.before < PACT_LEVEL ? '<div class="unl"><div class="c">😈</div><div><b>Nouveau : les pactes !</b><div class="tiny">Des cartes très puissantes… avec une contrepartie. Elles peuvent maintenant sortir aux haltes.</div></div></div>' : ''}
