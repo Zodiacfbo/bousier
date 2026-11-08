@@ -45,6 +45,21 @@ ol li { margin: 8px 0; }
 #fiche > .panel { max-width: 900px; margin: 0 auto; }
 .warn { color: #ffb84a; }
 svg text { fill: var(--muted); font-size: 10px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; } @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+.hbar { flex: 1; display: flex; height: 20px; background: #1a1020; border: 2px solid #000; min-width: 120px; }
+.hbar i { display: block; height: 100%; font-style: normal; font-size: 11px; color: #1a1020; text-align: center; line-height: 16px; overflow: hidden; white-space: nowrap; }
+.e-faim { background: #f2a33a; } .e-animal { background: #ff8a7a; background-image: repeating-linear-gradient(45deg, transparent 0 4px, rgba(0,0,0,.3) 4px 6px); }
+.e-abandon { background: #8a7a90; } .e-fin { background: #9be27a; }
+.leg span { margin-right: 12px; font-size: 12px; } .leg b { display: inline-block; width: 12px; height: 12px; vertical-align: -2px; margin-right: 4px; border: 1px solid #000; }
+.erow { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; } .erow .lab { width: 120px; flex: none; }
+.hist { display: flex; align-items: flex-end; gap: 3px; height: 120px; border-bottom: 2px solid var(--panel2); padding-top: 16px; }
+.hist div { flex: 1; background: var(--accent); position: relative; min-height: 1px; }
+.hist div span { position: absolute; top: -14px; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--muted); }
+.hx { display: flex; gap: 3px; font-size: 10px; color: var(--muted); } .hx span { flex: 1; text-align: center; }
+.mini { display: inline-block; height: 8px; background: var(--good); vertical-align: middle; margin-right: 4px; }
+.stat b small { display: block; font-size: 13px; color: var(--muted); }
+#advplayers td, #advplayers th, #advworlds td { white-space: nowrap; }
+th.sort { cursor: pointer; text-decoration: underline dotted; }
 </style>
 </head>
 <body>
@@ -72,6 +87,7 @@ svg text { fill: var(--muted); font-size: 10px; }
       <button data-tab="dash" class="on">📈 Tableau de bord</button>
       <button data-tab="players">👥 Joueurs</button>
       <button data-tab="pstats">📊 Stats</button>
+      <button data-tab="adv">🗺️ Aventure</button>
       <button data-tab="dunes">⚖️ Dunes & équilibrage</button>
       <button data-tab="ideas">💡 Suggestions <span id="inew"></span></button>
       <button data-tab="scores">🧹 Scores du jour</button>
@@ -129,6 +145,28 @@ svg text { fill: var(--muted); font-size: 10px; }
       <h2>👤 Par joueur</h2>
       <div class="row"><button class="main" id="csv">⬇️ Télécharger en tableur (CSV)</button></div>
       <div class="scroll"><table id="pstable"></table></div>
+    </section>
+
+    <section id="tab-adv" class="panel hidden">
+      <p class="muted">Mode aventure, d'après la progression de chaque joueur (version choisie en haut). Le détail des parties est noté
+        depuis la v1.24.1 (8 novembre 2026), les 60 dernières parties de chaque joueur. Les parties sur parcours raccourci (outil de test) sont ignorées.</p>
+      <div class="row"><label>Parties à partir du <input type="date" id="advfrom"></label><button id="advall">Toutes</button><button id="adv7">7 derniers jours</button><button id="advtoday">Aujourd'hui</button></div>
+      <h2>🗺️ Vue d'ensemble</h2>
+      <div class="stats" id="advstats"></div>
+      <h2>🏁 Progression dans les mondes</h2>
+      <div class="scroll"><table id="advworlds"></table></div>
+      <p class="muted" id="advgoal"></p>
+      <div class="two">
+        <div><h2>💀 Pourquoi la partie s'arrête</h2><div id="advends"></div></div>
+        <div><h2>📍 Où ça s'arrête</h2><div class="row" id="advhw"></div><div id="advhist"></div></div>
+      </div>
+      <div class="two">
+        <div><h2>🃏 Cartes</h2><div class="scroll"><table id="advcards"></table></div><p class="muted">Du plus choisi au moins choisi · en rouge : presque jamais prise (moins de 15 %).</p></div>
+        <div><h2>🎯 Compétences</h2><div id="advskills"></div></div>
+      </div>
+      <h2>👥 Joueurs</h2>
+      <p class="muted">Touche un en-tête pour trier, un pseudo pour voir ses parties.</p>
+      <div class="scroll"><table id="advplayers"></table></div>
     </section>
 
     <section id="tab-dunes" class="panel hidden">
@@ -312,7 +350,7 @@ async function refresh() {
   const profs = await all(envCol('profiles'));
   profiles = profs.map(d => { try { const p = JSON.parse(d.data); p._at = d.at; return p; } catch (e) { return null; } }).filter(Boolean);
   pstats = profiles.map(p => statRow(p, p._at)).sort((a, b) => b.runs - a.runs);
-  renderDropouts(); renderBalance();
+  renderDropouts(); renderBalance(); renderAdventure();
   const runs = pstats.reduce((n, r) => n + r.runs, 0);
   renderStats();
   renderActivity();
@@ -734,6 +772,153 @@ function renderStats() {
     return `<tr><td>${label}</td><td class="r">${r ? esc(fmt(get(r))) : '—'}</td><td><b>${r ? esc(r.name) : ''}</b></td><td class="muted">${r && day ? fmtDay(day(r)) : ''}</td></tr>`;
   }).join('');
 }
+// --- Mode aventure : suivi des parties (p.adv.log et p.adv.st, notés par le jeu depuis la v1.24.1) ---
+// Mêmes chiffres que dans index.html (WORLDS, UPS, cartes des haltes) : à mettre à jour avec les nouveaux mondes.
+const ADV_WORLDS = [
+  { icon: '🏜️', name: 'Désert', len: 2500, animal: 'scorpion' },
+  { icon: '🌴', name: 'Oasis', len: 3000, animal: 'crabe' },
+  { icon: '🌊', name: 'Rivière', len: 3500, animal: 'croc' },
+];
+const ADV_ANIMALS = { scorpion: '🦂 scorpion', crabe: '🦀 crabe', croc: '🐊 crocodile', pics: 'pics', baril: 'baril' };
+const ADV_FAMS = { gourmand: ['🍽️', 'Gourmand', '#f2a33a'], costaud: ['🛡️', 'Costaud', '#8ae0ff'], malin: ['🃏', 'Malin', '#c8a2ff'] };
+const ADV_SKILLS = [
+  ['estomac', 'gourmand', '🍽️', 'Estomac', 1], ['provisions', 'gourmand', '🎒', 'Provisions', 1], ['aimant', 'gourmand', '🧲', 'Aimant', 1], ['seconde', 'gourmand', '❤️', 'Seconde chance ⭐', 3],
+  ['carapace', 'costaud', '🐢', 'Carapace', 1], ['bouclier', 'costaud', '🩹', 'Pansements de départ', 1], ['trousse', 'costaud', '🧰', 'Trousse de secours ⭐', 3],
+  ['cartes', 'malin', '🃏', 'Cartes en plus', 1], ['durable', 'malin', '⏱️', 'Coups de pouce durables', 1], ['double', 'malin', '✌️', 'Double choix ⭐', 3],
+];
+const ADV_CARDS = {
+  cafe: '☕ Café serré', aimant: '🧲 Super aimant', fantome: '👻 Boule fantôme', bouclier: '🩹 Pansements', feu: '🔥 Boule de feu', rebond: '🏀 Boule rebondissante',
+  engrais: '🌱 Engrais', matrix: '🐌 Ralenti', chameau: '🐪 Chameau ami', raccourci: '🚀 Raccourci secret', mystere: '🧪 Tube mystère',
+  pacteFeu: '😈 Pacte du feu', pacteGeant: '😈 Pacte du géant', pacteVitesse: '😈 Pacte de vitesse', source: '💧 Source fraîche', cocos: '🥥 Pluie de noix de coco',
+  festin: '🍗 Festin', etoile: '🌟 Étoile filante', ombre: '🌴 Ombre fraîche', repousse: '🦂 Repousse-scorpions', bouee: '🛟 Bouée', alevins: '🐟 Banc de poissons',
+  appetit: '🍯 Gros appétit', gourde: '🥤 Gourde', piquenique: '🧺 Pique-nique', coquille: '🐚 Coquille', kit: '💊 Boîte de pansements', piquants: '🦔 Piquants',
+  trefle: '🍀 Trèfle', sablier: '⏳ Sablier', de: '🎲 Dé pipé',
+};
+const ADV_ENDS = { faim: 'Faim', animal: 'Animal', abandon: 'Abandon', fin: 'Fin des mondes' };
+const advLvl = xp => { let L = 1; while (L < 20 && xp >= 150 + 50 * (L - 1)) { xp -= 150 + 50 * (L - 1); L++; } return L; };
+const advDoneP = a => Math.max(a.unlocked || 0, a.cleared || 0);
+const fmtM = m => Math.round(m || 0).toLocaleString('fr-FR') + ' m';
+const fmtN = (v, d = 1) => (+v).toFixed(d).replace('.', ',').replace(/,0+$/, '');
+const median = xs => { const s = [...xs].sort((a, b) => a - b), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; };
+const cardName = id => ADV_CARDS[id] || id;
+const cardIcon = id => (ADV_CARDS[id] || '❔').split(' ')[0];
+let advHistW = 0, advSort = { k: 'runs', dir: -1 };
+const advTried = () => profiles.filter(p => p.adv && ((p.adv.st && p.adv.st.n) || p.adv.xp > 0 || (p.adv.log || []).length));
+const advLogs = p => (p.adv.log || []).filter(e => !e.short && (!$('advfrom').value || e.d >= $('advfrom').value));
+const famPoints = a => { const f = { gourmand: 0, costaud: 0, malin: 0 }; for (const [id, fam, , , cost] of ADV_SKILLS) f[fam] += ((a.spent || {})[id] || 0) * cost; return f; };
+const mainFam = a => { const f = famPoints(a), best = Object.entries(f).sort((x, y) => y[1] - x[1])[0]; return best[1] ? ADV_FAMS[best[0]][0] + ' ' + ADV_FAMS[best[0]][1] : '—'; };
+
+function renderAdventure() {
+  const tried = advTried(), rows = tried.map(p => ({ p, logs: advLogs(p) })), logs = rows.flatMap(r => r.logs);
+  const W = ADV_WORLDS.length;
+  // vue d'ensemble (période choisie)
+  const active = rows.filter(r => r.logs.length).length, n = logs.length, ab = logs.filter(e => e.end === 'abandon').length;
+  const km = logs.reduce((s, e) => s + (e.m || 0), 0) / 1000, time = logs.reduce((s, e) => s + (e.s || 0), 0);
+  $('advstats').innerHTML = [
+    ['Joueurs qui ont essayé (depuis le début)', `${tried.length} / ${profiles.length}`],
+    ['Joueurs sur la période', active],
+    ['Parties sur la période', n + (active ? ` <small>(${fmtN(n / active)} par joueur)</small>` : '')],
+    ['Distance parcourue ensemble', fmtN(km) + ' km'],
+    ['Durée moyenne d\'une partie', n ? fmtDur(time / n) : '—'],
+    ['Parties abandonnées', n ? Math.round(ab * 100 / n) + ' %' : '—'],
+  ].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('');
+  // progression dans les mondes (depuis le début)
+  const wrows = ADV_WORLDS.map((w, i) => {
+    const reach = tried.filter(p => i === 0 || advDoneP(p.adv) >= i).length, done = tried.filter(p => advDoneP(p.adv) >= i + 1);
+    const clr = done.map(p => p.adv.st && p.adv.st.clr && p.adv.st.clr[i]).filter(Boolean);
+    const nn = clr.map(c => c.n), med = median(nn), lv = median(clr.map(c => c.L || 0));
+    const days = clr.map((c, k) => c.d && done[k].adv.st.d0 ? Math.round((new Date(c.d) - new Date(done[k].adv.st.d0)) / 864e5) + 1 : null).filter(x => x != null);
+    return { w, i, reach, done: done.length, med, min: nn.length ? Math.min(...nn) : null, max: nn.length ? Math.max(...nn) : null, lv, nclr: clr.length, days: median(days) };
+  });
+  $('advworlds').innerHTML = '<tr><th>Monde</th><th class="r">Atteint par</th><th class="r">Terminé par</th><th class="r">Parties pour le finir<br><span class="muted">médiane · min-max</span></th><th class="r">Jours pour le finir<br><span class="muted">médiane</span></th><th class="r">Niveau en le finissant<br><span class="muted">médiane</span></th></tr>'
+    + wrows.map(r => `<tr><td>${r.w.icon} ${r.w.name}</td><td class="r">${r.reach}</td><td class="r">${r.done}${r.reach ? ` <span class="muted">(${Math.round(r.done * 100 / r.reach)} %)</span>` : ''}</td>
+      <td class="r">${r.med != null ? `<b class="${r.i === 0 ? (r.med <= 4 && r.med >= 3 ? 'good' : 'bad') : ''}">${fmtN(r.med)}</b> · ${r.min}-${r.max}${r.nclr < r.done ? ` <span class="muted">(${r.nclr} suivis)</span>` : ''}` : '—'}</td>
+      <td class="r">${r.days != null ? fmtN(r.days) : '—'}</td><td class="r">${r.lv != null ? 'niv. ' + fmtN(r.lv) : '—'}</td></tr>`).join('');
+  const d0 = wrows[0];
+  $('advgoal').innerHTML = 'Progression depuis le début (sans tenir compte de la période). Objectif : finir le désert en 3 ou 4 parties'
+    + (d0.med != null ? ` → ${d0.med >= 3 && d0.med <= 4 ? '<span class="good">✔ dans la cible</span>' : d0.med < 3 ? '<span class="bad">trop facile</span>' : '<span class="bad">trop difficile</span>'}` : ' → pas encore de données.');
+  // causes de fin, par monde où la partie s'arrête
+  const cats = ['faim', 'animal', 'abandon', 'fin'];
+  const ends = ADV_WORLDS.map((w, i) => {
+    const es = logs.filter(e => Math.min(e.w, W - 1) === i && (e.end !== 'fin' || i === W - 1)), c = {};
+    for (const e of es) c[e.end] = (c[e.end] || 0) + 1;
+    return { w, n: es.length, c };
+  });
+  const passed = i => logs.filter(e => e.w0 <= i && e.w >= i);
+  const hitsLine = ADV_WORLDS.map((w, i) => { const ps = passed(i); if (!ps.length) return ''; const h = ps.reduce((s, e) => s + ((e.kinds || {})[w.animal] || 0), 0); return `${ADV_ANIMALS[w.animal]} ${fmtN(h / ps.length)}`; }).filter(Boolean).join(' · ');
+  const hits = logs.reduce((s, e) => s + (e.hits || 0), 0), blk = logs.reduce((s, e) => s + (e.blk || 0), 0), dmg = logs.reduce((s, e) => s + (e.dmg || 0), 0);
+  const sc = logs.filter(e => e.sc).length;
+  $('advends').innerHTML = `<div class="leg">${cats.map(k => `<span><b class="e-${k}"></b>${ADV_ENDS[k]}</span>`).join('')}</div>`
+    + ends.map(r => `<div class="erow"><span class="lab">${r.w.icon} ${r.w.name} (${r.n})</span><div class="hbar">${r.n ? cats.filter(k => r.c[k]).map(k => { const pc = Math.round(r.c[k] * 100 / r.n); return `<i class="e-${k}" style="width:${pc}%" title="${ADV_ENDS[k]} : ${r.c[k]}">${pc >= 12 ? pc + ' %' : ''}</i>`; }).join('') : ''}</div></div>`).join('')
+    + `<p class="muted">Chocs d'animaux par partie (parties passées dans ce monde) : ${hitsLine || '—'}<br>
+      Taille perdue par choc : ${hits ? Math.round(dmg / hits) + ' %' : '—'} · chocs arrêtés par un pansement ou la boule rebondissante : ${hits + blk ? Math.round(blk * 100 / (hits + blk)) + ' %' : '—'}<br>
+      Seconde chance utilisée : ${sc} partie${sc > 1 ? 's' : ''}</p>`;
+  // où ça s'arrête (tranches de 250 m dans le monde choisi)
+  $('advhw').innerHTML = ADV_WORLDS.map((w, i) => `<button data-advhw="${i}" class="${i === advHistW ? 'main' : ''}">${w.icon} ${w.name}</button>`).join('');
+  const hw = ADV_WORLDS[advHistW], step = 250, nb = Math.ceil(hw.len / step), bins = Array(nb).fill(0);
+  for (const e of logs) if (Math.min(e.w, W - 1) === advHistW && e.w < W) bins[Math.min(nb - 1, Math.max(0, Math.floor((e.wm || 0) / step)))]++;
+  const fin = logs.filter(e => e.w0 <= advHistW && e.w > advHistW).length, all = [...bins, fin], mx = Math.max(1, ...all);
+  $('advhist').innerHTML = `<div class="hist">${all.map((v, k) => `<div style="height:${v / mx * 100}%;${k === nb ? 'background:var(--good)' : ''}"><span>${v || ''}</span></div>`).join('')}</div>
+    <div class="hx">${bins.map((_, k) => `<span>${k % 2 ? '' : (k * step / 1000).toLocaleString('fr-FR') + ' km'}</span>`).join('')}<span>fini</span></div>
+    <p class="muted">Distance dans le monde où la partie s'arrête (tranches de 250 m). En vert : parties qui ont traversé ce monde.</p>`;
+  // cartes : proposées / choisies
+  const off = {}, pick = {};
+  for (const e of logs) { for (const h of e.offers || []) for (const id of new Set(h)) off[id] = (off[id] || 0) + 1; for (const id of e.picks || []) pick[id] = (pick[id] || 0) + 1; }
+  const cards = Object.keys(off).map(id => ({ id, o: off[id], p: pick[id] || 0, r: Math.min(1, (pick[id] || 0) / off[id]) })).sort((a, b) => b.r - a.r || b.o - a.o);
+  $('advcards').innerHTML = '<tr><th>Carte</th><th class="r">Proposée</th><th class="r">Choisie</th></tr>'
+    + (cards.map(c => `<tr><td>${esc(cardName(c.id))}</td><td class="r">${c.o}</td><td class="r"><span class="mini" style="width:${Math.round(c.r * 60)}px"></span><span class="${c.r < 0.15 ? 'bad' : ''}">${c.p} · ${Math.round(c.r * 100)} %</span></td></tr>`).join('') || '<tr><td colspan="3" class="muted">Pas encore de halte.</td></tr>');
+  // compétences (points placés aujourd'hui par les joueurs)
+  const fp = { gourmand: 0, costaud: 0, malin: 0 };
+  for (const p of tried) { const f = famPoints(p.adv); for (const k in f) fp[k] += f[k]; }
+  const tot = Object.values(fp).reduce((a, b) => a + b, 0);
+  const sk = ADV_SKILLS.map(([id, fam, icon, name]) => ({ id, fam, icon, name, avg: tried.length ? tried.reduce((s, p) => s + ((p.adv.spent || {})[id] || 0), 0) / tried.length : 0, who: tried.filter(p => (p.adv.spent || {})[id]).length }));
+  $('advskills').innerHTML = Object.entries(ADV_FAMS).map(([k, [ic, nm, col]]) => { const pc = tot ? Math.round(fp[k] * 100 / tot) : 0; return `<div class="erow"><span class="lab">${ic} ${nm}</span><div class="hbar"><i style="width:${pc}%;background:${col}">${pc ? pc + ' %' : ''}</i></div></div>`; }).join('')
+    + `<p class="muted">Part des points placés (${tot} points au total).</p>`
+    + `<div class="scroll"><table><tr><th>Compétence</th><th class="r">Niveau moyen</th><th class="r">Joueurs</th></tr>${sk.map(s => `<tr><td>${s.icon} ${esc(s.name)}</td><td class="r">${fmtN(s.avg)}</td><td class="r ${s.who ? '' : 'bad'}">${s.who}</td></tr>`).join('')}</table></div>`;
+  // joueurs
+  const prow = rows.map(({ p, logs: lg }) => {
+    const a = p.adv, st = a.st || {}, last = (a.log || []).filter(e => !e.short).slice(-1)[0], wd = Math.min(advDoneP(a), W - 1);
+    return { p, name: p.name, lvl: advLvl(a.xp || 0), world: advDoneP(a), wtxt: advDoneP(a) >= W ? '🏁 Tout fini' : ADV_WORLDS[wd].icon + ' ' + ADV_WORLDS[wd].name,
+      runs: st.n || (a.log || []).length, period: lg.length, days: st.days || 0, best: (p.survival && p.survival.best) || 0, style: mainFam(a), last, lastAt: last ? last.at : 0 };
+  });
+  const k = advSort.k, dir = advSort.dir;
+  prow.sort((x, y) => (typeof x[k] === 'string' ? x[k].localeCompare(y[k]) : x[k] - y[k]) * dir);
+  const cols = [['name', 'Joueur'], ['lvl', 'Niv.'], ['world', 'Monde'], ['runs', 'Parties'], ['period', 'Sur la période'], ['days', 'Jours'], ['best', 'Record'], ['style', 'Style'], ['lastAt', 'Dernière partie']];
+  $('advplayers').innerHTML = '<tr>' + cols.map(([c, l]) => `<th class="sort ${['lvl', 'runs', 'period', 'days', 'best'].includes(c) ? 'r' : ''}" data-advsort="${c}">${l}${c === k ? (dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '</tr>'
+    + (prow.map(r => `<tr><td><button class="link" data-advp="${esc(r.name)}">${esc(r.name)}</button></td><td class="r">${r.lvl}</td><td>${r.wtxt}</td><td class="r">${r.runs}</td><td class="r">${r.period}</td><td class="r">${r.days}</td><td class="r">${fmtM(r.best)}</td><td>${r.style}</td>
+      <td>${r.last ? `${fmtDay(r.last.d)} · ${ADV_ENDS[r.last.end] || r.last.end} · ${fmtM(r.last.m)}` : '<span class="muted">pas encore suivie</span>'}</td></tr>`).join('') || '<tr><td colspan="9" class="muted">Personne n\'a encore joué à l\'aventure.</td></tr>');
+}
+// parties d'un joueur
+function openAdvPlayer(name) {
+  const p = profiles.find(x => x.name === name); if (!p || !p.adv) return;
+  const a = p.adv, st = a.st || {}, log = (a.log || []).filter(e => !e.short).slice().reverse();
+  const clr = ADV_WORLDS.map((w, i) => st.clr && st.clr[i] ? `${w.icon} ${w.name} : partie n° ${st.clr[i].n}, ${fmtDay(st.clr[i].d)}, niv. ${st.clr[i].L}` : '').filter(Boolean);
+  const sk = ADV_SKILLS.filter(([id]) => (a.spent || {})[id]).map(([id, , icon, nm]) => `${icon} ${esc(nm)} ${a.spent[id]}`);
+  $('fiche').innerHTML = `<div class="panel">
+    <div class="row" style="justify-content:space-between"><h2>🗺️ ${esc(p.name)} dans l'aventure</h2><button id="fclose">✕ Fermer</button></div>
+    <p class="muted">Niveau ${advLvl(a.xp || 0)} (${a.xp || 0} XP) · ${st.n || log.length} parties · ${st.ab || 0} abandons · ${st.days || 0} jours joués${st.d0 ? ' depuis le ' + fmtDay(st.d0) : ''} · record ${fmtM((p.survival && p.survival.best) || 0)}</p>
+    <p>${clr.length ? '🏁 Mondes finis : ' + clr.join(' · ') : '<span class="muted">Aucun monde fini pour l\'instant.</span>'}</p>
+    <p>🎯 ${sk.join(' · ') || '<span class="muted">Aucune compétence.</span>'}</p>
+    <div class="scroll"><table><tr><th>N°</th><th>Jour</th><th class="r">Niv.</th><th>Parcours</th><th class="r">Distance</th><th>Fin</th><th class="r">Temps</th><th class="r">Objets</th><th>Chocs</th><th>Cartes choisies</th></tr>
+      ${log.map(e => `<tr><td>${e.n}</td><td>${fmtDay(e.d)}</td><td class="r">${e.L}</td><td>${ADV_WORLDS[e.w0] ? ADV_WORLDS[e.w0].icon : ''}${e.w !== e.w0 ? ' → ' + (e.w >= ADV_WORLDS.length ? '🏁' : ADV_WORLDS[e.w].icon) : ''} <span class="muted">${fmtM(e.wm)}</span></td>
+        <td class="r">${fmtM(e.m)}</td><td>${ADV_ENDS[e.end] || e.end}${e.sc ? ' ❤️' : ''}</td><td class="r">${fmtDur(e.s || 0)}</td><td class="r">${e.obj || 0}</td>
+        <td>${Object.entries(e.kinds || {}).map(([k, v]) => `${(ADV_ANIMALS[k] || k).split(' ')[0]}×${v}`).join(' ') || '—'}${e.blk ? ` <span class="muted">(${e.blk} 🩹)</span>` : ''}</td><td>${(e.picks || []).map(cardIcon).join(' ') || '—'}</td></tr>`).join('') || '<tr><td colspan="10" class="muted">Aucune partie suivie.</td></tr>'}</table></div>
+  </div>`;
+  $('fiche').classList.remove('hidden');
+  $('fclose').onclick = () => $('fiche').classList.add('hidden');
+}
+$('tab-adv').addEventListener('click', e => {
+  const t = e.target.closest('[data-advhw],[data-advsort],[data-advp]'); if (!t) return;
+  if (t.dataset.advp) return openAdvPlayer(t.dataset.advp);
+  if (t.dataset.advhw) advHistW = +t.dataset.advhw;
+  if (t.dataset.advsort) { const k = t.dataset.advsort; advSort = { k, dir: advSort.k === k ? -advSort.dir : (['name', 'style', 'world'].includes(k) ? 1 : -1) }; }
+  renderAdventure();
+});
+$('advfrom').onchange = () => renderAdventure();
+$('advall').onclick = () => { $('advfrom').value = ''; renderAdventure(); };
+$('adv7').onclick = () => { $('advfrom').value = addDays(dayKey(), -6); renderAdventure(); };
+$('advtoday').onclick = () => { $('advfrom').value = dayKey(); renderAdventure(); };
+
 // activité jour par jour depuis le lancement (scores enregistrés en ligne)
 async function renderActivity() {
   const days = [];

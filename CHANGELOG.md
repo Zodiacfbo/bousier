@@ -7,6 +7,14 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.24.2 — Admin : onglet Aventure (8 novembre 2026)
+- Admin : nouvel onglet « 🗺️ Aventure » (d'après le suivi des parties de la v1.24.1) : vue d'ensemble (joueurs, parties,
+  distance parcourue ensemble, durée, abandons), progression dans les mondes (parties, jours et niveau pour finir chaque monde,
+  comparé à l'objectif 3 ou 4 parties pour le désert), causes de fin par monde, endroits où les parties s'arrêtent,
+  cartes proposées et choisies, compétences, tableau des joueurs triable et liste des parties de chaque joueur.
+- Choix de la période (toutes, 7 derniers jours, aujourd'hui, ou à partir d'une date) pour comparer avant et après un réglage.
+- Rien ne change dans le jeu.
+
 ## v1.24.1 — Suivi des parties d'aventure (8 novembre 2026)
 - Aventure : chaque partie est notée dans la progression du joueur (`p.adv.log`, les 60 dernières), pour équilibrer le mode
   depuis l'admin : date, monde de départ et d'arrivée, distance, cause de fin (faim, animal, abandon, fin des mondes),
