@@ -495,7 +495,9 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .seeds { white-space:nowrap; color:#c8ff8a; font-weight:700; }
 .map { position:relative; height: calc(var(--u)*235); }
 .adv-foot .wsel-row { display:flex; align-items:center; gap: calc(var(--u)*2); }
-.adv-foot .wsel-row .wsel { flex:1; margin:0; }
+.adv-foot .wsel-row .wsel { flex:1; margin:0; min-width:0; overflow-x:auto; scrollbar-width:none; }
+.adv-foot .wsel-row .wsel::-webkit-scrollbar { display:none; }
+.adv-foot .wsel-row .wsel span { flex: 1 0 auto; white-space:nowrap; padding-left: calc(var(--u)*3); padding-right: calc(var(--u)*3); }
 .adv-foot .btn.big { margin: calc(var(--u)*1.5) 0; }
 .map svg { position:absolute; inset:0; width:100%; height:100%; }
 .node { position:absolute; transform: translate(-50%,-50%); text-align:center; width: calc(var(--u)*46); }
@@ -4955,6 +4957,11 @@ const App = {
     if (name === 'shop') this.startPreview();
     if (name === 'results') this.countCoins();
     if (name === 'home') { this.annInit(); this.moreInit(); }
+    if (name === 'aventure') {
+      this.moreInit();
+      // beaucoup de départs : la rangée défile de côté, et le départ choisi est toujours visible
+      const on = this.ui.querySelector('.adv-foot .wsel .on'); if (on) on.parentNode.scrollLeft = on.offsetLeft - on.parentNode.offsetLeft - 20;
+    }
     if (name === 'name') { const i = this.ui.querySelector('input'); if (i) setTimeout(() => i.focus(), 50); }
   },
 
@@ -7384,6 +7391,7 @@ if (SURVIVAL_ON) (() => {
         <button class="btn ghost small" data-adv="reset">Tout remettre à zéro</button>
 </div>` : ''}
       <div class="foot adv-foot">
+        <div class="more">▼ Tes mondes et l'entraînement plus bas</div>
         <div class="wsel-row"><span class="tiny">Départ :</span><div class="wsel">${WORLDS.map((w, i) => !w.soon && i <= a.unlocked ? `<span class="${i === sel ? 'on' : ''}" data-adv="sel" data-w="${i}">${w.icon} ${w.short}</span>` : i === a.unlocked + 1 ? '<span class="off">🔒</span>' : '').join('')}</div></div>
         <button class="btn big pulse" data-adv="play">ROULER ! <small>départ : ${WORLDS[sel].name}</small></button>
         <div class="menu2"><button data-adv="skills"><span>🎯</span>Compétences${points() ? '<span class="pill-n">' + points() + '</span>' : ''}</button><button data-adv="records"><span>🏆</span>Records</button></div>
