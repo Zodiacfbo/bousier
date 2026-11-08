@@ -6367,12 +6367,13 @@ if (SURVIVAL_ON) (() => {
   };
 
   // --- Les mondes -----------------------------------------------------------
+  // une météo fixe par monde : elle fait partie de son ambiance
   const WORLDS = [
-    { icon: '🏜️', name: 'Le désert', short: 'Désert', up: 'LE DESERT', theme: 'doree', len: 2500, hunger: 1, speed: 1, wx: ['calme', 'tempete', 'canicule', 'ventarriere'] },
-    { icon: '🌴', name: 'L\'oasis', short: 'Oasis', up: 'L\'OASIS', theme: 'oasis', len: 3000, hunger: 1, speed: 1, wx: ['pluie', 'calme'],
+    { icon: '🏜️', name: 'Le désert', short: 'Désert', up: 'LE DESERT', theme: 'doree', len: 2500, hunger: 1, speed: 1, wx: ['canicule'] },
+    { icon: '🌴', name: 'L\'oasis', short: 'Oasis', up: 'L\'OASIS', theme: 'oasis', len: 3000, hunger: 1, speed: 1, wx: ['calme'],
       rule: 'Les flaques d\'eau font glisser… mais elles calment ta faim.', obstacle: 'des crabes qui pincent et qui bougent',
       objs: ['datte', 'coco', 'nenuphar', 'grenouille'], haz: 'crabe', cards: true },
-    { icon: '🌊', name: 'La rivière sauvage', short: 'Rivière', up: 'LA RIVIERE SAUVAGE', sign: 'RIVIERE', len: 3500, hunger: 1, speed: 1, wx: ['pluie', 'calme'],
+    { icon: '🌊', name: 'La rivière sauvage', short: 'Rivière', up: 'LA RIVIERE SAUVAGE', sign: 'RIVIERE', len: 3500, hunger: 1, speed: 1, wx: ['pluie'],
       theme: { id: 'riviere', sand: '#3f93cc', sandDark: '#2f7fb8', sandLight: '#58aee0', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
       rule: 'Plus de sable : le courant te pousse ! Il est fort au milieu, calme près des berges.', obstacle: 'des crocodiles : impossible de les avaler !',
       objs: ['tronc', 'nenuphar', 'coco'], haz: 'croc' },
