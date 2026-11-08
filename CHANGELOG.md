@@ -26,6 +26,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Aventure, cartes plus lisibles : nom, effet en une phrase, et une seule pastille (⏱ durée, ⚡ tout de suite, ♾ toute la partie) ;
   rareté au cadre (gris, bleu, doré). Pause : récapitulatif de la partie (pansements, vies en plus, coups de pouce en cours
   avec les secondes restantes, reliques et combos avec leur effet). Les cartes rappellent aussi l'effet du combo (« Armure 2/3 : … »).
+- Aventure, récompenses de style (sans news) : Chèche du désert (chapeau, désert terminé), Tenue de l'oasis (carapace verte
+  fleurie, oasis terminée), décor « Bord de rivière » (rivière terminée), titres « Globe-trotter » (niveau 10) et « Toujours plus
+  loin » (niveau 25). Le Bandana et la Tempête du survivant restent (1 000 et 2 000 m).
 - Aventure, mots : « Cartes prises », « Coups de pouce durables », relique « Boîte de pansements », « Ne compte pas pour la dune du jour »,
   « Bienvenue dans l'aventure ! », objets à débloquer « dans l'aventure » (plus « La Grande Fuite »).
 - Aventure, lisibilité : plus de liste de bonus ni d'icônes de reliques pendant la course (tout est à la pause), message

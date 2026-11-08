@@ -943,6 +943,7 @@ const ROWS = {
   baril: ['.kkkkk.', 'kyyyyyk', 'kyykyyk', 'kykkkyk', 'kyykyyk', 'kYYYYYk', '.kkkkk.'],
   tube: ['.w.', 'kWk', 'kWk', 'klk', 'klk', 'kek', '.k.'],
   bandana: ['.rrrrr.', 'rwrrwrr', 'rrrrrrr', '.r...r.'],
+  cheche: ['..CCCCC..', '.CcccccC.', 'CCCCCCCCC', 'CcccccccC', 'CCCCCCCCC', '.CcccccC.', '..CCC.cC.', '.......c.'],
   // boutique de la semaine et prestige (vus de dessus)
   beret: ['..rrr..', '.rrrrr.', 'rrrkrrr', 'rrrrrrr', '.RRRRR.'],
   bonnet: ['.ccccc.', 'cCwwwCc', 'cwwwwwc', 'cCwwwCc', '.CCCCC.'],
@@ -1473,6 +1474,7 @@ const HATS = [
   { from: NEW_WX_FROM, id: 'lunetteseclipse', name: 'Lunettes d\'éclipse', sprite: 'lunetteseclipse' },
   { id: 'sorciere', name: 'Chapeau de sorcière', sprite: 'sorciere', dy: -3, season: 'halloween' },
   { id: 'bandana', name: 'Bandana du survivant', sprite: 'bandana', survival: true },
+  { id: 'cheche', name: 'Chèche du désert', sprite: 'cheche', survival: true },
 ];
 // Tenues : recolorent la carapace du bousier (q, Q, u) + quelques pixels
 const OUTFITS = [
@@ -1484,6 +1486,7 @@ const OUTFITS = [
   { id: 'chatnoir', name: 'Chat noir', gift: true, devOnly: true, body: 'chat', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
   { from: NEW_WX_FROM, id: 'cire', name: 'Ciré jaune', pal: { q: '#e8c020', Q: '#ffe14a', u: '#b8901a' }, pixels: [[5, 2, '#1d1416']] },
   { id: 'smoking', name: 'Smoking', pal: { q: '#1d1d24', Q: '#2c2c38', u: '#ffffff' }, pixels: [[4, 8, '#d8463a'], [6, 8, '#d8463a'], [5, 8, '#8a2a2a']] },
+  { id: 'fleurie', name: 'Tenue de l\'oasis', survival: true, pal: { q: '#2f6b33', Q: '#5fae4a', u: '#8fd06a' }, pixels: [[3, 1, '#ff7aa8'], [7, 2, '#ffd25a'], [4, 4, '#ffffff'], [6, 5, '#ff7aa8'], [3, 6, '#ffd25a'], [7, 6, '#ffffff'], [5, 2, '#ff7aa8']] },
 ];
 const TRAILS = [
   { id: 'aucune', name: 'Aucune', price: 0 },
@@ -1506,6 +1509,7 @@ const THEMES = [
   { id: 'noire', name: 'Sable volcanique', price: 350, sand: '#4a4250', sandDark: '#332d39', sandLight: '#6b6070', wall: '#3d3543', wallDark: '#221d27', wallLight: '#5e5465' },
   { id: 'sel', name: 'Désert de sel', badge: 'serie7', sand: '#eef0f0', sandDark: '#cdd6db', sandLight: '#ffffff', wall: '#d7e0e4', wallDark: '#a9b8c2', wallLight: '#ffffff' },
   { id: 'oasis', name: 'Oasis', badge: 'collection', sand: '#e2c98a', sandDark: '#c4a868', sandLight: '#f2e0aa', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
+  { id: 'rive', name: 'Bord de rivière', survival: true, sand: '#9fb7a8', sandDark: '#7a9488', sandLight: '#c8dccd', wall: '#5f9a4e', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
 ];
 // Prestige et personnalisation du classement : à partir du 26 octobre ; boutique de la semaine : à partir du 9 novembre
 const SHOP_FROM = '2026-10-26', WEEK_SHOP_FROM = '2099-01-01';  // boutique de la semaine : en pause (prévue au départ le 9 nov. 2026)
@@ -1620,6 +1624,8 @@ const TITLES = [
   { from: EGG.from, id: 'timide', name: '🙈 Le timide' },
   { from: EGG.from, id: 'derniere', name: 'Jamais sans mon terrier' },
   { from: EGG.from, id: 'vege', name: 'Régime sans verdure 🥗' },
+  { id: 'globetrotter', name: 'Globe-trotter', survival: true },
+  { id: 'plusloin', name: 'Toujours plus loin', survival: true },
 ];
 const RANK_TYPES = ['frame', 'color', 'title'];
 const COSMETICS = { ball: SKINS, hat: HATS, outfit: OUTFITS, trail: TRAILS, theme: THEMES, frame: FRAMES, color: NAME_COLORS, title: TITLES };
@@ -1643,6 +1649,10 @@ const findCos = (type, id) => COSMETICS[type].find(c => c.id === id) || COSMETIC
 // flag : débloqué dès que ce compteur vaut 1 (exploits, secrets).
 // mystery : visible, mais seul un indice est donné. secret : invisible tant qu'il n'est pas obtenu.
 const counter = (p, k) => (p.counters && p.counters[k]) || 0;
+// aventure : mondes terminés et niveau (le même calcul que dans le bloc de l'aventure)
+const ADV_NEED = L => 150 + 50 * (L - 1);
+const advDone = p => Math.max((p.adv && p.adv.unlocked) || 0, (p.adv && p.adv.cleared) || 0);
+const advLevel = p => { let xp = (p.adv && p.adv.xp) || 0, L = 1; while (xp >= ADV_NEED(L)) { xp -= ADV_NEED(L); L++; } return L; };
 const UNLOCKS = {
   'ball:saturne': { text: 'Complète la Bousipédia', prog: p => [Store.discovered(p), OBJECTS.filter(o => !o.bonus).length + LEGENDS.length] },
   'ball:atome': { price: 500 },
@@ -1712,6 +1722,11 @@ const UNLOCKS = {
   'title:vege': { secret: true, how: 'Le terrier sans avaler ni feuille ni cactus', prog: p => [counter(p, 'vege'), 1] },
   'title:mois1': { how: 'Joué pendant le premier mois de Bousier', prog: p => [counter(p, 'mois1'), 1] },
   'hat:bandana': { text: 'Parcours 1 000 m dans l\'aventure', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 1000] },
+  'hat:cheche': { text: 'Termine le désert dans l\'aventure', prog: p => [advDone(p) >= 1 ? 1 : 0, 1] },
+  'outfit:fleurie': { text: 'Termine l\'oasis dans l\'aventure', prog: p => [advDone(p) >= 2 ? 1 : 0, 1] },
+  'theme:rive': { text: 'Termine la rivière sauvage dans l\'aventure', prog: p => [advDone(p) >= 3 ? 1 : 0, 1] },
+  'title:globetrotter': { text: 'Atteins le niveau 10 dans l\'aventure', prog: p => [Math.min(advLevel(p), 10), 10] },
+  'title:plusloin': { text: 'Atteins le niveau 25 dans l\'aventure', prog: p => [Math.min(advLevel(p), 25), 25] },
   'trail:survivant': { text: 'Parcours 2 000 m dans l\'aventure', prog: p => [Math.floor((p.survival && p.survival.best) || 0), 2000] },
 };
 for (const key in UNLOCKS) { const [type, id] = key.split(':'); Object.assign(COSMETICS[type].find(c => c.id === id), UNLOCKS[key]); }
@@ -6581,7 +6596,7 @@ if (SURVIVAL_ON) (() => {
   const k = () => (adv().short ? 0.1 : 1);
   const len = w => Math.round(WORLDS[w].len * k());
   const startOf = w => { let s = 0; for (let i = 0; i < w; i++) s += len(i); return s; };
-  const need = L => 150 + 50 * (L - 1);
+  const need = ADV_NEED;
   const levelOf = xp => { let L = 1; while (xp >= need(L)) { xp -= need(L); L++; } return { L, cur: xp, next: need(L) }; };
   const up = id => adv().spent[id] || 0;
   const spent = () => UPS.reduce((a, u) => a + up(u.id) * (u.cost || 1), 0);
