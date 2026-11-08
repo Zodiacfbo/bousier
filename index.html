@@ -6297,7 +6297,7 @@ const App = {
 
   // Dev seulement : choisir la date simulée (raccourcis vers les nouveautés et chaque météo spéciale)
   timeShiftPanel() {
-    const marks = [['2026-10-26', '🎃 26 oct. Halloween, Style, pionniers'], ['2026-10-31', '🧙 31 oct. nuit d\'Halloween'], ['2026-11-02', '⚡ 2 nov. événements'], ['2026-11-09', '⭐ 9 nov. boutique de la semaine']];
+    const marks = [['2026-10-26', '🎃 26 oct. Halloween, Style, pionniers'], ['2026-10-31', '🧙 31 oct. nuit d\'Halloween'], ['2026-11-02', '⚡ 2 nov. événements'], ['2026-11-09', '🗺️ 9 nov. aventure, cactus sans piquant']];
     for (const id of WEEKLY_WEATHERS) {
       const w = ALL_WEATHERS.find(x => x.id === id);
       for (let k = WX_ROTATION_FROM; k < '2027'; k = addDays(k, 1)) if (weeklyWeather(k) >= 0 && ALL_WEATHERS[weeklyWeather(k)].id === id) {
