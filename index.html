@@ -6418,6 +6418,7 @@ if (SURVIVAL_ON) (() => {
   window.generateSurvivalCourse = function (seed, weather) {
     const c = oGen(seed, weather);
     if (!ADV.run) return c;
+    c.events = [];  // pas d'événements surprise dans l'aventure (ils restent dans la dune du jour)
     const rng = makeRng((seed ^ 0xa5a5) >>> 0), w0 = ADV.run.world;
     // part du monde « oasis » à la hauteur y : 0 dans le désert, monte dans la transition, 1 dans l'oasis
     const oasisAt = y => {
