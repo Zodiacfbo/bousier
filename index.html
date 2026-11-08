@@ -3182,7 +3182,7 @@ const BONUSES = [
   { id: 'cafe', icon: '☕', name: 'Café du labo', desc: 'Turbo pendant 10 s', dur: 10 },
   { id: 'aimant', icon: '🧲', name: 'Aimant à crottes', desc: 'Ce qui se mange vient à toi (12 s)', dur: 12 },
   { id: 'fantome', icon: '👻', name: 'Boule fantôme', desc: 'Tu traverses tout pendant 6 s', dur: 6 },
-  { id: 'bouclier', icon: '🩹', name: 'Bouclier pansement', desc: 'Les 3 prochains chocs ne font rien', dur: 0 },
+  { id: 'bouclier', icon: '🩹', name: 'Pansements', desc: '3 pansements : chacun annule un choc', dur: 0 },
   { id: 'feu', icon: '🔥', name: 'Boule de feu', desc: 'Tu brûles les obstacles (10 s)', dur: 10 },
   { id: 'rebond', icon: '🏀', name: 'Boule rebondissante', desc: 'Les chocs ne te font pas maigrir (12 s)', dur: 12 },
   { id: 'engrais', icon: '🌱', name: 'Engrais', desc: '+50 % de taille tout de suite', dur: 0 },
@@ -6511,7 +6511,7 @@ if (SURVIVAL_ON) (() => {
     { id: 'provisions', icon: '🎒', name: 'Provisions', desc: 'Départ avec une boule plus grosse', max: 10, fx: n => `+${n * 12} %` },
     { id: 'cartes', icon: '🃏', name: 'Cartes en plus', desc: 'Plus de cartes à chaque halte', max: 2, fx: n => `${3 + n} cartes` },
     { id: 'durable', icon: '⏱️', name: 'Bonus durables', desc: 'Les bonus durent plus longtemps', max: 10, fx: n => `+${n * 15} %` },
-    { id: 'bouclier', icon: '🛡️', name: 'Bouclier de départ', desc: 'Chocs gratuits au départ', max: 5, fx: n => `${n} choc${n > 1 ? 's' : ''}` },
+    { id: 'bouclier', icon: '🩹', name: 'Pansements de départ', desc: 'Tu pars avec des pansements : chacun annule un choc', max: 5, fx: n => `${n} pansement${n > 1 ? 's' : ''}` },
   ];
   const PACT_LEVEL = 3;
   // pièces : +10 à la première partie du jour, puis 1 tous les 100 m, 50 par jour au plus
