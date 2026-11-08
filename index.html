@@ -6705,7 +6705,8 @@ if (SURVIVAL_ON) (() => {
   };
 
   // --- Le jeu ----------------------------------------------------------------
-  const pickWx = (w, rng = Math.random) => WEATHER[WORLDS[w].wx[Math.floor(rng() * WORLDS[w].wx.length)]];
+  // la canicule du désert : le look seulement (pas de rétrécissement ni de vitesse en plus, la faim suffit)
+  const pickWx = (w, rng = Math.random) => { const x = WEATHER[WORLDS[w].wx[Math.floor(rng() * WORLDS[w].wx.length)]]; return x.id === 'canicule' ? { ...x, shrink: 0, speed: 1 } : x; };
   const oStart = Game.prototype.start;
   Game.prototype.start = function (config, opts) {
     oStart.call(this, config, opts);

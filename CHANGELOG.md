@@ -10,6 +10,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 ## v1.23.6 — Aventure : pièces plafonnées, cactus avalable (dev seulement) (7 novembre 2026)
 - Aventure : plus d'événements surprise (ils restent dans la dune du jour).
 - Aventure : une météo fixe par monde (désert : canicule, oasis : grand calme, rivière : averse), au lieu d'un tirage au hasard.
+  La canicule du désert ne fait que le look (pas de rétrécissement ni de vitesse en plus : la faim suffit).
 - Aventure : +10 🟡 à la première partie du jour, puis 1 🟡 tous les 100 m, 50 🟡 par jour au plus (avant : 1 🟡 / 25 m sans limite).
   Le gain et le compteur du jour s'affichent à l'écran de fin.
 - Aventure : le cactus ne pique plus, c'est un objet avalable comme les autres (un seul obstacle par monde : le scorpion dans le désert).
