@@ -1654,7 +1654,9 @@ const findCos = (type, id) => COSMETICS[type].find(c => c.id === id) || COSMETIC
 const counter = (p, k) => (p.counters && p.counters[k]) || 0;
 // aventure : mondes terminés et niveau (le même calcul que dans le bloc de l'aventure)
 const ADV_NEED = L => 150 + 50 * (L - 1);
-const ADV_MAX = 20;  // niveau maximum pour l'instant (à relever avec les prochains mondes) ; l'XP continue de compter
+const ADV_MAX = 20;  // niveau maximum pour l'instant (à relever avec les prochains mondes)
+// l'XP s'arrête au niveau maximum : quand on relèvera le plafond, tout le monde repartira du même niveau
+const ADV_XP_CAP = Array.from({ length: ADV_MAX - 1 }, (_, i) => ADV_NEED(i + 1)).reduce((a, b) => a + b, 0);
 const advDone = p => Math.max((p.adv && p.adv.unlocked) || 0, (p.adv && p.adv.cleared) || 0);
 const advLevel = p => { let xp = (p.adv && p.adv.xp) || 0, L = 1; while (L < ADV_MAX && xp >= ADV_NEED(L)) { xp -= ADV_NEED(L); L++; } return L; };
 const UNLOCKS = {
@@ -6611,6 +6613,7 @@ if (SURVIVAL_ON) (() => {
     const p = prof(); p.adv = p.adv || { xp: 0, spent: {}, unlocked: 0, best: {}, sel: 0, short: false };
     // anciennes compétences montées plus haut que le nouveau maximum : les points en trop sont rendus
     for (const u of UPS) if ((p.adv.spent[u.id] || 0) > u.max) p.adv.spent[u.id] = u.max;
+    if (p.adv.xp > ADV_XP_CAP) p.adv.xp = ADV_XP_CAP;
     return p.adv;
   };
   const k = () => (adv().short ? 0.1 : 1);
@@ -7434,14 +7437,14 @@ if (SURVIVAL_ON) (() => {
       const from = ADV.run ? ADV.run.world : 0, y = ADV.lastY || 0, w = worldAtY(y);
       const gained = Math.max(0, Math.floor(run.dist - (ADV.run ? ADV.run.offset : 0)));
       const before = levelOf(a.xp).L;
-      a.xp += gained;
+      const xp0 = a.xp; a.xp = Math.min(ADV_XP_CAP, a.xp + gained); const xpGot = a.xp - xp0;
       const wb = Math.min(w, PLAYABLE - 1), inWorld = Math.floor((y - yStart(wb)) / 10);
       const rec = inWorld > (a.best[wb] || 0); if (rec) a.best[wb] = inWorld;
       a.unlocked = Math.max(a.unlocked, Math.min(w, PLAYABLE - 1));
       const p = prof(), cd = a.coins && a.coins.day === this.today ? a.coins : (a.coins = { day: this.today, n: 0 });
       const coins = Math.max(0, Math.min(COINS.max - cd.n, (cd.n ? 0 : COINS.first) + Math.floor(gained / COINS.per)));
       cd.n += coins; p.coins += coins; r.coins = coins;
-      r.adv = { gained, from, w, wb, before, after: levelOf(a.xp).L, rec, newWorld: w > from, left: Math.max(0, Math.ceil((yEnd(wb) - y) / 10)), coins, today: cd.n, wp: (ADV.run && ADV.run.wp) || 0 };
+      r.adv = { gained, from, w, wb, before, after: levelOf(a.xp).L, rec, newWorld: w > from, left: Math.max(0, Math.ceil((yEnd(wb) - y) / 10)), coins, today: cd.n, wp: (ADV.run && ADV.run.wp) || 0, xp: xpGot };
       Store.save();
     }
     const x = r.adv, l = levelOf(a.xp), end = x.w >= PLAYABLE, W1 = WORLDS[x.wb], N = WORLDS[x.wb + 1];
@@ -7453,7 +7456,7 @@ if (SURVIVAL_ON) (() => {
         : x.newWorld ? `<div class="next">🎉 <b>Monde ${x.w + 1} débloqué : ${WORLDS[x.w].name}</b> ! Tu peux maintenant y commencer directement.</div>`
         : `<div class="next">🏁 Plus que <b>${fmt(x.left)}</b> avant ${N && !N.soon ? (x.wb + 1 <= a.unlocked ? `<b>${N.icon} ${N.name}</b>` : '<b>le monde suivant</b>') : 'la fin des mondes jouables'} !</div>`}
       <div class="panel"><div class="lvl"><span class="n">Niv. ${x.before}${x.after > x.before ? ' → ' + x.after : ''}</span><div class="bar">${lvlBar(l)}</div></div>
-        <div class="tiny" style="margin-top:var(--u);color:#c8ff8a">+${x.gained} XP${x.after > x.before ? ` · ⬆️ Niveau supérieur ! +${x.after - x.before} point${x.after - x.before > 1 ? 's' : ''} de compétence` : ''}${x.wp ? ` · 🎯 +${x.wp} point${x.wp > 1 ? 's' : ''} : nouveau monde terminé !` : ''}</div></div>
+        <div class="tiny" style="margin-top:var(--u);color:#c8ff8a">${l.max && !x.xp ? 'Niveau max pour l\'instant' : `+${x.xp ?? x.gained} XP`}${x.after > x.before ? ` · ⬆️ Niveau supérieur ! +${x.after - x.before} point${x.after - x.before > 1 ? 's' : ''} de compétence` : ''}${x.wp ? ` · 🎯 +${x.wp} point${x.wp > 1 ? 's' : ''} : nouveau monde terminé !` : ''}</div></div>
       ${Object.keys(CARD_UNLOCKS).map(Number).filter(L => L !== PACT_LEVEL && L > x.before && L <= x.after).map(L => `<div class="unl"><div class="c">🆕</div><div><b>Niveau ${L} : ${CARD_UNLOCKS[L]} !</b><div class="tiny">Elles peuvent maintenant sortir aux haltes.</div></div></div>`).join('')}
       ${x.after >= PACT_LEVEL && x.before < PACT_LEVEL ? '<div class="unl"><div class="c">😈</div><div><b>Nouveau : les pactes !</b><div class="tiny">Des cartes très puissantes… avec une contrepartie. Elles peuvent maintenant sortir aux haltes.</div></div></div>' : ''}
       <div class="panel"><div class="tiny" style="color:#ffd25a">${x.coins ? `+${x.coins} 🟡` : '+0 🟡'} · ${x.today >= COINS.max ? `plafond du jour atteint (${COINS.max} 🟡), reviens demain !` : `${x.today} / ${COINS.max} 🟡 gagnées aujourd'hui dans l'aventure`}</div></div>
@@ -7496,7 +7499,7 @@ if (SURVIVAL_ON) (() => {
     if (act === 'tab') { ADV.tab = el.dataset.u; return App.show('competences'); }
     if (act === 'respec') { if (confirm('Reprendre tous tes points pour les placer autrement ?')) { a.spent = {}; Store.save(); } return App.show('competences'); }
     if (act === 'short') { a.short = !a.short; Store.save(); return App.show('aventure'); }
-    if (act === 'xp') { a.xp += 300; Store.save(); return App.show('aventure'); }
+    if (act === 'xp') { a.xp = Math.min(ADV_XP_CAP, a.xp + 300); Store.save(); return App.show('aventure'); }
     if (act === 'reset') { if (confirm('Remettre l\'aventure à zéro ?')) { const p = prof(); delete p.adv; Store.save(); } return App.show('aventure'); }
   }, true);
 

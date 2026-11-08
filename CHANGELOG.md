@@ -17,7 +17,8 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Aventure : les animaux dangereux ont un contour jaune et noir qui clignote, avec un « ! » au-dessus (les objets trop gros gardent
   le contour rouge).
 - Aventure : les mondes pas encore atteints gardent leur nom secret (« ??? », « bientôt », « au bout du monde 1 ») ; niveau maximum
-  provisoire : 20 (« NIVEAU MAX (pour l'instant) ») ; titre « Toujours plus loin » au niveau 20.
+  provisoire : 20 (« NIVEAU MAX (pour l'instant) »), l'XP s'arrête là (11 400 XP) pour que tout le monde reparte du même niveau
+  quand le plafond sera relevé ; titre « Toujours plus loin » au niveau 20.
 - News du 9 novembre : « 🗺️ Nouveau : le mode Aventure ! … ».
 - Contenu : tout ce qui est décrit dans les versions 1.23.x ci-dessous (mondes, difficulté, compétences, cartes, récompenses).
 - Dune du jour, à partir du 9 novembre : le cactus ne pique plus ; le titre « L'ami des cactus » compte les cactus avalés.
