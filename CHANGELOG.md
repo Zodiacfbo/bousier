@@ -25,7 +25,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   Repousse-scorpions), rivière (Bouée, Banc de poissons). Déblocages par niveau : pactes (3), reliques rares (5), légendaires (10), Cœur d'or (15).
 - Aventure, cartes plus lisibles : nom, effet en une phrase, et une seule pastille (⏱ durée, ⚡ tout de suite, ♾ toute la partie) ;
   rareté au cadre (gris, bleu, doré). Pause : récapitulatif de la partie (pansements, vies en plus, coups de pouce en cours
-  avec les secondes restantes, reliques et combos).
+  avec les secondes restantes, reliques et combos avec leur effet). Les cartes rappellent aussi l'effet du combo (« Armure 2/3 : … »).
 - Aventure, noms sans clin d'œil au labo : Café serré, Raccourci secret, Ralenti, Super aimant ; Kevin quitte l'aventure.
   La boule de feu fait aussi fuir les animaux.
 - Aventure, compétences en 3 familles (un onglet chacune) : 🍽️ Gourmand (Estomac, Provisions, Aimant), 🛡️ Costaud (Carapace,

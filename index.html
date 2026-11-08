@@ -453,7 +453,9 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .recap .rc-fx b { color:#c8ff8a; }
 .recap .rc-row { display:flex; gap: calc(var(--u)*2); align-items:center; padding: var(--u) 0 var(--u) calc(var(--u)*2); border-left: calc(var(--u)*1.5) solid var(--fam, #ffd25a); margin-top: var(--u); }
 .recap .rc-row .ic { font-size:1.4em; }
-.recap .rc-cmb { font-size:.7em; font-weight:bold; }
+.recap .rc-cmb { font-size:.7em; color:#9a8a9a; margin-top: calc(var(--u)*.8); }
+.recap .rc-cmb b { color: var(--fam); }
+.recap .rc-cmb.on { color: var(--fam); font-weight:bold; }
 #hud-relics { position:absolute; right: calc(var(--u)*2); top: calc(var(--u)*25); font-size:.7em; letter-spacing:.1em; text-shadow: 0 1px 0 #000; }
 #hud-relics .combo { font-weight:bold; }
 #hud-beetle { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: .8em; }
@@ -7222,7 +7224,7 @@ if (SURVIVAL_ON) (() => {
         : d ? `<span class="chip2">⏱ ${d} s</span>` : `<span class="chip2">⚡ tout de suite</span>`;
       const rar = c.pact ? '<span class="rw pact">pacte</span>' : c.rar === 'r' ? '<span class="rw r">rare</span>' : c.rar === 'l' ? '<span class="rw l">légendaire</span>' : '';
       const cnt = c.kind === 'relic' && F ? famCount(sv, c.fam) : -1;
-      const comboTxt = cnt >= 0 && cnt < 3 ? `<span class="cmb">${cnt + 1 === 3 ? `★ Combo ${COMBOS[c.fam].name} : ${COMBOS[c.fam].desc} !` : `Combo ${COMBOS[c.fam].name} ${cnt + 1}/3`}</span>` : '';
+      const comboTxt = cnt >= 0 && cnt < 3 ? `<span class="cmb">${cnt + 1 === 3 ? `★ Combo ${COMBOS[c.fam].name} obtenu : ${COMBOS[c.fam].desc} !` : `Combo ${COMBOS[c.fam].name} ${cnt + 1}/3 : ${COMBOS[c.fam].desc}`}</span>` : '';
       return `<button class="card acard rar-${c.rar || 'c'} ${c.kind === 'relic' ? 'relic' : ''} ${c.pact ? 'pact' : ''}" data-a="pickcard" data-v="${i}" ${F ? `style="--fam:${F.col}"` : ''}>
         <span class="ico">${c.icon}</span><span class="txt"><span class="top"><b>${esc(c.name)}</b>${rar}</span><span class="eff">${esc(c.desc)}</span><span class="bot">${chip}${comboTxt}</span></span></button>`;
     };
@@ -7244,7 +7246,7 @@ if (SURVIVAL_ON) (() => {
     const relRows = rl.map(id => { const r = BONUS[id], F = r.fam && FAMI[r.fam];
       return `<div class="rc-row" ${F ? `style="--fam:${F.col}"` : ''}><span class="ic">${r.icon}</span><span><b>${esc(r.name)}</b>${F ? ` <span class="tiny" style="color:${F.col}">${F.icon} ${F.name}</span>` : ''}<br><span class="tiny">${esc(r.desc)}</span></span></div>`; }).join('');
     const combos = FAMS.map(f => ({ f, n: famCount(sv, f.id) })).filter(x => x.n > 0)
-      .map(({ f, n }) => `<span class="rc-cmb" style="color:${f.col}">${n >= 3 ? '★' : '☆'} ${COMBOS[f.id].name} ${Math.min(n, 3)}/3</span>`).join('');
+      .map(({ f, n }) => `<div class="rc-cmb ${n >= 3 ? 'on' : ''}" style="--fam:${f.col}">${n >= 3 ? '★' : '☆'} <b>${COMBOS[f.id].name}</b> ${Math.min(n, 3)}/3 ${f.icon} : ${COMBOS[f.id].desc}${n >= 3 ? ' ✅' : ''}</div>`).join('');
     const coups = fx.map(([k, t]) => `<span class="rc-fx">${BONUS[k].icon} ${esc(BONUS[k].name)} <b>${Math.ceil(t)} s</b></span>`).join('');
     const recap = `<div class="panel recap">
       <div class="label">🎒 Ce que tu as</div>
@@ -7252,7 +7254,7 @@ if (SURVIVAL_ON) (() => {
       ${coups ? `<div class="rc-sub">En cours</div><div class="rc-fxs">${coups}</div>` : ''}
       <div class="rc-sub">Reliques (toute la partie)</div>
       ${relRows || '<div class="tiny">Aucune pour l\'instant : elles sortent aux haltes.</div>'}
-      ${combos ? `<div class="rc-cmbs">${combos}</div>` : ''}
+      ${combos ? `<div class="rc-sub">Combos (3 reliques d'une famille)</div><div class="rc-cmbl">${combos}</div>` : ''}
     </div>`;
     return h.replace('<div class="title small">PAUSE</div>', '<div class="title small">PAUSE</div>' + recap);
   };
