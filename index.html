@@ -7252,7 +7252,7 @@ if (SURVIVAL_ON) (() => {
     const rl = sv.relics || [], tips = adv().tips = adv().tips || {}, cs = this.cards || [];
     // une seule fois : on explique ce qui est nouveau
     const TIPS = [
-      ['combo', FAMS.some(f => combo(sv, f.id)), '★ Bravo, ton premier combo ! 3 reliques de la même famille donnent un bonus en plus. Tout est rappelé à la pause.'],
+      ['combo', FAMS.some(f => combo(sv, f.id)), '★ Bravo, ton premier combo ! 3 reliques de la même famille donnent un bonus en plus. Le récapitulatif de tes bonus est disponible quand tu mets pause.'],
       ['relic', cs.some(c => c.kind === 'relic'), '♾ Nouveau : les reliques ! Elles durent toute la partie et se cumulent. 3 de la même famille (même couleur) = un combo.'],
       ['legend', cs.some(c => c.rar === 'l'), '✨ Une carte légendaire (cadre doré) : très rare et très forte !'],
       ['rare', cs.some(c => c.rar === 'r' && !c.pact), '🔷 Une carte rare (cadre bleu) : plus forte que les autres.'],
@@ -7328,8 +7328,9 @@ if (SURVIVAL_ON) (() => {
     if (!a.introSeen || ADV.intro) return `<div class="screen">
       <div class="sv-title" style="margin-top:calc(var(--u)*6)">MODE AVENTURE</div><div class="sv-sub">Bienvenue dans l'aventure !</div>
       <div class="panel intro">
-        <div class="r"><span class="i">🍽️</span><span><b>Ta boule fond sans arrêt</b><br>Mange pour survivre et roule le plus loin possible. La partie s'arrête quand il ne reste plus rien.</span></div>
-        <div class="r"><span class="i">🃏</span><span><b>Une halte tous les 250 m</b><br>Choisis une carte : un coup de pouce ⏱ pour quelques secondes, ou une relique ♾ pour toute la partie (3 de la même famille = un combo). Certaines sont risquées 😈. Tout est rappelé à la pause.</span></div>
+        <div class="r"><span class="i">🍽️</span><span><b>Ta boule fond sans arrêt</b><br>Mange pour survivre et roule le plus loin possible. Si ta boule arrive à 0, la partie s'arrête.</span></div>
+        <div class="r"><span class="i">🃏</span><span><b>Une halte tous les 250 m</b><br>Choisis une carte : un coup de pouce ⏱ pour quelques secondes, ou une relique ♾ pour toute la partie (3 de la même famille = un combo). Certaines sont risquées 😈. Un récapitulatif de tes bonus est disponible quand tu mets pause (II).</span></div>
+        <div class="r"><span class="i">⚠️</span><span><b>Un animal dangereux par monde</b><br>Dans chaque monde, un animal (comme le scorpion du désert) fait rétrécir ta boule. Impossible de le manger : évite-le !</span></div>
         <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Au bout du désert, l'oasis… et d'autres encore. Une fois atteint, tu peux y commencer directement.</span></div>
         <div class="r"><span class="i">📈</span><span><b>Tu progresses à chaque partie</b><br>Chaque mètre rapporte de l'XP. À chaque niveau, un point de compétence à placer dans 3 familles : Gourmand, Costaud, Malin. Les niveaux débloquent aussi de nouvelles cartes.</span></div>
         <div class="r"><span class="i">🎲</span><span><b>Ne compte pas pour la dune du jour</b><br>Joue autant que tu veux : ton record a son propre classement (🏆 Records). C'est aussi un bon entraînement !</span></div>
