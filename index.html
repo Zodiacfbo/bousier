@@ -7348,7 +7348,7 @@ if (SURVIVAL_ON) (() => {
       // un monde pas encore atteint garde son nom secret
       const ic = !W0 ? '❓' : done || cur ? W0.icon : W0.soon ? '🚧' : '🔒';
       const nm = W0 && (done || cur) ? W0.name : '???';
-      const sub = !W0 ? '🔒' : done ? '✅ terminé' : cur ? (a.best[i] ? `📍 record ${fmt(a.best[i])}` : '📍 à découvrir') : W0.soon ? 'bientôt' : next ? `au bout du monde ${i}` : '🔒';
+      const sub = !W0 ? '🔒' : done ? '✅ terminé' : cur ? (a.best[i] ? `📍 record ${fmt(a.best[i])}` : '📍 à découvrir') : W0.soon ? 'bientôt' : '';
       return `<div class="node ${st}" style="left:${x}%;top:${y}%"><div class="ic">${ic}</div><b>${nm}</b><i>${sub}</i></div>`;
     }).join('');
     const pts = POS.map(([x, y]) => `${x},${y}`).join(' ');
