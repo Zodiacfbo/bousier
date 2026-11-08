@@ -6640,7 +6640,7 @@ if (SURVIVAL_ON) (() => {
     { id: 'aimant', fam: 'gourmand', icon: '🧲', name: 'Aimant', desc: 'Les petits objets proches viennent à toi', max: 3, fx: n => ['rien', 'petit rayon', 'rayon moyen', 'grand rayon'][n] },
     { id: 'seconde', fam: 'gourmand', star: true, cost: 3, max: 1, icon: '❤️', name: 'Seconde chance', desc: 'Une fois par partie, quand ta boule est vide, tu repars\u00a0!' },
     { id: 'carapace', fam: 'costaud', icon: '🐢', name: 'Carapace', desc: 'Les animaux font moins mal', max: 5, fx: n => `−${n * 10} %` },
-    { id: 'bouclier', fam: 'costaud', icon: '🩹', name: 'Pansements de départ', desc: 'Au départ et à chaque nouveau monde', max: 3, fx: n => `${n} pansement${n > 1 ? 's' : ''}` },
+    { id: 'bouclier', fam: 'costaud', icon: '🩹', name: 'Pansements de départ', desc: 'Au départ de chaque partie', max: 3, fx: n => `${n} pansement${n > 1 ? 's' : ''}` },
     { id: 'trousse', fam: 'costaud', star: true, cost: 3, max: 1, icon: '🧰', name: 'Trousse de secours', desc: '+1 pansement à chaque halte' },
     { id: 'cartes', fam: 'malin', icon: '🃏', name: 'Cartes en plus', desc: 'Plus de cartes à chaque halte', max: 2, fx: n => `${3 + n} cartes` },
     { id: 'durable', fam: 'malin', icon: '⏱️', name: 'Coups de pouce durables', desc: 'Les coups de pouce durent plus longtemps', max: 5, fx: n => `+${n * 20} %` },
