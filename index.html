@@ -7200,8 +7200,9 @@ if (SURVIVAL_ON) (() => {
   // 2 sortes : les coups de pouce (effet immédiat ou court) et les reliques (toute la partie, elles se cumulent).
   // 3 raretés : commune, rare, légendaire. Les reliques suivent les 3 familles des compétences ;
   // 3 reliques d'une même famille donnent un combo. Chaque monde ajoute ses 2 cartes.
-  const RARE_COUPS = ['fantome', 'feu', 'rebond', 'raccourci'];
-  const COUPS = BONUSES.map(b => ({ ...b, kind: 'coup', rar: RARE_COUPS.includes(b.id) ? 'r' : 'c' }));
+  const RARE_COUPS = ['feu', 'rebond', 'raccourci'];
+  // la boule fantôme n'est plus une carte de l'aventure (trop faible) : son effet vit dans l'Étoile filante
+  const COUPS = BONUSES.filter(b => b.id !== 'fantome').map(b => ({ ...b, kind: 'coup', rar: RARE_COUPS.includes(b.id) ? 'r' : 'c' }));
   const NEW_COUPS = [
     { id: 'festin', icon: '🍗', name: 'Festin', desc: 'Plus de faim, et +50 % de taille', dur: 20, rar: 'l', lvl: 10 },
     { id: 'etoile', icon: '🌟', name: 'Étoile filante', desc: 'Turbo, et tu traverses tout', dur: 0, show: 12, rar: 'l', lvl: 10 },
