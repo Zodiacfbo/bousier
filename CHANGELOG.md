@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.25.2 — Aventure : les cartes expliquées dans l'accueil (9 novembre 2026)
+- Aventure : l'accueil explique de nouveau les cartes, dans un petit encadré de 4 lignes (coup de pouce, relique, combo,
+  cartes risquées).
+
 ## v1.25.1 — Aventure : accueil plus court, texte de la news (9 novembre 2026)
 - Aventure : l'écran d'accueil passe de six blocs à trois (Survivre, Choisir tes bonus, Finir le monde), avec le but
   en sous-titre : « Traverse chaque monde sans que ta boule disparaisse ! ».

@@ -496,6 +496,7 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .intro { display: flex; flex-direction: column; gap: calc(var(--u)*3); }
 .intro .r { display: flex; gap: calc(var(--u)*3); align-items: flex-start; font-size: .88em; line-height: 1.3; }
 .intro .r .i { font-size: 1.5em; width: calc(var(--u)*13); text-align: center; }
+.intro .cards { display: flex; flex-direction: column; gap: calc(var(--u)*.7); margin-top: calc(var(--u)*2); padding: calc(var(--u)*2.5); background: rgba(255,255,255,.06); border: 1px solid #7a5a8a; border-radius: calc(var(--u)*1.5); font-size: .92em; line-height: 1.35; }
 .sv-title { text-align:center; font-size: calc(var(--u)*13); font-weight:700; color:#ffb04a; text-shadow: calc(var(--u)*1.5) calc(var(--u)*1.5) 0 #120a16; line-height:1; }
 .sv-sub { text-align:center; color: var(--muted); font-size:.8em; }
 .lvl { display:flex; align-items:center; gap: calc(var(--u)*3); }
@@ -7472,7 +7473,7 @@ if (SURVIVAL_ON) (() => {
       <div class="sv-title" style="margin-top:calc(var(--u)*6)">MODE AVENTURE</div><div class="sv-sub">Traverse chaque monde sans que ta boule disparaisse !</div>
       <div class="panel intro">
         <div class="r"><span class="i">🍽️</span><span><b>Survivre</b><br>Ta boule fond sans arrêt : mange pour la garder en vie. Évite l'animal dangereux de chaque monde.</span></div>
-        <div class="r"><span class="i">🃏</span><span><b>Choisir tes bonus</b><br>Tous les 250 m, une halte : pioche une carte qui t'aide quelques secondes ou toute la partie.</span></div>
+        <div class="r"><span class="i">🃏</span><span><b>Choisir tes bonus</b><br>Tous les 250 m, une halte : pioche une carte.<span class="cards"><span>⏱ <b>Coup de pouce</b> : quelques secondes</span><span>♾ <b>Relique</b> : toute la partie</span><span>✨ <b>Combo</b> : 3 reliques de la même famille</span><span>😈 Certaines cartes sont risquées</span></span></span></div>
         <div class="r"><span class="i">🏁</span><span><b>Finir le monde</b><br>Passe la ligne d'arrivée pour ouvrir le monde suivant. À chaque partie, tu gagnes de l'XP et des points de compétence.</span></div>
         <div class="tiny center" style="opacity:.8">Pas de classement : joue à ton rythme. Ça ne compte pas pour la dune du jour.</div>
       </div>
