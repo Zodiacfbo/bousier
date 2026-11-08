@@ -505,6 +505,10 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .node.done .ic { background:#3a6a3a; box-shadow: inset 0 0 0 var(--u) #8ad86a; }
 .node.cur .ic { background:#6a4a1a; box-shadow: inset 0 0 0 calc(var(--u)*1.5) var(--gold), 0 0 calc(var(--u)*5) rgba(255,210,90,.7); }
 .node.lock .ic { background:#1a1020; box-shadow:none; }
+.node.pick { cursor:pointer; }
+.node.sel .ic { outline: calc(var(--u)*1) solid #ffffff; outline-offset: calc(var(--u)*1.5); }
+.node .dep { position:absolute; left:50%; bottom: calc(100% + var(--u)*1); transform: translateX(-50%); font-size:.55em; font-weight:700; letter-spacing:.06em;
+  color:#2a1408; background:#ffffff; padding: calc(var(--u)*.4) calc(var(--u)*1.5); white-space:nowrap; }
 .node.lock .ic span { filter: brightness(0); opacity:.55; }
 .node b { display:block; font-size:.72em; margin-top: var(--u); }
 .node i { display:block; font-style:normal; font-size:.6em; color: var(--muted); }
@@ -4959,8 +4963,6 @@ const App = {
     if (name === 'home') { this.annInit(); this.moreInit(); }
     if (name === 'aventure') {
       this.moreInit();
-      // beaucoup de départs : la rangée défile de côté, et le départ choisi est toujours visible
-      const on = this.ui.querySelector('.adv-foot .wsel .on'); if (on) on.parentNode.scrollLeft = on.offsetLeft - on.parentNode.offsetLeft - 20;
     }
     if (name === 'name') { const i = this.ui.querySelector('input'); if (i) setTimeout(() => i.focus(), 50); }
   },
@@ -7359,7 +7361,9 @@ if (SURVIVAL_ON) (() => {
       const ic = !W0 ? '❓' : done || cur ? W0.icon : W0.soon ? '🚧' : '🔒';
       const nm = W0 && (done || cur) ? W0.name : '???';
       const sub = !W0 ? '🔒' : done ? '✅ terminé' : cur ? (a.best[i] ? `📍 record ${fmt(a.best[i])}` : '📍 à découvrir') : W0.soon ? 'bientôt' : '';
-      return `<div class="node ${st}" style="left:${x}%;top:${y}%"><div class="ic">${ic}</div><b>${nm}</b><i>${sub}</i></div>`;
+      // un monde atteint se touche pour en faire le départ
+      const pick = W0 && !W0.soon && i <= a.unlocked, isSel = pick && i === Math.min(a.sel || 0, a.unlocked);
+      return `<div class="node ${st} ${pick ? 'pick' : ''} ${isSel ? 'sel' : ''}" style="left:${x}%;top:${y}%" ${pick ? `data-adv="sel" data-w="${i}"` : ''}>${isSel && a.unlocked > 0 ? '<span class="dep">DÉPART</span>' : ''}<div class="ic">${ic}</div><b>${nm}</b><i>${sub}</i></div>`;
     }).join('');
     const pts = POS.map(([x, y]) => `${x},${y}`).join(' ');
     const gold = POS.slice(0, a.unlocked + 1).map(([x, y]) => `${x},${y}`).join(' ');
@@ -7392,8 +7396,7 @@ if (SURVIVAL_ON) (() => {
 </div>` : ''}
       <div class="foot adv-foot">
         <div class="more">▼ Tes mondes et l'entraînement plus bas</div>
-        <div class="wsel-row"><span class="tiny">Départ :</span><div class="wsel">${WORLDS.map((w, i) => !w.soon && i <= a.unlocked ? `<span class="${i === sel ? 'on' : ''}" data-adv="sel" data-w="${i}">${w.icon} ${w.short}</span>` : i === a.unlocked + 1 ? '<span class="off">🔒</span>' : '').join('')}</div></div>
-        <button class="btn big pulse" data-adv="play">ROULER ! <small>départ : ${WORLDS[sel].name}</small></button>
+        <button class="btn big pulse" data-adv="play">ROULER ! <small>départ : ${WORLDS[sel].name}${a.unlocked > 0 ? ' · touche un monde pour changer' : ''}</small></button>
         <div class="menu2"><button data-adv="skills"><span>🎯</span>Compétences${points() ? '<span class="pill-n">' + points() + '</span>' : ''}</button><button data-adv="records"><span>🏆</span>Records</button></div>
       </div>
     </div>`;
