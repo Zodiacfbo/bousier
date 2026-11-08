@@ -36,7 +36,7 @@ Au début de toute conversation sur Bousier, même sans « Parlons de Bousier »
 
 **Contenu du jeu**
 - **Ne jamais modifier une dune déjà jouée** : toute évolution des dunes, météos, événements ou trésors doit être datée dans le futur.
-- Le **mode survie (La Grande Fuite)** reste **invisible sur `main`** (`SURVIVAL_ON` = dev seulement).
+- Le **mode aventure** (qui a remplacé La Grande Fuite) est sur `main` à partir du 9 novembre 2026 ; ses **outils de test** restent sur `dev` seulement.
 - Les noms des joueurs viennent d'un classement en ligne partagé : ne rien afficher de privé.
 
 **Sécurité**
@@ -90,11 +90,12 @@ Au début de toute conversation sur Bousier, même sans « Parlons de Bousier »
 - Lire les vraies données du jeu officiel : lectures publiques de l'API REST Firestore (`envs/prod/…`), tant que la phase 1 des règles est active.
 - Ranger les scripts et captures de test **hors du dépôt**.
 
-## 5. Où en est le projet (au 6 novembre 2026)
+## 5. Où en est le projet (au 8 novembre 2026)
 
-- **Version 1.22.2 sur `main`** : outil d'admin « essai en plus » (voir plus bas) ; avant, v1.22.1 : nouvelles météos spéciales (lundi et vendredi), 6 nouveaux événements, **événements en roulement à partir du 9 novembre** (comme la météo), calendrier des événements dans l'admin.
-- **Sur `dev` seulement (v1.23.5)** : le **mode aventure**, qui remplace La Grande Fuite (désert, oasis, **rivière sauvage** avec courant, eau en 4 tons sans flèches : look validé par Florent). Tout son suivi est dans l'**issue GitHub n° 10**. Il reste invisible sur `main`.
-- **Règle de l'aventure** : un seul obstacle par monde, toujours un animal jamais avalable (scorpion, crabe, crocodile ; volcan et Lune à trouver) ; tout le reste est un objet avalable selon la taille de la boule.
+- **Version 1.24.0 sur `main` et `dev`** : le **mode aventure** s'ouvre aux joueurs le **lundi 9 novembre** au matin (`ADVENTURE_FROM`, `SURVIVAL_ON` vrai sur main à partir de ce jour ; outils de test : dev seulement). Il remplace La Grande Fuite ; l'entraînement aléatoire est dans le menu de l'aventure. Tout son suivi est dans l'**issue GitHub n° 10**.
+- **Aventure, en bref** : mode **solo** (pas de classement, juste « Ton record ») ; pas d'événements ; une météo fixe par monde ; carte de **8 mondes** (désert, oasis, rivière sauvage ; les autres « bientôt », noms cachés) ; compétences en **3 familles** (Gourmand, Costaud, Malin) ; **cartes** (« bonus » pour les joueurs) : coups de pouce et reliques, 3 raretés, combos ; **niveau max 20** ; 50 pièces max par jour. Difficulté réglée pour finir le désert en 3 ou 4 parties.
+- **Règle de l'aventure** : un seul obstacle par monde, toujours un animal jamais avalable (scorpion, crabe, crocodile ; volcan et Lune à trouver) ; tout le reste est un objet avalable selon la taille de la boule. À chaque nouveau monde : ajouter des compétences et relever le niveau max.
+- **Cactus** : il ne pique plus dans la dune du jour à partir du 9 novembre (`CACTUS_SOFT_FROM`) ; « L'ami des cactus » compte les cactus avalés.
 - **Essai perdu d'un joueur** : l'essai est retiré dès le lancement de la course (anti-triche), donc un plantage ou un abandon le fait perdre. Geste d'admin : fiche du joueur (🎁) > case « Un essai en plus pour la dune d'aujourd'hui » (champ `d.bonus`, pour le jour d'envoi seulement, absent du cadeau à tout le monde). Piste si ça se reproduit : rendre l'essai si la course est très courte (issue n° 9).
 - **Boutique de la semaine : en pause** (`WEEK_SHOP_FROM = '2099-01-01'` et news correspondante datée 2099). Pour la relancer : remettre un vrai lundi aux deux endroits.
 - **Le 20 novembre** : 1 mois de Bousier (gâteau et cadeau, déjà programmés).
