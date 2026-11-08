@@ -459,6 +459,12 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .obj-grid { display:grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u)*1.5) calc(var(--u)*3); margin-top: var(--u); }
 .obj-chip { display:flex; align-items:center; gap: calc(var(--u)*2); font-size:.9em; }
 .obj-chip .oi { flex:0 0 auto; width: calc(var(--u)*12); display:flex; justify-content:center; align-items:center; }
+.myst { margin: calc(var(--u)*4) 0; padding: calc(var(--u)*5); background: var(--panel); box-shadow: inset 0 0 0 var(--u) #74f088; }
+.myst.bad { box-shadow: inset 0 0 0 var(--u) #ff6a6a; background:#3a1820; }
+.myst .ico { font-size: 3em; animation: mystbob 1s ease-in-out infinite; }
+@keyframes mystbob { 50% { transform: translateY(calc(var(--u) * -2)); } }
+.myst b { display:block; font-size:1.2em; margin: calc(var(--u)*2) 0; color: var(--gold); }
+.myst.bad b { color:#ff9a8a; }
 .tipbox { font-size:.75em; background:#2a3a1a; box-shadow: inset 0 0 0 var(--u) #c8ff8a; color:#e8ffd0; padding: calc(var(--u)*2) calc(var(--u)*3); margin: calc(var(--u)*2) 0; text-align:left; }
 #hud-relics { position:absolute; right: calc(var(--u)*2); top: calc(var(--u)*25); font-size:.7em; letter-spacing:.1em; text-shadow: 0 1px 0 #000; }
 #hud-relics .combo { font-weight:bold; }
@@ -7272,12 +7278,31 @@ if (SURVIVAL_ON) (() => {
   const oPick = App.pickCard;
   App.pickCard = function (i) {
     const g = this.game, sv = g && g.surv, c = this.cards && this.cards[i];
+    // tube mystère pris à une halte : on montre ce qu'il contenait avant de repartir
+    if (ADV.run && sv && c && c.id === 'mystere') {
+      sv.taken.push('🧪');
+      let res;
+      if (Math.random() < 0.7) { const pool = COUPS.filter(x => x.id !== 'mystere'), bon = pool[Math.floor(Math.random() * pool.length)]; g.applyBonus(bon); res = { good: true, icon: bon.icon, name: bon.name, desc: bon.desc, dur: bon.dur }; }
+      else if (Math.random() < 0.5) { g.ball.area *= 0.75; g.ball.r = Math.sqrt(g.ball.area); res = { good: false, icon: '💥', name: 'Oups ! Ta boule rétrécit', desc: '−25 % de taille' }; }
+      else { sv.fx.mystereInv = 6; g.mirror = true; res = { good: false, icon: '🙃', name: 'Oups ! Commandes inversées', desc: 'Gauche et droite inversées pendant 6 s' }; }
+      const rest = sv.doublePick ? this.cards.filter((_, k) => k !== i) : null;
+      sv.doublePick = false; this.cards = null; ADV.myst = { res, rest };
+      return this.show('mystere');
+    }
     if (ADV.run && sv && sv.doublePick && c) {
       sv.doublePick = false; g.applyBonus(c);
       this.cards = this.cards.filter((_, k) => k !== i);
       return this.show('cards');
     }
     return oPick.call(this, i);
+  };
+  App.scr_mystere = function () {
+    const m = ADV.myst || { res: { icon: '🧪', name: '', desc: '' } }, r = m.res;
+    return `<div class="screen center dim">
+      <div class="title small">TUBE MYSTÈRE…</div>
+      <div class="myst ${r.good ? 'good' : 'bad'}"><div class="ico">${r.icon}</div><b>${esc(r.name)}</b><div class="tiny">${esc(r.desc)}${r.dur ? ` · ⏱ ${r.dur} s` : ''}</div></div>
+      <button class="btn big" data-adv="mystok">${m.rest ? 'Choisir ma 2e carte' : 'Continuer'}</button>
+    </div>`;
   };
   const oCardsScr = App.scr_cards;
   App.scr_cards = function () {
@@ -7517,6 +7542,12 @@ if (SURVIVAL_ON) (() => {
       const u = el.dataset.u, U = UPS.find(x => x.id === u), cost = U.cost || 1;
       if (points() >= cost && up(u) < U.max && (!U.star || famSpent(U.fam) >= STAR_NEED)) { a.spent[u] = up(u) + 1; Store.save(); }
       return App.show('competences');
+    }
+    if (act === 'mystok') {
+      const m = ADV.myst || {}, g = App.game; ADV.myst = null;
+      if (m.rest && m.rest.length) { App.cards = m.rest; return App.show('cards'); }
+      if (g) { g.paused = false; g.last = 0; }
+      return App.show('none');
     }
     if (act === 'tab') { ADV.tab = el.dataset.u; return App.show('competences'); }
     if (act === 'respec') { if (confirm('Reprendre tous tes points pour les placer autrement ?')) { a.spent = {}; Store.save(); } return App.show('competences'); }

@@ -31,6 +31,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   sous le niveau ; présentation : « Ton aventure à toi ». Plus de records par monde (carte : « terminé » / « à découvrir »).
 - Menu de l'aventure : haut fixé (titre, « ? », barre de niveau) ; seuls la carte et l'entraînement défilent. Grand titre retiré.
 - Aventure : la Boule fantôme n'est plus une carte (trop faible face à la Boule rebondissante) ; son effet reste dans l'Étoile filante.
+- Aventure : tube mystère pris à une halte → écran de révélation (bon effet en vert, mauvaise surprise en rouge) avant de repartir.
 - News du 9 novembre : « 🗺️ Nouveau : le mode Aventure ! … » et « 🎲 L'entraînement aléatoire est maintenant dans le menu de l'Aventure. »
 - Contenu : tout ce qui est décrit dans les versions 1.23.x ci-dessous (mondes, difficulté, compétences, cartes, récompenses).
 - Dune du jour, à partir du 9 novembre : le cactus ne pique plus ; le titre « L'ami des cactus » compte les cactus avalés.
