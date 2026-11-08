@@ -23,6 +23,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   3 raretés (cadre blanc, bleu, doré). 10 reliques dans les 3 familles (Gourmand, Costaud, Malin) + Cœur d'or ; 3 reliques d'une
   famille = combo (Ventre d'or, Armure, Jackpot). Nouvelles cartes : Festin et Étoile filante (légendaires), désert (Ombre fraîche,
   Repousse-scorpions), rivière (Bouée, Banc de poissons). Déblocages par niveau : pactes (3), reliques rares (5), légendaires (10), Cœur d'or (15).
+- Aventure, cartes plus lisibles : nom, effet en une phrase, et une seule pastille (⏱ durée, ⚡ tout de suite, ♾ toute la partie) ;
+  rareté au cadre (gris, bleu, doré). Pause : récapitulatif de la partie (pansements, vies en plus, coups de pouce en cours
+  avec les secondes restantes, reliques et combos).
 - Aventure, noms sans clin d'œil au labo : Café serré, Raccourci secret, Ralenti, Super aimant ; Kevin quitte l'aventure.
   La boule de feu fait aussi fuir les animaux.
 - Aventure, compétences en 3 familles (un onglet chacune) : 🍽️ Gourmand (Estomac, Provisions, Aimant), 🛡️ Costaud (Carapace,

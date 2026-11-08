@@ -429,14 +429,31 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .card .ico { font-size: 2em; }
 .card b { display: block; color: var(--gold); }
 .card.pact b { color: #ff9ad8; }
-.card .ctag { display:block; font-size:.6em; letter-spacing:.04em; color:#cbb8c8; margin-bottom: calc(var(--u)*.5); }
-.card .ctag i { font-style:normal; }
+.card.acard.rar-c:not(.pact) { box-shadow: inset 0 0 0 var(--u) #8a7a8a; }
+.card.acard { flex-direction:row; text-align:left; align-items:center; padding: calc(var(--u)*3); gap: calc(var(--u)*3); }
+.card.acard .ico { font-size:1.8em; flex:0 0 auto; width: calc(var(--u)*12); text-align:center; }
+.card.acard .txt { display:flex; flex-direction:column; gap: calc(var(--u)*.8); flex:1; }
+.card.acard .top { display:flex; align-items:baseline; gap: calc(var(--u)*2); flex-wrap:wrap; }
+.card.acard b { display:inline; }
+.card.acard .eff { font-size:.8em; }
+.card.acard .bot { display:flex; gap: calc(var(--u)*2); align-items:center; flex-wrap:wrap; }
+.card .chip2 { font-size:.65em; padding: calc(var(--u)*.4) calc(var(--u)*1.5); background:#00000055; color:#e8dce8; white-space:nowrap; }
+.card .chip2.rel { color: var(--fam, #ffd25a); box-shadow: inset 0 0 0 1px var(--fam, #ffd25a); }
+.card .rw { font-size:.6em; text-transform:uppercase; letter-spacing:.05em; }
+.card .rw.r { color:#8acbff; } .card .rw.l { color:#ffd25a; } .card .rw.pact { color:#ff9ad8; }
 .card.rar-r { box-shadow: inset 0 0 0 var(--u) #5ab4ff; background: #1f2a44; }
-.card.rar-r .ctag i { color:#8acbff; }
 .card.rar-l { box-shadow: inset 0 0 0 var(--u) #ffd25a, 0 0 calc(var(--u)*4) #ffd25a88; background: linear-gradient(135deg, #4a3a14, #2a1c22); }
-.card.rar-l .ctag i { color:#ffd25a; }
 .card.relic { border-left: calc(var(--u)*2.5) solid var(--fam, #ffd25a); }
-.card .cmb { display:block; color: var(--fam, #c8ff8a); margin-top: calc(var(--u)*.5); }
+.card .cmb { font-size:.65em; color: var(--fam, #c8ff8a); }
+.recap { text-align:left; width:100%; max-height: 52vh; overflow:auto; margin: calc(var(--u)*2) 0; }
+.recap .rc-line { font-size:.85em; margin: var(--u) 0; }
+.recap .rc-sub { font-size:.65em; text-transform:uppercase; letter-spacing:.06em; color:#cbb8c8; margin-top: calc(var(--u)*2); }
+.recap .rc-fxs, .recap .rc-cmbs { display:flex; flex-wrap:wrap; gap: var(--u); margin-top: var(--u); }
+.recap .rc-fx { font-size:.7em; background:#00000055; padding: calc(var(--u)*.6) calc(var(--u)*1.5); }
+.recap .rc-fx b { color:#c8ff8a; }
+.recap .rc-row { display:flex; gap: calc(var(--u)*2); align-items:center; padding: var(--u) 0 var(--u) calc(var(--u)*2); border-left: calc(var(--u)*1.5) solid var(--fam, #ffd25a); margin-top: var(--u); }
+.recap .rc-row .ic { font-size:1.4em; }
+.recap .rc-cmb { font-size:.7em; font-weight:bold; }
 #hud-relics { position:absolute; right: calc(var(--u)*2); top: calc(var(--u)*25); font-size:.7em; letter-spacing:.1em; text-shadow: 0 1px 0 #000; }
 #hud-relics .combo { font-weight:bold; }
 #hud-beetle { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: .8em; }
@@ -3197,23 +3214,23 @@ const SURV = {
 };
 // dur : durée en secondes (0 = immédiat). pact : bonus avec contrepartie.
 const BONUSES = [
-  { id: 'cafe', icon: '☕', name: 'Café serré', desc: 'Turbo pendant 10 s', dur: 10 },
-  { id: 'aimant', icon: '🧲', name: 'Super aimant', desc: 'Ce qui se mange vient à toi (12 s)', dur: 12 },
-  { id: 'fantome', icon: '👻', name: 'Boule fantôme', desc: 'Tu traverses tout pendant 6 s', dur: 6 },
+  { id: 'cafe', icon: '☕', name: 'Café serré', desc: 'Turbo !', dur: 10 },
+  { id: 'aimant', icon: '🧲', name: 'Super aimant', desc: 'Ce qui se mange vient à toi', dur: 12 },
+  { id: 'fantome', icon: '👻', name: 'Boule fantôme', desc: 'Tu traverses tout', dur: 6 },
   { id: 'bouclier', icon: '🩹', name: 'Pansements', desc: '3 pansements : chacun annule un choc', dur: 0 },
-  { id: 'feu', icon: '🔥', name: 'Boule de feu', desc: 'Tu brûles les gros objets, les animaux te fuient (10 s)', dur: 10 },
-  { id: 'rebond', icon: '🏀', name: 'Boule rebondissante', desc: 'Les chocs ne te font pas maigrir (12 s)', dur: 12 },
-  { id: 'engrais', icon: '🌱', name: 'Engrais', desc: '+50 % de taille tout de suite', dur: 0 },
-  { id: 'matrix', icon: '🐌', name: 'Ralenti', desc: 'Tout ralentit pendant 8 s', dur: 8 },
-  { id: 'chameau', icon: '🐪', name: 'Chameau ami', desc: 'Il dégage la route devant toi (15 s)', dur: 15 },
+  { id: 'feu', icon: '🔥', name: 'Boule de feu', desc: 'Tu brûles les gros objets, les animaux te fuient', dur: 10 },
+  { id: 'rebond', icon: '🏀', name: 'Boule rebondissante', desc: 'Les chocs ne te font pas maigrir', dur: 12 },
+  { id: 'engrais', icon: '🌱', name: 'Engrais', desc: '+50 % de taille', dur: 0 },
+  { id: 'matrix', icon: '🐌', name: 'Ralenti', desc: 'Tout ralentit', dur: 8 },
+  { id: 'chameau', icon: '🐪', name: 'Chameau ami', desc: 'Il dégage la route devant toi', dur: 15 },
   // (Kevin à la rescousse : retiré, Kevin reste un personnage de la dune du jour)
-  { id: 'raccourci', icon: '🚀', name: 'Raccourci secret', desc: 'Distance ×2 pendant 15 s', dur: 15 },
+  { id: 'raccourci', icon: '🚀', name: 'Raccourci secret', desc: 'Distance ×2', dur: 15 },
   { id: 'mystere', icon: '🧪', name: 'Tube mystère', desc: 'Génial… ou catastrophique ?', dur: 0 },
 ];
 const PACTS = [
-  { id: 'pacteFeu', icon: '😈', name: 'Pacte du feu', desc: 'Boule de feu 25 s… mais tu as 2× plus faim', dur: 25, pact: true },
-  { id: 'pacteGeant', icon: '😈', name: 'Pacte du géant', desc: 'Taille ×2… mais commandes inversées 12 s', dur: 12, pact: true },
-  { id: 'pacteVitesse', icon: '😈', name: 'Pacte de vitesse', desc: '5 pansements… mais +25 % de vitesse pour toujours', dur: 0, pact: true },
+  { id: 'pacteFeu', icon: '😈', name: 'Pacte du feu', desc: 'Boule de feu… mais tu as 2× plus faim', dur: 25, pact: true },
+  { id: 'pacteGeant', icon: '😈', name: 'Pacte du géant', desc: 'Taille ×2… mais commandes inversées', dur: 12, pact: true },
+  { id: 'pacteVitesse', icon: '😈', name: 'Pacte de vitesse', desc: '5 pansements… mais +25 % de vitesse jusqu\'à la fin', dur: 0, pact: true },
 ];
 const BONUS = Object.fromEntries([...BONUSES, ...PACTS].map(b => [b.id, b]));
 
@@ -6523,7 +6540,7 @@ if (SURVIVAL_ON) (() => {
   ];
   const PLAYABLE = WORLDS.filter(w => !w.soon).length;
   const OASIS_CARDS = [
-    { id: 'source', icon: '💧', name: 'Source fraîche', desc: 'Ta faim s\'arrête pendant 12 s', dur: 12 },
+    { id: 'source', icon: '💧', name: 'Source fraîche', desc: 'Ta faim s\'arrête', dur: 12 },
     { id: 'cocos', icon: '🥥', name: 'Pluie de noix de coco', desc: 'Des noix de coco tombent devant toi', dur: 0 },
   ];
   // compétences : 3 familles (un style de jeu chacune), avec une grande compétence ⭐ au bout,
@@ -7118,11 +7135,11 @@ if (SURVIVAL_ON) (() => {
   const RARE_COUPS = ['fantome', 'feu', 'rebond', 'raccourci'];
   const COUPS = BONUSES.map(b => ({ ...b, kind: 'coup', rar: RARE_COUPS.includes(b.id) ? 'r' : 'c' }));
   const NEW_COUPS = [
-    { id: 'festin', icon: '🍗', name: 'Festin', desc: 'Plus de faim pendant 20 s, et +50 % de taille', dur: 20, rar: 'l', lvl: 10 },
-    { id: 'etoile', icon: '🌟', name: 'Étoile filante', desc: 'Turbo et tu traverses tout pendant 12 s', dur: 0, rar: 'l', lvl: 10 },
-    { id: 'ombre', icon: '🌴', name: 'Ombre fraîche', desc: 'La faim monte 2× moins vite (15 s)', dur: 15, rar: 'c', world: 0 },
-    { id: 'repousse', icon: '🦂', name: 'Repousse-scorpions', desc: 'Les animaux s\'écartent sans faire mal (12 s)', dur: 12, rar: 'r', world: 0 },
-    { id: 'bouee', icon: '🛟', name: 'Bouée', desc: 'Le courant ne te pousse plus (15 s)', dur: 15, rar: 'c', world: 2 },
+    { id: 'festin', icon: '🍗', name: 'Festin', desc: 'Plus de faim, et +50 % de taille', dur: 20, rar: 'l', lvl: 10 },
+    { id: 'etoile', icon: '🌟', name: 'Étoile filante', desc: 'Turbo, et tu traverses tout', dur: 0, show: 12, rar: 'l', lvl: 10 },
+    { id: 'ombre', icon: '🌴', name: 'Ombre fraîche', desc: 'La faim monte 2× moins vite', dur: 15, rar: 'c', world: 0 },
+    { id: 'repousse', icon: '🦂', name: 'Repousse-scorpions', desc: 'Les animaux s\'écartent sans faire mal', dur: 12, rar: 'r', world: 0 },
+    { id: 'bouee', icon: '🛟', name: 'Bouée', desc: 'Le courant ne te pousse plus', dur: 15, rar: 'c', world: 2 },
     { id: 'alevins', icon: '🐟', name: 'Banc de poissons', desc: 'Des petits poissons à avaler arrivent devant toi', dur: 0, rar: 'c', world: 2 },
   ].map(b => ({ ...b, kind: 'coup' }));
   const RELICS = [
@@ -7131,7 +7148,7 @@ if (SURVIVAL_ON) (() => {
     { id: 'piquenique', fam: 'gourmand', icon: '🧺', name: 'Pique-nique', desc: '+20 % de taille à chaque halte', rar: 'r', lvl: 5 },
     { id: 'coquille', fam: 'costaud', icon: '🐚', name: 'Coquille', desc: 'Les animaux font 15 % moins mal', rar: 'c' },
     { id: 'kit', fam: 'costaud', icon: '💊', name: 'Kit de soin', desc: '+1 pansement toutes les 2 haltes', rar: 'c' },
-    { id: 'piquants', fam: 'costaud', icon: '🦔', name: 'Piquants', desc: 'Un animal qui te touche fuit sans faire mal (1 fois / 20 s)', rar: 'r', lvl: 5 },
+    { id: 'piquants', fam: 'costaud', icon: '🦔', name: 'Piquants', desc: 'Un animal qui te touche fuit sans faire mal (1 fois toutes les 20 s)', rar: 'r', lvl: 5 },
     { id: 'trefle', fam: 'malin', icon: '🍀', name: 'Trèfle', desc: 'Les cartes rares et légendaires sortent 2× plus', rar: 'c' },
     { id: 'sablier', fam: 'malin', icon: '⏳', name: 'Sablier', desc: 'Les coups de pouce durent 30 % de plus', rar: 'c' },
     { id: 'de', fam: 'malin', icon: '🎲', name: 'Dé pipé', desc: '+1 carte à chaque halte', rar: 'r', lvl: 5 },
@@ -7199,12 +7216,15 @@ if (SURVIVAL_ON) (() => {
     if (!ADV.run || !sv) return oCardsScr.call(this);
     const sub = sv.doublePick ? '✌️ Double choix : prends 2 cartes !' : (up('double') && sv.halts % 2 === 1 ? '✌️ choisis ta 2e carte' : 'choisis une carte');
     const card = (c, i) => {
-      const F = c.fam && FAMI[c.fam], dur = c.dur ? ` · ${c.dur} s` : '';
-      const tag = c.pact ? 'PACTE 😈' : c.kind === 'relic' ? `RELIQUE · toute la partie${F ? ` · ${F.icon} ${F.name}` : ''}` : `COUP DE POUCE${dur}`;
+      const F = c.fam && FAMI[c.fam], d = c.dur || c.show;
+      // une seule pastille dit ce qu'est la carte : durée, effet immédiat, ou relique pour toute la partie
+      const chip = c.kind === 'relic' ? `<span class="chip2 rel">♾ ${F ? F.icon + ' ' : ''}toute la partie</span>`
+        : d ? `<span class="chip2">⏱ ${d} s</span>` : `<span class="chip2">⚡ tout de suite</span>`;
+      const rar = c.pact ? '<span class="rw pact">pacte</span>' : c.rar === 'r' ? '<span class="rw r">rare</span>' : c.rar === 'l' ? '<span class="rw l">légendaire</span>' : '';
       const cnt = c.kind === 'relic' && F ? famCount(sv, c.fam) : -1;
-      const comboTxt = cnt >= 0 && cnt < 3 ? `<span class="tiny cmb">${cnt + 1 === 3 ? `⭐ Combo ${COMBOS[c.fam].name} : ${COMBOS[c.fam].desc} !` : `Combo ${COMBOS[c.fam].name} : ${cnt + 1}/3`}</span>` : '';
-      return `<button class="card rar-${c.rar || 'c'} ${c.kind === 'relic' ? 'relic' : ''} ${c.pact ? 'pact' : ''}" data-a="pickcard" data-v="${i}" ${F ? `style="--fam:${F.col}"` : ''}>
-        <span class="ico">${c.icon}</span><span><span class="ctag">${tag}${c.rar && c.rar !== 'c' && !c.pact ? ` · <i>${RAR[c.rar]}</i>` : ''}</span><b>${esc(c.name)}</b><span class="tiny">${esc(c.desc)}</span>${comboTxt}</span></button>`;
+      const comboTxt = cnt >= 0 && cnt < 3 ? `<span class="cmb">${cnt + 1 === 3 ? `★ Combo ${COMBOS[c.fam].name} : ${COMBOS[c.fam].desc} !` : `Combo ${COMBOS[c.fam].name} ${cnt + 1}/3`}</span>` : '';
+      return `<button class="card acard rar-${c.rar || 'c'} ${c.kind === 'relic' ? 'relic' : ''} ${c.pact ? 'pact' : ''}" data-a="pickcard" data-v="${i}" ${F ? `style="--fam:${F.col}"` : ''}>
+        <span class="ico">${c.icon}</span><span class="txt"><span class="top"><b>${esc(c.name)}</b>${rar}</span><span class="eff">${esc(c.desc)}</span><span class="bot">${chip}${comboTxt}</span></span></button>`;
     };
     const rl = sv.relics || [];
     return `<div class="screen center dim">
@@ -7213,6 +7233,28 @@ if (SURVIVAL_ON) (() => {
       <div class="cards">${(this.cards || []).map(card).join('')}</div>
       ${rl.length ? `<div class="tiny" style="margin-top:calc(var(--u)*2)">Tes reliques : ${rl.map(id => BONUS[id].icon).join(' ')}</div>` : ''}
     </div>`;
+  };
+  // pause : récapitulatif de ce qu'on a pendant la partie
+  const oPause = App.scr_pause;
+  App.scr_pause = function () {
+    const h = oPause.call(this), g = this.game, sv = g && g.surv;
+    if (!ADV.run || !sv) return h;
+    const rl = sv.relics || [], fx = Object.entries(sv.fx || {}).filter(([k, t]) => BONUS[k] && t > 0);
+    const life = (up('seconde') && !sv.second ? 1 : 0) + (sv.coeur || 0);
+    const relRows = rl.map(id => { const r = BONUS[id], F = r.fam && FAMI[r.fam];
+      return `<div class="rc-row" ${F ? `style="--fam:${F.col}"` : ''}><span class="ic">${r.icon}</span><span><b>${esc(r.name)}</b>${F ? ` <span class="tiny" style="color:${F.col}">${F.icon} ${F.name}</span>` : ''}<br><span class="tiny">${esc(r.desc)}</span></span></div>`; }).join('');
+    const combos = FAMS.map(f => ({ f, n: famCount(sv, f.id) })).filter(x => x.n > 0)
+      .map(({ f, n }) => `<span class="rc-cmb" style="color:${f.col}">${n >= 3 ? '★' : '☆'} ${COMBOS[f.id].name} ${Math.min(n, 3)}/3</span>`).join('');
+    const coups = fx.map(([k, t]) => `<span class="rc-fx">${BONUS[k].icon} ${esc(BONUS[k].name)} <b>${Math.ceil(t)} s</b></span>`).join('');
+    const recap = `<div class="panel recap">
+      <div class="label">🎒 Ce que tu as</div>
+      <div class="rc-line">🩹 ${sv.shields} pansement${sv.shields > 1 ? 's' : ''}${life ? ` · ❤️ ${life} vie${life > 1 ? 's' : ''} en plus` : ''}</div>
+      ${coups ? `<div class="rc-sub">En cours</div><div class="rc-fxs">${coups}</div>` : ''}
+      <div class="rc-sub">Reliques (toute la partie)</div>
+      ${relRows || '<div class="tiny">Aucune pour l\'instant : elles sortent aux haltes.</div>'}
+      ${combos ? `<div class="rc-cmbs">${combos}</div>` : ''}
+    </div>`;
+    return h.replace('<div class="title small">PAUSE</div>', '<div class="title small">PAUSE</div>' + recap);
   };
   const oSurv = App.startSurvival;
   App.startSurvival = function () { if (!ADV.run) { const w = Math.min(adv().sel, adv().unlocked, PLAYABLE - 1); ADV.run = { world: w, offset: startOf(w) }; ADV.lastY = 0; } return oSurv.call(this); };
