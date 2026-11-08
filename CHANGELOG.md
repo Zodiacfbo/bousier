@@ -13,6 +13,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Ligne franchie : « 🏁 … terminé ! », monde suivant débloqué, puis « Monde suivant ▶ » (nouvelle partie : on repart de
   zéro, sans reliques) ou « Menu de l'aventure ». Après la rivière : « Tu as terminé tous les mondes jouables ! ».
 - Le compteur de distance (et « Ton record ») continue d'un monde à l'autre (l'oasis démarre à 2 500 m).
+- La difficulté repart du début de chaque monde (faim, vitesse et animaux montent avec la distance faite dans le monde),
+  avec un cran de plus par monde : oasis faim ×1,15, vitesse ×1,05, animaux +10 % ; rivière faim ×1,3, vitesse ×1,1, animaux +20 %.
+- Compétence « Pansements de départ » : « Au départ de chaque partie ».
 - La grande annonce de chaque monde s'affiche la première fois qu'on y joue. Présentation de l'aventure mise à jour.
 - Suivi : nouvelle cause de fin « fini », parties jouées par monde (`p.adv.st.wn`, `clr[i].k`) ; admin : « Monde fini »
   dans les causes de fin, « Parties dans ce monde pour le finir ».

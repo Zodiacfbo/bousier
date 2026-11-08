@@ -3729,7 +3729,7 @@ class Game {
   // --- La Grande Fuite ------------------------------------------------------------
   survSpeed() {
     const sv = this.surv;
-    let k = (1 + Math.min(0.8, sv.dist / 3500)) * sv.speedPact;  // accélère avec la distance
+    let k = (1 + Math.min(0.8, (sv.dist - (sv.d0 || 0)) / 3500)) * sv.speedPact;  // accélère avec la distance (aventure : depuis le début du monde)
     if (sv.fx.cafe) k *= 1.5;
     if (sv.fx.matrix) k *= 0.55;
     return k;
@@ -3744,7 +3744,7 @@ class Game {
       if (this.quietFx && BONUS[k]) this.floatText('FIN : ' + BONUS[k].name.toUpperCase(), this.ball.x, this.ball.y - this.ball.r - 16, '#e8dce8');
     }
     // la faim : la boule fond doucement, de plus en plus vite
-    const hunger = (0.9 + sv.dist / 1800) * sv.hunger * (sv.fx.pacteFeu ? 2 : 1);
+    const hunger = (0.9 + (sv.dist - (sv.d0 || 0)) / 1800) * sv.hunger * (sv.fx.pacteFeu ? 2 : 1);
     b.area = Math.max(0, b.area - hunger * TICK * (1 + b.r * 0.04));
     // aimant : ce qui se mange glisse vers la boule
     if (sv.fx.aimant) for (let i = lowerBound(this.objs, b.y - 50); i < this.objs.length && this.objs[i].y < b.y + 60; i++) {
@@ -6608,10 +6608,10 @@ if (SURVIVAL_ON) (() => {
     { icon: '🏜️', name: 'Le désert', short: 'Désert', up: 'LE DESERT', theme: 'doree', len: 2500, hunger: 1, speed: 1, wx: ['canicule'],
       rule: 'Du sable à perte de vue, et ta boule qui fond : avale tout ce que tu peux !', obstacle: 'des scorpions qui piquent et qui bougent : impossible de les avaler !',
       objs: ['feuille', 'os', 'cactus', 'amphore', 'valise', 'tente', 'chameau', 'palmier'], haz: 'scorpion' },
-    { icon: '🌴', name: 'L\'oasis', short: 'Oasis', up: 'L\'OASIS', theme: 'oasis', len: 3000, hunger: 1, speed: 1, wx: ['calme'],
+    { icon: '🌴', name: 'L\'oasis', short: 'Oasis', up: 'L\'OASIS', theme: 'oasis', len: 3000, hunger: 1.15, speed: 1.05, wx: ['calme'],
       rule: 'Les flaques d\'eau font glisser… mais elles calment ta faim.', obstacle: 'des crabes qui pincent et qui bougent',
       objs: ['datte', 'coco', 'nenuphar', 'grenouille', 'regime', 'pasteque', 'panier'], haz: 'crabe', cards: true },
-    { icon: '🌊', name: 'La rivière sauvage', short: 'Rivière', up: 'LA RIVIERE SAUVAGE', sign: 'RIVIERE', len: 3500, hunger: 1, speed: 1, wx: ['pluie'],
+    { icon: '🌊', name: 'La rivière sauvage', short: 'Rivière', up: 'LA RIVIERE SAUVAGE', sign: 'RIVIERE', len: 3500, hunger: 1.3, speed: 1.1, wx: ['pluie'],
       theme: { id: 'riviere', sand: '#3f93cc', sandDark: '#2f7fb8', sandLight: '#58aee0', wall: '#6aa84f', wallDark: '#3f7a3a', wallLight: '#8fcf6a' },
       rule: 'Plus de sable : le courant te pousse ! Il est fort au milieu, calme près des berges.', obstacle: 'des crocodiles : impossible de les avaler !',
       objs: ['tronc', 'nenuphar', 'coco', 'poisson', 'radeau', 'rondin', 'barque'], haz: 'croc' },
@@ -6753,10 +6753,11 @@ if (SURVIVAL_ON) (() => {
       return true;
     });
     // les animaux-obstacles du monde (scorpion, crabe, crocodile) : peu au début, puis de plus en plus nombreux
-    // et rapides, jusqu'à 3,25 km depuis le départ du désert (environ 16, puis 40 tous les 500 m)
-    const y0 = startOf(w0) * 10, animals = [];
+    // et rapides, depuis le début de chaque monde (désert : environ 16, puis jusqu'à 40 tous les 500 m vers 3,25 km ;
+    // chaque monde suivant démarre un cran plus haut : +10 % oasis, +20 % rivière)
+    const f0 = 0.1 * w0, animals = [];
     for (let y = 1500; y < c.len - 300;) {
-      const f = Math.min(1, (y + y0) / 32500);
+      const f = Math.min(1, f0 + y / 32500);
       y += (310 - 185 * f) * rng.range(0.7, 1.3);
       const tR = riverAt(y), tO = oasisAt(y);
       const def = tR && rng.chance(tR) ? D.croc : tO && rng.chance(tO) ? D.crabe : D.scorpion;
@@ -7039,7 +7040,8 @@ if (SURVIVAL_ON) (() => {
     showRelics(this); if (this.surv) this.surv.fxMax = {}; showFx(this);
     if (!this.surv || !ADV.run) return;
     const sv = this.surv, w = ADV.run.world, b = this.ball;
-    sv.dist = startOf(w); sv.world = w;
+    // le compteur continue d'un monde à l'autre, mais la difficulté (faim, vitesse, animaux) repart du début de chaque monde
+    sv.dist = startOf(w); sv.d0 = sv.dist; sv.world = w;
     b.area *= 1 + 0.15 * up('provisions'); b.r = Math.sqrt(b.area);
     sv.shields += up('bouclier');
     sv.hunger *= HUNGER_BASE * 0.9 ** up('estomac') * WORLDS[w].hunger;
@@ -7128,7 +7130,7 @@ if (SURVIVAL_ON) (() => {
     if (sv && ADV.run) {
       ADV.lastY = b.y;
       // faim : la source fraîche l'arrête, les flaques la calment
-      const hunger = (0.9 + sv.dist / 1800) * sv.hunger * (sv.fx.pacteFeu ? 2 : 1) * TICK * (1 + b.r * 0.04);
+      const hunger = (0.9 + (sv.dist - (sv.d0 || 0)) / 1800) * sv.hunger * (sv.fx.pacteFeu ? 2 : 1) * TICK * (1 + b.r * 0.04);
       const pud = (this.course.puddles || []).find(p => ((b.x - p.x) / p.rx) ** 2 + ((b.y - p.y) / p.ry) ** 2 < 1);
       if (sv.fx.source || sv.fx.festin) b.area += hunger;
       else if (pud) b.area += hunger * 0.7;
