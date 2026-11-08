@@ -456,6 +456,9 @@ tr.now .nc-champps { color: transparent !important; text-shadow: none; -webkit-b
 .recap .rc-cmb { font-size:.7em; color:#9a8a9a; margin-top: calc(var(--u)*.8); }
 .recap .rc-cmb b { color: var(--fam); }
 .recap .rc-cmb.on { color: var(--fam); font-weight:bold; }
+.obj-grid { display:grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u)*1.5) calc(var(--u)*3); margin-top: var(--u); }
+.obj-chip { display:flex; align-items:center; gap: calc(var(--u)*2); font-size:.9em; }
+.obj-chip .oi { flex:0 0 auto; width: calc(var(--u)*12); display:flex; justify-content:center; align-items:center; }
 .tipbox { font-size:.75em; background:#2a3a1a; box-shadow: inset 0 0 0 var(--u) #c8ff8a; color:#e8ffd0; padding: calc(var(--u)*2) calc(var(--u)*3); margin: calc(var(--u)*2) 0; text-align:left; }
 #hud-relics { position:absolute; right: calc(var(--u)*2); top: calc(var(--u)*25); font-size:.7em; letter-spacing:.1em; text-shadow: 0 1px 0 #000; }
 #hud-relics .combo { font-weight:bold; }
@@ -6549,7 +6552,9 @@ if (SURVIVAL_ON) (() => {
   // --- Les mondes -----------------------------------------------------------
   // une météo fixe par monde : elle fait partie de son ambiance
   const WORLDS = [
-    { icon: '🏜️', name: 'Le désert', short: 'Désert', up: 'LE DESERT', theme: 'doree', len: 2500, hunger: 1, speed: 1, wx: ['canicule'] },
+    { icon: '🏜️', name: 'Le désert', short: 'Désert', up: 'LE DESERT', theme: 'doree', len: 2500, hunger: 1, speed: 1, wx: ['canicule'],
+      rule: 'Du sable à perte de vue, et ta boule qui fond : avale tout ce que tu peux !', obstacle: 'des scorpions qui piquent et qui bougent : impossible de les avaler !',
+      objs: ['feuille', 'os', 'cactus', 'amphore', 'valise', 'tente', 'chameau', 'palmier'], haz: 'scorpion' },
     { icon: '🌴', name: 'L\'oasis', short: 'Oasis', up: 'L\'OASIS', theme: 'oasis', len: 3000, hunger: 1, speed: 1, wx: ['calme'],
       rule: 'Les flaques d\'eau font glisser… mais elles calment ta faim.', obstacle: 'des crabes qui pincent et qui bougent',
       objs: ['datte', 'coco', 'nenuphar', 'grenouille', 'regime', 'pasteque', 'panier'], haz: 'crabe', cards: true },
@@ -7012,6 +7017,11 @@ if (SURVIVAL_ON) (() => {
     if (!WORLDS[w].wx.includes(this.wx.id)) this.wx = pickWx(w);
     this.advPalettes(); this.setPalette(themeOf(w), this.wx);
     this.notice(`MONDE ${w + 1} : ${WORLDS[w].up}`, '#fff4a8', 2.5, 4);
+    // toute première partie dans le désert : sa grande annonce (règle, animal, objets), une seule fois
+    if (w === 0 && !adv().seen0) {
+      adv().seen0 = 1; Store.save();
+      setTimeout(() => { if (App.game !== this || !this.surv) return; this.paused = true; ADV.welcome = 0; App.show('monde'); }, 60);
+    }
     setTimeout(() => { App.hud.tryEl.textContent = `MONDE ${w + 1} · ${WORLDS[w].short.toUpperCase()}`; App.hud.wx.textContent = this.wx.icon; }, 0);
   };
   function enterWorld(g, w) {
@@ -7330,7 +7340,7 @@ if (SURVIVAL_ON) (() => {
       <div class="panel intro">
         <div class="r"><span class="i">🍽️</span><span><b>Ta boule fond sans arrêt</b><br>Mange pour survivre et roule le plus loin possible. Si ta boule arrive à 0, la partie s'arrête.</span></div>
         <div class="r"><span class="i">🃏</span><span><b>Une halte tous les 250 m</b><br>Choisis une carte : un coup de pouce ⏱ pour quelques secondes, ou une relique ♾ pour toute la partie (3 de la même famille = un combo). Certaines sont risquées 😈. Un récapitulatif de tes bonus est disponible quand tu mets pause (II).</span></div>
-        <div class="r"><span class="i">⚠️</span><span><b>Un animal dangereux par monde</b><br>Dans chaque monde, un animal (comme le scorpion du désert) fait rétrécir ta boule. Impossible de le manger : évite-le !</span></div>
+        <div class="r"><span class="i">⚠️</span><span><b>Un animal dangereux par monde</b><br>Dans chaque monde, un animal fait rétrécir ta boule. Impossible de le manger : évite-le !</span></div>
         <div class="r"><span class="i">🗺️</span><span><b>Des mondes à découvrir</b><br>Au bout du désert, l'oasis… et d'autres encore. Une fois atteint, tu peux y commencer directement.</span></div>
         <div class="r"><span class="i">📈</span><span><b>Tu progresses à chaque partie</b><br>Chaque mètre rapporte de l'XP. À chaque niveau, un point de compétence à placer dans 3 familles : Gourmand, Costaud, Malin. Les niveaux débloquent aussi de nouvelles cartes.</span></div>
         <div class="r"><span class="i">🎲</span><span><b>Ne compte pas pour la dune du jour</b><br>Joue autant que tu veux : ton record a son propre classement (🏆 Records). C'est aussi un bon entraînement !</span></div>
@@ -7358,13 +7368,14 @@ if (SURVIVAL_ON) (() => {
     const w = ADV.welcome ?? 1, W1 = WORLDS[w];
     return `<div class="screen center dim">
       <div class="confetti">🎉 ✨ 🎊 ✨ 🎉</div>
-      <div class="sv-sub">NOUVEAU MONDE</div>
+      <div class="sv-sub">${w ? 'NOUVEAU MONDE' : 'TON PREMIER MONDE'}</div>
       <div class="world-big">${W1.icon}<br>MONDE ${w + 1}<br><span>${W1.name.toUpperCase()}</span></div>
       <div class="panel welcome">
         <div class="row"><span class="ic">📜</span><span><b>La règle d'ici</b><br>${W1.rule}</span></div>
         <div class="row"><span class="ic">⚠️</span><span><b>Attention</b><br>${W1.obstacle} ${spriteImg(W1.haz || 'crabe', W1.haz === 'croc' ? 1 : 2)}</span></div>
-        <div class="row"><span class="ic">😋</span><span><b>À découvrir</b><br>${W1.objs.map(o => `${spriteImg(o === 'grenouille' ? 'grenouille' : o, 2)} ${D[o].name}`).join(' · ')}</span></div>
-        ${W1.cards ? `<div class="row"><span class="ic">🃏</span><span><b>Nouvelles cartes aux haltes</b><br>${OASIS_CARDS.map(c => `${c.icon} ${c.name}`).join(' · ')}</span></div>` : ''}
+        <div class="row"><span class="ic">😋</span><span><b>À découvrir</b><div class="obj-grid">${W1.objs.map(o => { const O = D[o] || OBJ[o], sp = SPR[O.sprite], k = Math.min(2, 11 / Math.max(sp.width, sp.height));
+          return `<span class="obj-chip"><span class="oi">${spriteImg(O.sprite, k)}</span><span>${O.name}</span></span>`; }).join('')}</div></span></div>
+        ${(wc => wc.length ? `<div class="row"><span class="ic">🃏</span><span><b>Cartes de ce monde, aux haltes</b><br>${wc.map(c => `${c.icon} ${c.name}`).join(' · ')}</span></div>` : '')((w === 1 ? OASIS_CARDS : []).concat(NEW_COUPS.filter(c => c.world === w)))}
         <div class="row"><span class="ic">🌦️</span><span><b>Météo</b><br>${W1.wx.map(id => `${WEATHER[id].icon} ${WEATHER[id].name}`).join(' ou ')}</span></div>
       </div>
       <button class="btn big" data-adv="resume">C'est parti !</button>

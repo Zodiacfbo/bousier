@@ -12,6 +12,8 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
   à la place de l'entraînement aléatoire (la partie d'entraînement reste dans le menu de l'aventure). Outils de test : dev seulement.
 - Présentation de l'aventure : « si ta boule arrive à 0, la partie s'arrête », récapitulatif des bonus à la pause (II),
   nouveau point « Un animal dangereux par monde ».
+- Aventure : grande annonce du désert à la toute première partie (« TON PREMIER MONDE » : règle, scorpions, objets, cartes, météo) ;
+  chaque annonce de monde liste ses propres cartes ; objets « À découvrir » en petit, sur 2 colonnes.
 - News du 9 novembre : « 🗺️ Nouveau : le mode Aventure ! … ».
 - Contenu : tout ce qui est décrit dans les versions 1.23.x ci-dessous (mondes, difficulté, compétences, cartes, récompenses).
 - Dune du jour, à partir du 9 novembre : le cactus ne pique plus ; le titre « L'ami des cactus » compte les cactus avalés.
