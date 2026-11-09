@@ -7,6 +7,11 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.25.4 — Outil : niveaux et mondes dans le bilan (9 novembre 2026)
+- Bilan de l'aventure : XP par partie, joueurs par tranche de niveau, et pour chaque monde le nombre de joueurs qui l'ont fini,
+  en combien de parties, en combien de jours et à quel niveau (depuis l'ouverture). Toujours sans aucun nom.
+- Rien ne change dans le jeu.
+
 ## v1.25.3 — Outil : bilan chiffré à la demande (9 novembre 2026)
 - Nouveau robot GitHub « Rapport » (`.github/workflows/rapport.yml`, `scripts/rapport.mjs`) : lancé à la demande, il lit la base
   sans rien modifier et donne des chiffres d'ensemble sans aucun nom (dune du jour jour par jour, aventure). Les petits groupes

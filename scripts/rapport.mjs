@@ -80,6 +80,25 @@ async function dunes() {
   line(`Gagnants différents (1er du jour) : ${winners.size} sur ${N} jours`);
 }
 
+// --- Aventure : niveaux et mondes, depuis l'ouverture (pas seulement la période) ---
+const ADV_MAX = 20, ADV_NEED = L => 150 + 50 * (L - 1);  // comme dans index.html
+const levelOf = xp => { let L = 1; while (L < ADV_MAX && xp >= ADV_NEED(L)) { xp -= ADV_NEED(L); L++; } return L; };
+const dayDiff = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5) + 1;
+function progression() {
+  const advs = profiles.map(p => p.adv).filter(a => a && (a.st && a.st.n || a.xp));
+  line();
+  line(`Depuis l'ouverture : ${advs.length} joueurs ont fait au moins une partie`);
+  const lv = advs.map(a => levelOf(a.xp || 0));
+  const tr = [[1, 4], [5, 9], [10, 14], [15, 19], [20, 20]];
+  line(`Niveau actuel : ${tr.map(([a, b]) => `${a === b ? a : a + '-' + b} : ${m(lv.filter(L => L >= a && L <= b).length)}`).join(' · ')} (médiane ${r1(med(lv))})`);
+  line('Monde            | Joueurs qui l\'ont fini | Parties dans ce monde pour le finir (médiane) | Jours depuis la 1re partie | Niveau au départ');
+  for (let w = 0; w < 3; w++) {
+    const c = advs.map(a => a.st && a.st.clr && a.st.clr[w] && { ...a.st.clr[w], d0: a.st.d0 }).filter(Boolean);
+    line([WORLD_NAMES[w].padEnd(16), m(c.length).padStart(22), r1(med(c.map(x => x.k || x.n))).padStart(44),
+      r1(med(c.filter(x => x.d0 && x.d).map(x => dayDiff(x.d0, x.d)))).padStart(26), r1(med(c.map(x => x.L || 0))).padStart(16)].join(' | '));
+  }
+}
+
 // --- Aventure ------------------------------------------------------------------
 const WORLD_NAMES = ['Désert', 'Oasis', 'Rivière sauvage', 'Monde 4', 'Monde 5', 'Monde 6', 'Monde 7', 'Monde 8'];
 function aventure() {
@@ -94,7 +113,11 @@ function aventure() {
     if (c && c.d && inRange(c.d)) clr0.push(c.k || c.n);
   });
   line(`Joueurs : ${players.size} · parties : ${games.length} · parties par joueur : ${r1(players.size ? games.length / players.size : null)}`);
+  progression();
   if (!games.length) return;
+  line();
+  const xps = games.map(g => g.xp || 0);
+  line(`XP par partie : médiane ${Math.round(med(xps))} · moyenne ${Math.round(avg(xps))} · maximum ${Math.max(...xps)} · total ${xps.reduce((a, b) => a + b, 0)}`);
   line(`Durée médiane d'une partie : ${r1(med(games.map(g => g.s || 0)) / 60)} min · niveau médian : ${r1(med(games.map(g => g.L || 0)))}`);
   const ends = {}; games.forEach(g => { ends[g.end] = (ends[g.end] || 0) + 1; });
   const NOMS = { faim: 'faim', animal: 'animal', abandon: 'abandon', fini: 'monde fini', fin: 'fin des mondes' };
