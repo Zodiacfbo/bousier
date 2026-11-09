@@ -1,0 +1,56 @@
+# Bilan chiffré du jeu, sans aucun nom de joueur, lancé à la demande (bouton « Run workflow »
+# ou depuis une conversation Claude Code). Ne fait que lire la base (scripts/rapport.mjs).
+# Le journal de ce robot est lisible par tous (dépôt public) : il est effacé juste après lecture,
+# et chaque nouveau lancement efface aussi les journaux des bilans précédents.
+name: Rapport
+
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Quoi ? (dunes, aventure ou tout)'
+        default: 'tout'
+        type: choice
+        options: [tout, dunes, aventure]
+      jours:
+        description: 'Combien de jours (jusqu’à aujourd’hui) ?'
+        default: '7'
+      env:
+        description: 'Données (prod ou dev)'
+        default: 'prod'
+        type: choice
+        options: [prod, dev]
+
+permissions:
+  contents: read
+  actions: write   # pour effacer les journaux des bilans précédents
+
+jobs:
+  rapport:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Effacer les bilans précédents
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow rapport.yml --limit 100 --json databaseId -q '.[].databaseId'); do
+            [ "$id" = "$GITHUB_RUN_ID" ] || gh run delete -R "$GITHUB_REPOSITORY" "$id" || true
+          done
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer firebase-admin
+        run: npm install --no-save --no-package-lock firebase-admin@13
+
+      - name: Bilan
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TZ: Europe/Paris
+          TYPE: ${{ inputs.type }}
+          JOURS: ${{ inputs.jours }}
+          ENV: ${{ inputs.env }}
+        run: node scripts/rapport.mjs "$TYPE" "$JOURS" "$ENV"

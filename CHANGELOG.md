@@ -7,6 +7,12 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.25.3 — Outil : bilan chiffré à la demande (9 novembre 2026)
+- Nouveau robot GitHub « Rapport » (`.github/workflows/rapport.yml`, `scripts/rapport.mjs`) : lancé à la demande, il lit la base
+  sans rien modifier et donne des chiffres d'ensemble sans aucun nom (dune du jour jour par jour, aventure). Les petits groupes
+  sont masqués et les journaux sont effacés après lecture.
+- Rien ne change dans le jeu.
+
 ## v1.25.2 — Aventure : les cartes expliquées dans l'accueil (9 novembre 2026)
 - Aventure : l'accueil explique de nouveau les cartes, dans un petit encadré de 4 lignes (coup de pouce, relique, combo,
   cartes risquées).
