@@ -796,7 +796,7 @@ const ADV_CARDS = {
 };
 const ADV_ENDS = { fini: 'Monde fini', faim: 'Faim', animal: 'Animal', abandon: 'Abandon', fin: 'Fin des mondes' };
 const advEndW = e => (e.end === 'fini' || e.w > e.w0 ? e.w0 : e.w);  // monde où la partie s'arrête (depuis le 9 nov., une partie = un monde)
-const advLvl = xp => { let L = 1; while (L < 20 && xp >= 150 + 50 * (L - 1)) { xp -= 150 + 50 * (L - 1); L++; } return L; };
+const advLvl = xp => { let L = 1; while (L < 20 && xp >= 150 + 100 * (L - 1)) { xp -= 150 + 100 * (L - 1); L++; } return L; };
 const advDoneP = a => Math.max(a.unlocked || 0, a.cleared || 0);
 const fmtM = m => Math.round(m || 0).toLocaleString('fr-FR') + ' m';
 const fmtN = (v, d = 1) => (+v).toFixed(d).replace('.', ',').replace(/,0+$/, '');

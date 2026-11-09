@@ -81,7 +81,7 @@ async function dunes() {
 }
 
 // --- Aventure : niveaux et mondes, depuis l'ouverture (pas seulement la période) ---
-const ADV_MAX = 20, ADV_NEED = L => 150 + 50 * (L - 1);  // comme dans index.html
+const ADV_MAX = 20, ADV_NEED = L => 150 + 100 * (L - 1);  // comme dans index.html
 const levelOf = xp => { let L = 1; while (L < ADV_MAX && xp >= ADV_NEED(L)) { xp -= ADV_NEED(L); L++; } return L; };
 const dayDiff = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5) + 1;
 function progression() {

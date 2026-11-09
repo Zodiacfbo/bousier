@@ -7,6 +7,13 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.25.5 — Aventure : niveaux plus longs à gagner (9 novembre 2026)
+- Chaque niveau coûte 100 XP de plus que le précédent (au lieu de 50) : 150, 250, 350… Le niveau 20 demande 19 950 XP
+  (au lieu de 11 400). Après 3 bonnes parties, on est vers le niveau 11 (au lieu de 15).
+- L'XP déjà gagnée est gardée, le niveau est recalculé ; si un joueur avait placé plus de points qu'il n'en a maintenant,
+  tous ses points lui sont rendus pour les replacer.
+- Même calcul dans l'admin et dans le bilan. Pas de news.
+
 ## v1.25.4 — Outil : niveaux et mondes dans le bilan (9 novembre 2026)
 - Bilan de l'aventure : XP par partie, joueurs par tranche de niveau, et pour chaque monde le nombre de joueurs qui l'ont fini,
   en combien de parties, en combien de jours et à quel niveau (depuis l'ouverture). Toujours sans aucun nom.
