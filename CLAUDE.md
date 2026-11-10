@@ -8,12 +8,13 @@ Lire aussi `README.md` (fonctionnement, Firebase) et `CHANGELOG.md` (historique 
 
 | Commande | Ce qu'elle déclenche |
 |---|---|
-| **« Parlons de Bousier »** | Début de conversation : lire les issues n° 8, 9 et 10 (surtout les derniers commentaires) et le haut de `CHANGELOG.md` ; résumer en 5 lignes maximum où en est le jeu, ce qui est en cours et ce qui attend une décision ; **rappeler ces 4 commandes** ; demander « De quoi on parle aujourd'hui ? » |
+| **« Parlons de Bousier »** | Début de conversation : lire les issues n° 8, 9 et 10 (surtout les derniers commentaires) et le haut de `CHANGELOG.md` ; résumer en 5 lignes maximum où en est le jeu, ce qui est en cours et ce qui attend une décision ; **rappeler ces 5 commandes** ; demander « De quoi on parle aujourd'hui ? » |
 | **« Publication sur dev »** (ou « go dev ») | Publier le travail validé sur `dev` (voir §2). |
 | **« Publication sur main »** (ou « go main ») | Publier sur `main`, la version des joueurs (voir §2). |
+| **« Bilan »** (ou « bilan des dunes », « bilan de l'aventure », « bilan sur 14 jours ») | Lancer le robot « Rapport » et résumer les chiffres (voir §2 bis). |
 | **« Fin de discussion »** | Noter dans l'issue qui convient tout ce qui a été décidé, mis de côté ou reste à faire (n° 10 aventure, n° 8 sécurité, n° 9 le reste, ou une nouvelle issue pour un nouveau gros chantier) ; mettre à jour ce `CLAUDE.md` si une règle ou l'état du projet a changé ; **publier les changements de `CLAUDE.md` seul sur `dev` et `main`** (exception validée : ce fichier ne change rien au jeu) ; résumer en 3 lignes ce qui a été noté ; **rappeler à Florent de supprimer à la main la branche de la session, en donnant son nom exact et le lien direct `https://github.com/Zodiacfbo/bousier/branches`** (corbeille à droite de la ligne ; je ne peux pas supprimer de branche distante). |
 
-Au début de toute conversation sur Bousier, même sans « Parlons de Bousier », rappeler ces 4 commandes en une ligne.
+Au début de toute conversation sur Bousier, même sans « Parlons de Bousier », rappeler ces 5 commandes en une ligne.
 
 ## 1. Règles de travail (à respecter toujours)
 
@@ -62,6 +63,13 @@ Au début de toute conversation sur Bousier, même sans « Parlons de Bousier »
 - Après un push, vérifier avec `git log --oneline -1 origin/main` (ou `origin/dev`). GitHub Pages peut mettre jusqu'à 10 minutes à servir la nouvelle version.
 - Si plusieurs conversations travaillent en parallèle : avant de publier, récupérer la dernière version de `dev`/`main` (`git fetch`) et la fusionner dans sa branche ; ne jamais forcer un push. Ne coder qu'à un seul endroit à la fois (tout le jeu est dans `index.html`).
 - Sauvegarde hebdomadaire : `.github/workflows/backup.yml` + `scripts/backup.mjs` (fichier chiffré).
+
+## 2 bis. Bilan chiffré (« Bilan »)
+
+- Robot `.github/workflows/rapport.yml` + `scripts/rapport.mjs` : lit la base `prod` avec le secret `FIREBASE_SERVICE_ACCOUNT`, **sans rien modifier**, et écrit dans son journal des chiffres d'ensemble **sans aucun nom** (groupes de 1 ou 2 joueurs affichés « <3 »). Le dépôt est public : ne jamais y ajouter de nom, d'identifiant ni de détail par joueur.
+- Déroulé : outil GitHub `actions_run_trigger` (`run_workflow`, `workflow_id` `rapport.yml`, `ref` `main`, `inputs` : `type` = `tout`/`dunes`/`aventure`, `jours` = `7` par défaut, `env` = `prod`) ; attendre 1 à 2 minutes ; `actions_list` (`list_workflow_runs` puis `list_workflow_jobs`) ; `get_job_logs` (`return_content`) ; résumer à Florent avec un avis clair ; puis **effacer le journal** (`actions_run_trigger`, `delete_workflow_run_logs`). Chaque lancement efface aussi les bilans précédents.
+- Le détail par joueur reste dans l'admin (seul Florent y a accès).
+- Si le jeu change ses données (nouveau monde, nouvelles cartes…), mettre `scripts/rapport.mjs` à jour comme l'admin.
 
 ## 3. Architecture
 

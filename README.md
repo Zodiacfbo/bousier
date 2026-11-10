@@ -44,6 +44,12 @@ Secrets GitHub nécessaires : `FIREBASE_SERVICE_ACCOUNT` (clé JSON d'un compte 
 Déchiffrer : `openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in bousier-AAAA-MM-JJ.json.enc -out sauvegarde.json`.
 Les comptes (pseudos + mots de passe) restent dans Firebase Authentication et ne sont pas dans la sauvegarde.
 
+## Bilan chiffré
+
+`.github/workflows/rapport.yml` (lancé à la main, onglet **Actions** > « Rapport » > « Run workflow », ou par Claude
+avec la commande « Bilan ») lit la base sans la modifier (`scripts/rapport.mjs`) et écrit dans son journal des chiffres
+d'ensemble, sans aucun nom de joueur. Chaque lancement efface les journaux des bilans précédents.
+
 ## Page admin
 
 `admin.html` (non liée depuis le jeu) : activité, liste des joueurs, cadeaux (pièces, objets), suppression d'un

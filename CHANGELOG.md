@@ -15,6 +15,23 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - La tenue Chat noir n'est plus réservée au site de test (`devOnly` retiré, et plus offerte d'office sur dev : il faut l'adopter) ; nouveau compteur `chatAdopt`.
 - Dev : raccourci « 13 nov. vendredi 13 » dans le voyage dans le temps.
 - News de teaser datée du 12 novembre : « Vendredi 13 approche… on raconte qu'un chat noir rôde dans les dunes. »
+## v1.25.5 — Aventure : niveaux plus longs à gagner (9 novembre 2026)
+- Chaque niveau coûte 100 XP de plus que le précédent (au lieu de 50) : 150, 250, 350… Le niveau 20 demande 19 950 XP
+  (au lieu de 11 400). Après 3 bonnes parties, on est vers le niveau 11 (au lieu de 15).
+- L'XP déjà gagnée est gardée, le niveau est recalculé ; si un joueur avait placé plus de points qu'il n'en a maintenant,
+  tous ses points lui sont rendus pour les replacer.
+- Même calcul dans l'admin et dans le bilan. Pas de news.
+
+## v1.25.4 — Outil : niveaux et mondes dans le bilan (9 novembre 2026)
+- Bilan de l'aventure : XP par partie, joueurs par tranche de niveau, et pour chaque monde le nombre de joueurs qui l'ont fini,
+  en combien de parties, en combien de jours et à quel niveau (depuis l'ouverture). Toujours sans aucun nom.
+- Rien ne change dans le jeu.
+
+## v1.25.3 — Outil : bilan chiffré à la demande (9 novembre 2026)
+- Nouveau robot GitHub « Rapport » (`.github/workflows/rapport.yml`, `scripts/rapport.mjs`) : lancé à la demande, il lit la base
+  sans rien modifier et donne des chiffres d'ensemble sans aucun nom (dune du jour jour par jour, aventure). Les petits groupes
+  sont masqués et les journaux sont effacés après lecture.
+- Rien ne change dans le jeu.
 
 ## v1.25.2 — Aventure : les cartes expliquées dans l'accueil (9 novembre 2026)
 - Aventure : l'accueil explique de nouveau les cartes, dans un petit encadré de 4 lignes (coup de pouce, relique, combo,

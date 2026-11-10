@@ -1676,7 +1676,7 @@ const findCos = (type, id) => COSMETICS[type].find(c => c.id === id) || COSMETIC
 // mystery : visible, mais seul un indice est donné. secret : invisible tant qu'il n'est pas obtenu.
 const counter = (p, k) => (p.counters && p.counters[k]) || 0;
 // aventure : mondes terminés et niveau (le même calcul que dans le bloc de l'aventure)
-const ADV_NEED = L => 150 + 50 * (L - 1);
+const ADV_NEED = L => 150 + 100 * (L - 1);  // v1.25.5 : +100 XP par niveau (au lieu de +50), les niveaux montaient trop vite
 const ADV_MAX = 20;  // niveau maximum pour l'instant (à relever avec les prochains mondes)
 // l'XP s'arrête au niveau maximum : quand on relèvera le plafond, tout le monde repartira du même niveau
 const ADV_XP_CAP = Array.from({ length: ADV_MAX - 1 }, (_, i) => ADV_NEED(i + 1)).reduce((a, b) => a + b, 0);
