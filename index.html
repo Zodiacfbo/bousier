@@ -1509,7 +1509,7 @@ const OUTFITS = [
   { id: 'hazmat', name: 'Combinaison anti-contamination', pal: { q: '#d9b400', Q: '#ffd84a', u: '#2c2442' }, pixels: [[4, 4, '#2c2442'], [6, 4, '#2c2442'], [5, 5, '#2c2442']] },
   { id: 'cape', name: 'Cape de super-héros', pal: { q: '#a8202a', Q: '#d8463a', u: '#ffd25a' }, cape: true },
   // essai : seulement sur le site de test (dev), offert d'office ; invisible sur le site officiel
-  { id: 'chatnoir', name: 'Chat noir', gift: true, devOnly: true, body: 'chat', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
+  { id: 'chatnoir', name: 'Chat noir', gift: true, body: 'chat', ...(location.pathname.includes('/dev/') ? { price: 0 } : {}) },
   { from: NEW_WX_FROM, id: 'cire', name: 'Ciré jaune', pal: { q: '#e8c020', Q: '#ffe14a', u: '#b8901a' }, pixels: [[5, 2, '#1d1416']] },
   { id: 'smoking', name: 'Smoking', pal: { q: '#1d1d24', Q: '#2c2c38', u: '#ffffff' }, pixels: [[4, 8, '#d8463a'], [6, 8, '#d8463a'], [5, 8, '#8a2a2a']] },
   { id: 'fleurie', name: 'Tenue de l\'oasis', survival: true, pal: { q: '#2f6b33', Q: '#5fae4a', u: '#8fd06a' }, pixels: [[3, 1, '#ff7aa8'], [7, 2, '#ffd25a'], [4, 4, '#ffffff'], [6, 5, '#ff7aa8'], [3, 6, '#ffd25a'], [7, 6, '#ffffff'], [5, 2, '#ff7aa8']] },
@@ -1736,6 +1736,7 @@ const UNLOCKS = {
   'hat:plotHat': { secret: true, how: '25 plots avalés à l\'entraînement', prog: p => [counter(p, 'plots'), EGG.plots] },
   'hat:sifflet': { secret: true, how: '50 parties d\'entraînement', prog: p => [p.stats.practice || 0, EGG.practice] },
   'title:echauffement': { secret: true, how: '50 parties d\'entraînement', prog: p => [p.stats.practice || 0, EGG.practice] },
+  'outfit:chatnoir': { secret: true, how: 'Le chat noir du vendredi 13 : laisse-le t\'adopter', prog: p => [counter(p, 'chatAdopt'), 1] },
   'hat:ferACheval': { secret: true, how: 'Le chat noir du vendredi 13 évité', prog: p => [counter(p, 'chat'), 1] },
   'hat:plumeHat': { secret: true, how: '100 chatouilles au bousier de l\'accueil', prog: p => [counter(p, 'tickle'), EGG.tickle] },
   'ball:lune': { secret: true, how: '13 touches d\'affilée sur la lune de l\'accueil', prog: p => [counter(p, 'lune'), 1] },
@@ -1772,6 +1773,7 @@ const SECRET_COUNT = Object.values(UNLOCKS).filter(u => u.secret).length;
 // La première entrée est la plus récente : elle s'affiche une fois sur l'accueil
 // des joueurs qui ne l'ont pas encore vue.
 const CHANGELOG = [
+  { v: 13.6, date: '2026-11-12', items: ['🐈‍⬛ Vendredi 13 approche… on raconte qu\'un chat noir rôde dans les dunes.'] },
   { v: 13.5, date: '2026-11-09', items: ['🗺️ Nouveau : le mode Aventure ! Au bout du désert, d\'autres mondes t\'attendent… mais ta boule fond à chaque mètre ! Choisis tes bonus aux haltes, débloque des compétences et va le plus loin possible. Bouton 🗺️ AVENTURE à l\'accueil.', '🎲 L\'entraînement aléatoire est maintenant dans le menu de l\'Aventure.', '🐞 C\'est tout neuf : si tu vois un bug, dis-le-moi avec le bouton 💡 en haut de l\'accueil. Merci !'] },
   { v: 14, date: '2026-11-20', items: ['🎂 Bousier a 1 mois ! Merci à tous ceux qui roulent depuis le début : un gâteau vous attend sur la dune du jour, et un petit cadeau pour les fidèles du premier mois.'] },
   { v: 13, date: '2099-01-01',  // en pause avec la boutique de la semaine
@@ -3626,11 +3628,15 @@ class Game {
   stepCat(b) {
     const c = this.cat;
     if (!c.go && c.y - b.y < 150) { const [L, R] = this.edge(c.y); c.go = true; c.dir = b.x > (L + R) / 2 ? -1 : 1; c.x = c.dir > 0 ? L + 3 : R - 3; c.L = L; c.R = R; }
-    if (!c.go) return;
-    if (c.x > c.L - 20 && c.x < c.R + 20) c.x += c.dir * 48 * TICK;
+    if (!c.go || c.gone) return;
+    // le chat traverse puis s'assoit contre le bord d'en face : on peut toujours aller le toucher (ou l'éviter)
+    const lim = c.dir > 0 ? c.R - 8 : c.L + 8;
+    if (c.dir > 0 ? c.x < lim : c.x > lim) c.x = c.dir > 0 ? Math.min(lim, c.x + 48 * TICK) : Math.max(lim, c.x - 48 * TICK);
     if (!c.touched && Math.hypot(c.x - b.x, c.y - b.y) < b.r + 4) {
-      c.touched = true; b.area = Math.max(this.minArea, b.area * 0.95); this.shake = 2; Sound.play('bump');
-      this.floatText('MIAOU !', b.x, b.y - b.r - 10, '#ffffff');
+      // toucher le chat : il t'adopte (tenue chat noir), sans perdre de taille ; l'éviter donne le fer à cheval (autre essai)
+      c.touched = true; c.gone = true; this.run.chatAdopt = true; Sound.play('unlock');
+      this.floatText('LE CHAT NOIR T\'ADOPTE !', clamp(b.x, 52, W - 52), b.y - b.r - 14, '#ffd25a');
+      this.burst(b.x, b.y - 6, 26, ['#ff6a8a', '#ffd25a', '#ffffff'], 90);
     }
     if (!c.done && b.y > c.y + 20) { c.done = true; if (!c.touched) { this.run.chat = true; this.floatText('OUF... CHANCE !', b.x, b.y - b.r - 10, '#a8ff9a'); } }
   }
@@ -4168,7 +4174,7 @@ class Game {
     this.drawBackground(Math.round(camY));
     ctx.save();
     ctx.translate(0, -Math.round(camY));
-    if (this.cat && this.cat.go) { const s = this.cat.dir > 0 ? SPR.chatF : SPR.chat; ctx.drawImage(s, Math.round(this.cat.x - s.width / 2), Math.round(this.cat.y - s.height / 2)); }
+    if (this.cat && this.cat.go && !this.cat.gone) { const s = this.cat.dir > 0 ? SPR.chatF : SPR.chat; ctx.drawImage(s, Math.round(this.cat.x - s.width / 2), Math.round(this.cat.y - s.height / 2)); }
     for (const z of this.sands || []) {
       const zr = this.sandR(z);
       if (z.y < camY - zr * 2.5 || z.y > camY + H + zr * 2.5) continue;
@@ -5441,6 +5447,7 @@ const App = {
       if (run.byType.megot && !d.megot) { d.megot = true; inc('megot'); }  // un seul mégot compté par jour
       if (this.today >= EGG.from) {
         if (run.chat) inc('chat');
+        if (run.chatAdopt) inc('chatAdopt');
         if (now.getHours() < 7) inc('early');
         if (now.getHours() >= 23) inc('owl');
         const m = x => (run.score / 100).toFixed(2) === x;

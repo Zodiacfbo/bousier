@@ -7,6 +7,14 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.26.0 — Vendredi 13 : le chat noir t'adopte (13 novembre 2026)
+- Vendredi 13 : toucher le chat noir ne fait plus perdre de taille ; le chat t'adopte (« LE CHAT NOIR T'ADOPTE ! ») et
+  donne la tenue **Chat noir** (très rare : elle ne revient qu'au prochain vendredi 13, en août 2027). L'éviter donne
+  toujours le fer à cheval, sur un autre essai. Le chat apparaît à chaque essai de la dune.
+- Le chat traverse puis s'assoit contre le bord d'en face, pour qu'on puisse toujours aller le toucher (ou l'éviter).
+- La tenue Chat noir n'est plus réservée au site de test (`devOnly` retiré) ; nouveau compteur `chatAdopt`.
+- News de teaser datée du 12 novembre : « Vendredi 13 approche… on raconte qu'un chat noir rôde dans les dunes. »
+
 ## v1.25.2 — Aventure : les cartes expliquées dans l'accueil (9 novembre 2026)
 - Aventure : l'accueil explique de nouveau les cartes, dans un petit encadré de 4 lignes (coup de pouce, relique, combo,
   cartes risquées).
