@@ -986,7 +986,8 @@ const ROWS = {
   sifflet: ['r.....r', '.r...r.', '..hhh..', '.hWhhh.', '..hhh..'],
   ferACheval: ['hh...hh', 'hW...Wh', 'h.....h', '.h...h.', '..hhh..'],
   plumeHat: ['.....rr', '....rrR', '...rrR.', '..rrR..', '.rR....', 'k......'],
-  chat: ['k.k......', 'kkk......', 'kykk....k', 'kkkkkkkk.', '.kkkkkkk.', '.k.k.k.k.'],
+  // chat noir du vendredi 13 : assis de profil, tourné vers la gauche (SPR.chatF = vers la droite)
+  chat: ['.k..k.......', '.kkkk.......', 'kkykk.......', 'kkkkk.......', '.kkkkk......', '.kkkkkk....k', '.kkkkkkk...k', '.kkkkkkk..kk', '.kkkkkkk.kk.', '.kkkkkkkkkk.', '..kkkkkkkk..', '..kkk..kkk..'],
   gateau: ['.y.y.y.', '.r.r.r.', 'wwwwwww', 'ppppppp', 'wwwwwww', 'ppppppp'],
   luneHome: ['..yyyyy..', '.yyyYyyy.', 'yyYyyyyyy', 'yyyyyyYyy', 'yYyyyyyyy', 'yyyyyYyyy', 'yyyYyyyyy', '.yyyyyyy.', '..yyyyy..'],
   bandeauZen: ['.......', 'ooooooo', 'oyyoyyo', 'ooooooo'],
@@ -3630,9 +3631,9 @@ class Game {
     if (!c.go && c.y - b.y < 150) { const [L, R] = this.edge(c.y); c.go = true; c.dir = b.x > (L + R) / 2 ? -1 : 1; c.x = c.dir > 0 ? L + 3 : R - 3; c.L = L; c.R = R; }
     if (!c.go || c.gone) return;
     // le chat traverse puis s'assoit contre le bord d'en face : on peut toujours aller le toucher (ou l'éviter)
-    const lim = c.dir > 0 ? c.R - 8 : c.L + 8;
+    const lim = c.dir > 0 ? c.R - 12 : c.L + 12;
     if (c.dir > 0 ? c.x < lim : c.x > lim) c.x = c.dir > 0 ? Math.min(lim, c.x + 48 * TICK) : Math.max(lim, c.x - 48 * TICK);
-    if (!c.touched && Math.hypot(c.x - b.x, c.y - b.y) < b.r + 4) {
+    if (!c.touched && Math.hypot(c.x - b.x, c.y - b.y) < b.r + 10) {
       // toucher le chat : il t'adopte (tenue chat noir), sans perdre de taille ; l'éviter donne le fer à cheval (autre essai)
       c.touched = true; c.gone = true; this.run.chatAdopt = true; Sound.play('unlock');
       this.floatText('LE CHAT NOIR T\'ADOPTE !', clamp(b.x, 52, W - 52), b.y - b.r - 14, '#ffd25a');
@@ -4174,7 +4175,15 @@ class Game {
     this.drawBackground(Math.round(camY));
     ctx.save();
     ctx.translate(0, -Math.round(camY));
-    if (this.cat && this.cat.go && !this.cat.gone) { const s = this.cat.dir > 0 ? SPR.chatF : SPR.chat; ctx.drawImage(s, Math.round(this.cat.x - s.width / 2), Math.round(this.cat.y - s.height / 2)); }
+    if (this.cat && this.cat.go && !this.cat.gone) {
+      // le chat est grand (x2) et entouré d'un halo doré qui pulse, pour qu'on le repère de loin
+      const c = this.cat, s = c.dir > 0 ? SPR.chatF : SPR.chat, k = 0.5 + 0.5 * Math.sin(this.t * 7);
+      ctx.save(); ctx.fillStyle = '#ffd25a';
+      ctx.globalAlpha = 0.18 + 0.12 * k; ctx.beginPath(); ctx.ellipse(c.x, c.y, 24 + 2 * k, 19 + 2 * k, 0, 0, 6.3); ctx.fill();
+      ctx.globalAlpha = 0.3 + 0.15 * k; ctx.beginPath(); ctx.ellipse(c.x, c.y, 17, 13, 0, 0, 6.3); ctx.fill();
+      ctx.restore();
+      ctx.drawImage(s, Math.round(c.x - s.width), Math.round(c.y - s.height), s.width * 2, s.height * 2);
+    }
     for (const z of this.sands || []) {
       const zr = this.sandR(z);
       if (z.y < camY - zr * 2.5 || z.y > camY + H + zr * 2.5) continue;
