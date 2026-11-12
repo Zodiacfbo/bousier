@@ -17,6 +17,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Le chat traverse puis s'assoit contre le bord d'en face, pour qu'on puisse toujours aller le toucher (ou l'éviter).
 - La tenue Chat noir n'est plus réservée au site de test (`devOnly` retiré, et plus offerte d'office sur dev : il faut l'adopter) ; nouveau compteur `chatAdopt`.
 - Dev : raccourci « 13 nov. vendredi 13 » dans le voyage dans le temps.
+- Dev : essais illimités en date simulée (voyage dans le temps).
 - News de teaser datée du 12 novembre : « Vendredi 13 approche… on raconte qu'un chat noir rôde dans les dunes. »
 ## v1.25.5 — Aventure : niveaux plus longs à gagner (9 novembre 2026)
 - Chaque niveau coûte 100 XP de plus que le précédent (au lieu de 50) : 150, 250, 350… Le niveau 20 demande 19 950 XP

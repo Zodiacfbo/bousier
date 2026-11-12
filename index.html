@@ -2164,7 +2164,8 @@ const BOOST_MIN = 4, BOOST_COUNT = 2, BOOST2_FROM = '2026-10-26';
 // joueurs qui reçoivent le coup de pouce à l'issue d'une semaine (anciens podiums : un seul « last »)
 const boosted = pod => !pod ? [] : pod.lasts || (pod.last ? [pod.last] : []);
 // 3 essais (4 avec le coup de pouce) + les essais offerts par l'organisateur pour ce jour (d.bonus)
-const maxAttempts = (p, day) => (p && p.boostWeek === weekKey(day) ? 4 : 3) + ((p && p.days && p.days[day] && p.days[day].bonus) || 0);
+// dev, en date simulée (voyage dans le temps) : essais illimités pour tester
+const maxAttempts = (p, day) => TIME_SHIFT ? 99 : (p && p.boostWeek === weekKey(day) ? 4 : 3) + ((p && p.days && p.days[day] && p.days[day].bonus) || 0);
 const FIRST_WEEK = '2026-10-19';
 function fmtWeek(wk) {
   const f = k => dayFromKey(k).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
@@ -6396,7 +6397,7 @@ const App = {
     }
     marks.sort((x, y) => x[0] < y[0] ? -1 : 1);
     return `<div class="panel"><div class="label">🕰️ Voyage dans le temps <span class="tiny">(dev seulement)</span></div>
-      <div class="tiny">${TIME_SHIFT ? `Date simulée : <b>${esc(fmtDayLong(TIME_SHIFT))}</b>` : 'Date réelle.'} Le site officiel et ta progression de main ne sont jamais touchés. En date simulée, les scores en ligne peuvent être refusés.</div>
+      <div class="tiny">${TIME_SHIFT ? `Date simulée : <b>${esc(fmtDayLong(TIME_SHIFT))}</b>` : 'Date réelle.'} Le site officiel et ta progression de main ne sont jamais touchés. En date simulée, les essais sont illimités. En date simulée, les scores en ligne peuvent être refusés.</div>
       <div class="pills">${marks.map(([k, l]) => `<button class="pill ${TIME_SHIFT === k ? 'on' : ''}" data-a="timeshift" data-v="${k}">${esc(l)}</button>`).join('')}</div>
       <div style="display:flex;gap:calc(var(--u)*2);align-items:center"><input id="tsdate" type="date" value="${TIME_SHIFT || ''}"><button class="btn ghost small" data-a="timeshift" data-v="pick">Aller à cette date</button></div>
       ${TIME_SHIFT ? '<button class="btn" data-a="timeshift" data-v="">⏪ Revenir à aujourd\'hui</button>' : ''}</div>`;
