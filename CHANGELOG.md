@@ -11,7 +11,9 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 - Vendredi 13 : toucher le chat noir ne fait plus perdre de taille ; le chat t'adopte (« LE CHAT NOIR T'ADOPTE ! ») et
   donne la tenue **Chat noir** (très rare : elle ne revient qu'au prochain vendredi 13, en août 2027). L'éviter donne
   toujours le fer à cheval, sur un autre essai. Le chat apparaît à chaque essai de la dune.
-- Nouveau dessin du chat : assis de profil, deux fois plus grand, avec un halo doré qui pulse ; zone de contact agrandie.
+- Nouveau chat animé, deux fois plus grand, avec un halo doré qui pulse : il trotte (4 images : pattes, queue, tête),
+  s'assoit face à la piste (queue qui bouge, clignement des yeux) et, si on le touche, saute en arc sur la boule avant
+  de disparaître dans des étincelles. Zone de contact adaptée à sa taille.
 - Le chat traverse puis s'assoit contre le bord d'en face, pour qu'on puisse toujours aller le toucher (ou l'éviter).
 - La tenue Chat noir n'est plus réservée au site de test (`devOnly` retiré, et plus offerte d'office sur dev : il faut l'adopter) ; nouveau compteur `chatAdopt`.
 - Dev : raccourci « 13 nov. vendredi 13 » dans le voyage dans le temps.

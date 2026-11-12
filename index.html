@@ -986,8 +986,15 @@ const ROWS = {
   sifflet: ['r.....r', '.r...r.', '..hhh..', '.hWhhh.', '..hhh..'],
   ferACheval: ['hh...hh', 'hW...Wh', 'h.....h', '.h...h.', '..hhh..'],
   plumeHat: ['.....rr', '....rrR', '...rrR.', '..rrR..', '.rR....', 'k......'],
-  // chat noir du vendredi 13 : assis de profil, tourné vers la gauche (SPR.chatF = vers la droite)
-  chat: ['.k..k.......', '.kkkk.......', 'kkykk.......', 'kkkkk.......', '.kkkkk......', '.kkkkkk....k', '.kkkkkkk...k', '.kkkkkkk..kk', '.kkkkkkk.kk.', '.kkkkkkkkkk.', '..kkkkkkkk..', '..kkk..kkk..'],
+  // chat noir du vendredi 13 (tourné vers la droite ; les versions « L » regardent à gauche) :
+  // 4 images de marche (pattes, queue, tête qui balance), puis assis : queue qui bouge, clignement des yeux
+  chatW1: ['............k..k', '.k..........kkkk', 'k...........kkyk', 'k...........kkkk', '.k.........kkkk.', '..kkkkkkkkkkkk..', '..kkkkkkkkkkkk..', '...kkkkkkkkkk...', '...k.k....k.k...', '..k...k..k...k..', '................'],
+  chatW2: ['................', 'k...........k..k', 'k...........kkkk', 'k...........kkyk', '.k..........kkkk', '..kkkkkkkkkkkkk.', '..kkkkkkkkkkkk..', '...kkkkkkkkkk...', '....kk.....kk...', '....kk.....kk...', '................'],
+  chatW3: ['............k..k', '..k.........kkkk', '.k..........kkyk', '.k..........kkkk', '.k.........kkkk.', '..kkkkkkkkkkkk..', '..kkkkkkkkkkkk..', '...kkkkkkkkkk...', '....k......k....', '...kkk....kkk...', '................'],
+  chatW4: ['................', 'k...........k..k', 'k...........kkkk', '.k..........kkyk', '.k..........kkkk', '..kkkkkkkkkkkkk.', '..kkkkkkkkkkkk..', '...kkkkkkkkkk...', '....kk.....kk...', '....kk.....kk...', '................'],
+  chatS1: ['........k..k....', '........kkkk....', '........kkykk...', '........kkkkk...', '.......kkkkk....', '...k..kkkkkk....', '..k..kkkkkkk....', '..k..kkkkkkk....', '..k..kkkkkkk....', '...kkkkkkkkk....', '.....kkk..kkk...'],
+  chatS2: ['........k..k....', '........kkkk....', '........kkykk...', '........kkkkk...', '.......kkkkk....', '.k....kkkkkk....', '.k...kkkkkkk....', '.k...kkkkkkk....', '..k..kkkkkkk....', '...kkkkkkkkk....', '.....kkk..kkk...'],
+  chatS3: ['........k..k....', '........kkkk....', '........kkkkk...', '........kkkkk...', '.......kkkkk....', '...k..kkkkkk....', '..k..kkkkkkk....', '..k..kkkkkkk....', '..k..kkkkkkk....', '...kkkkkkkkk....', '.....kkk..kkk...'],
   gateau: ['.y.y.y.', '.r.r.r.', 'wwwwwww', 'ppppppp', 'wwwwwww', 'ppppppp'],
   luneHome: ['..yyyyy..', '.yyyYyyy.', 'yyYyyyyyy', 'yyyyyyYyy', 'yYyyyyyyy', 'yyyyyYyyy', 'yyyYyyyyy', '.yyyyyyy.', '..yyyyy..'],
   bandeauZen: ['.......', 'ooooooo', 'oyyoyyo', 'ooooooo'],
@@ -1314,7 +1321,7 @@ function buildSprites() {
   SPR.chantierFluo = spriteFromRows(ROWS.chantier, { ...PAL, y: '#e6ff3a', Y: '#a8c020' });
   SPR.lezardF = flipCanvas(SPR.lezard);
   SPR.kevinF = flipCanvas(SPR.kevin);
-  SPR.chatF = flipCanvas(SPR.chat);
+  for (const k of ['chatW1', 'chatW2', 'chatW3', 'chatW4', 'chatS1', 'chatS2', 'chatS3']) SPR[k + 'L'] = flipCanvas(SPR[k]);
   SPR.scorpionF = flipCanvas(SPR.scorpion);
   SPR.tortueF = flipCanvas(SPR.tortue);
   SPR.grenouilleF = SPR.grenouille;
@@ -3630,14 +3637,26 @@ class Game {
     const c = this.cat;
     if (!c.go && c.y - b.y < 150) { const [L, R] = this.edge(c.y); c.go = true; c.dir = b.x > (L + R) / 2 ? -1 : 1; c.x = c.dir > 0 ? L + 3 : R - 3; c.L = L; c.R = R; }
     if (!c.go || c.gone) return;
-    // le chat traverse puis s'assoit contre le bord d'en face : on peut toujours aller le toucher (ou l'éviter)
+    // touché : il saute sur la boule (0,35 s), puis disparaît dans des étincelles
+    if (c.jump != null) {
+      c.jump += TICK;
+      if (c.jump >= 0.35) {
+        c.gone = true; Sound.play('unlock');
+        this.floatText('LE CHAT NOIR T\'ADOPTE !', clamp(b.x, 52, W - 52), b.y - b.r - 14, '#ffd25a');
+        this.burst(b.x, b.y - 6, 26, ['#ff6a8a', '#ffd25a', '#ffffff'], 90);
+      }
+      return;
+    }
+    // le chat trotte puis s'assoit contre le bord d'en face : on peut toujours aller le toucher (ou l'éviter)
     const lim = c.dir > 0 ? c.R - 12 : c.L + 12;
-    if (c.dir > 0 ? c.x < lim : c.x > lim) c.x = c.dir > 0 ? Math.min(lim, c.x + 48 * TICK) : Math.max(lim, c.x - 48 * TICK);
-    if (!c.touched && Math.hypot(c.x - b.x, c.y - b.y) < b.r + 10) {
+    if (c.dir > 0 ? c.x < lim : c.x > lim) {
+      const nx = c.dir > 0 ? Math.min(lim, c.x + 48 * TICK) : Math.max(lim, c.x - 48 * TICK);
+      c.walk = (c.walk || 0) + Math.abs(nx - c.x); c.x = nx;
+    } else c.sat = true;
+    if (!c.touched && Math.abs(c.x - b.x) < b.r + 13 && Math.abs(c.y - b.y) < b.r + 8) {
       // toucher le chat : il t'adopte (tenue chat noir), sans perdre de taille ; l'éviter donne le fer à cheval (autre essai)
-      c.touched = true; c.gone = true; this.run.chatAdopt = true; Sound.play('unlock');
-      this.floatText('LE CHAT NOIR T\'ADOPTE !', clamp(b.x, 52, W - 52), b.y - b.r - 14, '#ffd25a');
-      this.burst(b.x, b.y - 6, 26, ['#ff6a8a', '#ffd25a', '#ffffff'], 90);
+      c.touched = true; c.jump = 0; c.jx = c.x; c.jy = c.y; this.run.chatAdopt = true;
+      return;
     }
     if (!c.done && b.y > c.y + 20) { c.done = true; if (!c.touched) { this.run.chat = true; this.floatText('OUF... CHANCE !', b.x, b.y - b.r - 10, '#a8ff9a'); } }
   }
@@ -4177,12 +4196,24 @@ class Game {
     ctx.translate(0, -Math.round(camY));
     if (this.cat && this.cat.go && !this.cat.gone) {
       // le chat est grand (x2) et entouré d'un halo doré qui pulse, pour qu'on le repère de loin
-      const c = this.cat, s = c.dir > 0 ? SPR.chatF : SPR.chat, k = 0.5 + 0.5 * Math.sin(this.t * 7);
-      ctx.save(); ctx.fillStyle = '#ffd25a';
-      ctx.globalAlpha = 0.18 + 0.12 * k; ctx.beginPath(); ctx.ellipse(c.x, c.y, 24 + 2 * k, 19 + 2 * k, 0, 0, 6.3); ctx.fill();
-      ctx.globalAlpha = 0.3 + 0.15 * k; ctx.beginPath(); ctx.ellipse(c.x, c.y, 17, 13, 0, 0, 6.3); ctx.fill();
-      ctx.restore();
-      ctx.drawImage(s, Math.round(c.x - s.width), Math.round(c.y - s.height), s.width * 2, s.height * 2);
+      const c = this.cat, b = this.ball, k = 0.5 + 0.5 * Math.sin(this.t * 7);
+      let x = c.x, y = c.y, key, left;
+      if (c.jump != null) {  // saut en arc jusque sur la boule
+        const u = Math.min(1, c.jump / 0.35);
+        x = c.jx + (b.x - c.jx) * u; y = c.jy + (b.y - b.r - 4 - c.jy) * u - Math.sin(u * Math.PI) * 14;
+        key = 'chatW1'; left = b.x < c.jx;
+      } else if (!c.sat) { key = 'chatW' + (1 + Math.floor((c.walk || 0) / 3) % 4); left = c.dir < 0; }
+      else {  // assis, tourné vers la piste : la queue bouge, il cligne des yeux de temps en temps
+        key = this.t % 2.6 < 0.13 ? 'chatS3' : Math.floor(this.t / 0.45) % 2 ? 'chatS2' : 'chatS1'; left = c.dir > 0;
+      }
+      if (c.jump == null) {
+        ctx.save(); ctx.fillStyle = '#ffd25a';
+        ctx.globalAlpha = 0.18 + 0.12 * k; ctx.beginPath(); ctx.ellipse(x, y, 24 + 2 * k, 19 + 2 * k, 0, 0, 6.3); ctx.fill();
+        ctx.globalAlpha = 0.3 + 0.15 * k; ctx.beginPath(); ctx.ellipse(x, y, 17, 13, 0, 0, 6.3); ctx.fill();
+        ctx.restore();
+      }
+      const s = SPR[key + (left ? 'L' : '')];
+      ctx.drawImage(s, Math.round(x - s.width), Math.round(y - s.height), s.width * 2, s.height * 2);
     }
     for (const z of this.sands || []) {
       const zr = this.sandR(z);
