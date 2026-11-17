@@ -7,6 +7,10 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
+## v1.26.1 — Admin : la tenue Chat noir peut être offerte (17 novembre 2026)
+- Admin : la tenue **Chat noir 🤫** est ajoutée à la liste des objets qu'on peut offrir (fiche du joueur 🎁 ou cadeau à tout le monde).
+- Rien ne change dans le jeu. Pas de news.
+
 ## v1.26.0 — Vendredi 13 : le chat noir t'adopte (13 novembre 2026)
 - Vendredi 13 : toucher le chat noir ne fait plus perdre de taille ; le chat t'adopte (« LE CHAT NOIR T'ADOPTE ! ») et
   donne la tenue **Chat noir** (très rare : elle ne revient qu'au prochain vendredi 13, en août 2027). L'éviter donne
