@@ -3453,7 +3453,7 @@ class Game {
     this.t = 0; this.playTicks = 0; this.phase = 'count'; this.countT = 3.2; this.lastCount = 4;
     this.evs = (this.course.events || []).map(e => ({ ...e }));
     this.cat = this.course.cat ? { y: this.course.cat.y, x: 0, go: false, touched: false, done: false } : null;
-    this.cake = this.objs.find(o => o.deco && o.def.id === 'gateau') || null; this.confT = 0; this.confs = [];  // 1 mois : toucher le gâteau = confettis (rien d'autre)
+    this.cake = this.objs.find(o => o.deco && o.def.id === 'gateau') || null; this.confT = 0; this.confs = []; this.cakeMsg = 0;  // 1 mois : toucher le gâteau = confettis (rien d'autre)
     this.wallT = 0;
     this.resetEvents(); this.lastSay = -9;
     this.shake = 0; this.particles = []; this.texts = [];
@@ -3581,9 +3581,7 @@ class Game {
         const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4, v = 50 + Math.random() * 70;
         this.particles.push({ x: this.cake.x, y: this.cake.y - 4, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 90, life: 1 + Math.random() * 0.8, col: RAINBOW[i % RAINBOW.length], s: 1 + (i % 2) });
       }
-      const tx = clamp(b.x, 60, W - 60);
-      this.texts.push({ text: 'JOYEUX ANNIVERSAIRE !', x: tx, y: b.y - b.r - 22, col: '#ffd25a', life: 1.8 });
-      this.texts.push({ text: 'BOUSIER A 1 MOIS', x: tx, y: b.y - b.r - 12, col: '#ffffff', life: 1.8 });
+      this.cakeMsg = 3.2;  // grand message au milieu de l'écran, pendant les confettis
     }
     // pluie de confettis sur tout l'écran pendant 2,5 s (ils tombent un peu plus vite que la boule)
     // (coordonnées de l'écran, pas de la dune : ils tombent du haut jusqu'en bas même si la boule avance)
@@ -3591,6 +3589,7 @@ class Game {
       this.confT -= TICK;
       for (let i = 0; i < 3; i++) this.confs.push({ x: Math.random() * W, y: -4 - Math.random() * 10, vx: (Math.random() - 0.5) * 20, vy: 60 + Math.random() * 60, ph: Math.random() * 6, col: RAINBOW[Math.floor(Math.random() * RAINBOW.length)], s: 1 + (Math.random() < 0.5 ? 1 : 0) });
     }
+    if (this.cakeMsg > 0) this.cakeMsg -= TICK;
     for (let i = this.confs.length - 1; i >= 0; i--) {
       const c = this.confs[i]; c.ph += TICK * 6; c.x += (c.vx + Math.sin(c.ph) * 15) * TICK; c.y += c.vy * TICK;
       if (c.y > this.H + 4) this.confs.splice(i, 1);
@@ -4328,6 +4327,12 @@ class Game {
       ctx.fillStyle = `rgba(255,40,30,${0.08 * k})`; ctx.fillRect(0, 0, W, H);
     }
     if (this.confs) for (const c of this.confs) { ctx.fillStyle = c.col; ctx.fillRect(Math.round(c.x), Math.round(c.y), c.s, c.s + (Math.sin(c.ph) > 0 ? 1 : 0)); }
+    if (this.cakeMsg > 0) {  // 1 mois : texte en grand (x2), qui rebondit doucement
+      const my = Math.round(this.H * 0.42 + Math.sin(this.t * 6) * 2);
+      drawText(ctx, 'JOYEUX', W / 2, my, '#ffd25a', 2, '#1d1416', 'center');
+      drawText(ctx, 'ANNIVERSAIRE !', W / 2, my + 13, '#ffd25a', 2, '#1d1416', 'center');
+      drawText(ctx, 'BOUSIER A 1 MOIS', W / 2, my + 30, '#ffffff', 2, '#1d1416', 'center');
+    }
     ctx.save(); ctx.translate(0, -Math.round(camY));
     for (const t of this.texts) drawText(ctx, t.text, t.x, t.y, t.col, 1, '#1d1416', 'center');
     ctx.restore();

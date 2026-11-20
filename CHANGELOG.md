@@ -8,7 +8,7 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 ---
 
 ## v1.26.2 — 1 mois : confettis, gâteau à l'accueil, news en tête (20 novembre 2026)
-- Dune du jour du 20 novembre : gâteau deux fois plus grand ; le toucher fait pleuvoir des confettis sur tout l'écran pendant 2 à 3 secondes, avec « JOYEUX ANNIVERSAIRE ! BOUSIER A 1 MOIS »
+- Dune du jour du 20 novembre : gâteau deux fois plus grand ; le toucher fait pleuvoir des confettis sur tout l'écran pendant 2 à 3 secondes, avec « JOYEUX ANNIVERSAIRE ! BOUSIER A 1 MOIS » en grand au milieu de l'écran
   (une fois par essai). Seulement pour les yeux : aucun effet sur la taille, le score ou les récompenses.
 - Accueil : un gâteau qui sautille à côté du titre BOUSIER, le 20 novembre seulement.
 - La news « Bousier a 1 mois » s'affiche maintenant en premier (elle était rangée sous les news du 9 et du 12 novembre).
