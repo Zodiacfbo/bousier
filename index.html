@@ -3181,7 +3181,7 @@ function generateCourse(seed, weather, legend, day = dayKey(), daily = false, pr
     final.sort((a, b) => a.y - b.y);
   }
   // 1 mois : un gâteau au bord du départ
-  if (daily && day === EGG.month1) { final.push({ deco: true, def: { id: 'gateau' }, x: Lx[230] + 14, y: 230, r: 3, sprite: 'gateau', amp: 0 }); final.sort((a, b) => a.y - b.y); }
+  if (daily && day === EGG.month1) { final.push({ deco: true, def: { id: 'gateau' }, x: Lx[230] + 14, y: 230, r: 3, sprite: 'gateau', amp: 0, zoom: 2 }); final.sort((a, b) => a.y - b.y); }
   if (day >= CACTUS_SOFT_FROM) for (const o of final) if (o.def === OBJ.cactus) o.def = CACTUS_SOFT;
   const cat = daily && isFriday13(day) ? { y: Math.round(holeY * makeRng(hashStr(day + '|chat')).range(0.35, 0.6)) } : null;
   return {
@@ -3453,7 +3453,7 @@ class Game {
     this.t = 0; this.playTicks = 0; this.phase = 'count'; this.countT = 3.2; this.lastCount = 4;
     this.evs = (this.course.events || []).map(e => ({ ...e }));
     this.cat = this.course.cat ? { y: this.course.cat.y, x: 0, go: false, touched: false, done: false } : null;
-    this.cake = this.objs.find(o => o.deco && o.def.id === 'gateau') || null;  // 1 mois : toucher le gâteau = confettis (rien d'autre)
+    this.cake = this.objs.find(o => o.deco && o.def.id === 'gateau') || null; this.confT = 0; this.confs = [];  // 1 mois : toucher le gâteau = confettis (rien d'autre)
     this.wallT = 0;
     this.resetEvents(); this.lastSay = -9;
     this.shake = 0; this.particles = []; this.texts = [];
@@ -3575,8 +3575,8 @@ class Game {
     this.wallT = touch || (b.x - r < L + 1.5) || (b.x + r > R - 1.5) ? this.wallT + TICK : 0;
     if (this.wallT >= EGG.shy && !this.run.timide && !this.surv) { this.run.timide = true; this.floatText('...', b.x, b.y - b.r - 14, '#ff8aa8'); }
     if (this.cat) this.stepCat(b);
-    if (this.cake && !this.cake.hit && this.state === 'run' && Math.hypot(this.cake.x - b.x, this.cake.y - b.y) < b.r + 8) {
-      this.cake.hit = true; Sound.play('unlock');
+    if (this.cake && !this.cake.hit && this.state === 'run' && Math.hypot(this.cake.x - b.x, this.cake.y - b.y) < b.r + 11) {
+      this.cake.hit = true; this.confT = 2.5; Sound.play('unlock');
       for (let i = 0; i < 60; i++) {
         const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4, v = 50 + Math.random() * 70;
         this.particles.push({ x: this.cake.x, y: this.cake.y - 4, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 90, life: 1 + Math.random() * 0.8, col: RAINBOW[i % RAINBOW.length], s: 1 + (i % 2) });
@@ -3584,6 +3584,16 @@ class Game {
       const tx = clamp(b.x, 60, W - 60);
       this.texts.push({ text: 'JOYEUX ANNIVERSAIRE !', x: tx, y: b.y - b.r - 22, col: '#ffd25a', life: 1.8 });
       this.texts.push({ text: 'BOUSIER A 1 MOIS', x: tx, y: b.y - b.r - 12, col: '#ffffff', life: 1.8 });
+    }
+    // pluie de confettis sur tout l'écran pendant 2,5 s (ils tombent un peu plus vite que la boule)
+    // (coordonnées de l'écran, pas de la dune : ils tombent du haut jusqu'en bas même si la boule avance)
+    if (this.confT > 0) {
+      this.confT -= TICK;
+      for (let i = 0; i < 3; i++) this.confs.push({ x: Math.random() * W, y: -4 - Math.random() * 10, vx: (Math.random() - 0.5) * 20, vy: 60 + Math.random() * 60, ph: Math.random() * 6, col: RAINBOW[Math.floor(Math.random() * RAINBOW.length)], s: 1 + (Math.random() < 0.5 ? 1 : 0) });
+    }
+    for (let i = this.confs.length - 1; i >= 0; i--) {
+      const c = this.confs[i]; c.ph += TICK * 6; c.x += (c.vx + Math.sin(c.ph) * 15) * TICK; c.y += c.vy * TICK;
+      if (c.y > this.H + 4) this.confs.splice(i, 1);
     }
 
     // objets proches
@@ -4317,6 +4327,7 @@ class Game {
       ctx.fillStyle = g; ctx.fillRect(left ? 0 : W - 34, 0, 34, H);
       ctx.fillStyle = `rgba(255,40,30,${0.08 * k})`; ctx.fillRect(0, 0, W, H);
     }
+    if (this.confs) for (const c of this.confs) { ctx.fillStyle = c.col; ctx.fillRect(Math.round(c.x), Math.round(c.y), c.s, c.s + (Math.sin(c.ph) > 0 ? 1 : 0)); }
     ctx.save(); ctx.translate(0, -Math.round(camY));
     for (const t of this.texts) drawText(ctx, t.text, t.x, t.y, t.col, 1, '#1d1416', 'center');
     ctx.restore();
@@ -4373,6 +4384,7 @@ class Game {
     let key = o.sprite;
     if (o.amp && o.def.move && Math.cos(this.t * o.w + o.phase) < 0 && SPR[key + 'F']) key += 'F';
     const s = SPR[key]; if (!s) return;
+    if (o.zoom) { const z = o.zoom; ctx.drawImage(s, Math.round(this.objX(o) - s.width * z / 2), Math.round(o.y - s.height * z / 2), s.width * z, s.height * z); return; }  // décor agrandi (gâteau du 1 mois)
     const x = Math.round(this.objX(o) - s.width / 2);
     let y = Math.round(o.y - s.height / 2);
     if (o.def.move === 'spider') {
