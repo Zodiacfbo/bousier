@@ -163,6 +163,9 @@ input, textarea {
   text-shadow: var(--u) var(--u) 0 #b5662a, calc(var(--u)*2) calc(var(--u)*2) 0 #5a2a1a, calc(var(--u)*3) calc(var(--u)*3) 0 #120a16;
 }
 .title.small { font-size: calc(var(--u) * 13); }
+.title-cake { display: inline-block; margin-left: calc(var(--u) * 4); vertical-align: calc(var(--u) * 1); animation: bob 1s steps(2) infinite; }
+/* la police colle « fi » en un seul signe (qui ressemble à un A) : on l'empêche */
+body, button, input, textarea, select { font-variant-ligatures: none; font-feature-settings: 'liga' 0, 'clig' 0; }
 .sub { text-align: center; color: var(--ink); text-shadow: var(--u) var(--u) 0 #120a16; margin-top: calc(var(--u) * 2); }
 .hero { display: flex; flex-direction: column; align-items: center; position: relative; }
 .tickle { cursor: pointer; }
@@ -3450,6 +3453,7 @@ class Game {
     this.t = 0; this.playTicks = 0; this.phase = 'count'; this.countT = 3.2; this.lastCount = 4;
     this.evs = (this.course.events || []).map(e => ({ ...e }));
     this.cat = this.course.cat ? { y: this.course.cat.y, x: 0, go: false, touched: false, done: false } : null;
+    this.cake = this.objs.find(o => o.deco && o.def.id === 'gateau') || null;  // 1 mois : toucher le gâteau = confettis (rien d'autre)
     this.wallT = 0;
     this.resetEvents(); this.lastSay = -9;
     this.shake = 0; this.particles = []; this.texts = [];
@@ -3571,6 +3575,16 @@ class Game {
     this.wallT = touch || (b.x - r < L + 1.5) || (b.x + r > R - 1.5) ? this.wallT + TICK : 0;
     if (this.wallT >= EGG.shy && !this.run.timide && !this.surv) { this.run.timide = true; this.floatText('...', b.x, b.y - b.r - 14, '#ff8aa8'); }
     if (this.cat) this.stepCat(b);
+    if (this.cake && !this.cake.hit && this.state === 'run' && Math.hypot(this.cake.x - b.x, this.cake.y - b.y) < b.r + 8) {
+      this.cake.hit = true; Sound.play('unlock');
+      for (let i = 0; i < 60; i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4, v = 50 + Math.random() * 70;
+        this.particles.push({ x: this.cake.x, y: this.cake.y - 4, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 90, life: 1 + Math.random() * 0.8, col: RAINBOW[i % RAINBOW.length], s: 1 + (i % 2) });
+      }
+      const tx = clamp(b.x, 60, W - 60);
+      this.texts.push({ text: 'JOYEUX ANNIVERSAIRE !', x: tx, y: b.y - b.r - 22, col: '#ffd25a', life: 1.8 });
+      this.texts.push({ text: 'BOUSIER A 1 MOIS', x: tx, y: b.y - b.r - 12, col: '#ffffff', life: 1.8 });
+    }
 
     // objets proches
     const objs = this.objs;
@@ -5864,7 +5878,7 @@ const App = {
     return `<div class="screen">
       ${this.topbar()}
       <div class="hero">
-        <div class="title">BOUSIER</div>
+        <div class="title">BOUSIER${this.today === EGG.month1 ? `<span class="title-cake">${spriteImg('gateau', 4)}</span>` : ''}</div>
         <div class="sub">Dune #${cfg.num} · ${esc(fmtDayLong(this.today))}</div>
         <div class="mascot bob tickle" data-a="tickle">${pix(mascotUrl(skin, hat, 10, outfit, trail), 72, trail.fx ? 104 : 76)}</div>
         ${this.today >= EGG.from && cfg.weather.id === 'nuit' ? `<button class="moon" data-a="moon" aria-label="Lune">${spriteImg('luneHome', 3)}</button>` : ''}

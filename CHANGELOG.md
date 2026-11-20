@@ -7,9 +7,13 @@ Le panneau « Quoi de neuf ? » du jeu en est la version courte, pour les joueur
 
 ---
 
-## v1.26.2 — News du 1 mois en tête (20 novembre 2026)
+## v1.26.2 — 1 mois : confettis, gâteau à l'accueil, news en tête (20 novembre 2026)
+- Dune du jour du 20 novembre : toucher le gâteau fait pleuvoir des confettis, avec « JOYEUX ANNIVERSAIRE ! BOUSIER A 1 MOIS »
+  (une fois par essai). Seulement pour les yeux : aucun effet sur la taille, le score ou les récompenses.
+- Accueil : un gâteau qui sautille à côté du titre BOUSIER, le 20 novembre seulement.
 - La news « Bousier a 1 mois » s'affiche maintenant en premier (elle était rangée sous les news du 9 et du 12 novembre).
-- Rien d'autre ne change. Pas de nouvelle news.
+- Textes : la police ne colle plus « fi » en un seul signe qui ressemblait à un A (« fidèles », « défi », « profil »).
+- Pas de nouvelle news.
 
 ## v1.26.1 — Admin : la tenue Chat noir peut être offerte (17 novembre 2026)
 - Admin : la tenue **Chat noir 🤫** est ajoutée à la liste des objets qu'on peut offrir (fiche du joueur 🎁 ou cadeau à tout le monde).
